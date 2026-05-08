@@ -50,7 +50,7 @@ pub async fn start_auto_archive_licensing_requests(state: AppState) {
 }
 
 async fn run_auto_archive_licensing_requests(state: &AppState) -> Result<(), String> {
-    match crate::licensing_requests::auto_archive_expired_licensing_requests(state).await {
+    match crate::licenses::requests::auto_archive_expired_licensing_requests(state).await {
         Ok((total_checked, archived_count)) => {
             if archived_count > 0 {
                 info!(

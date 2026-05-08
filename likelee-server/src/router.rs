@@ -87,27 +87,27 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route(
             "/api/talent/agency-invites",
-            get(crate::agency_talent_invites::list_for_talent),
+            get(crate::agencies::talent_invites::list_for_talent),
         )
         .route(
             "/api/creator/brand-connection-requests",
-            get(crate::face_profiles::list_creator_brand_connection_requests),
+            get(crate::creators::face_profiles::list_creator_brand_connection_requests),
         )
         .route(
             "/api/creator/brand-connection-requests/:id/accept",
-            post(crate::face_profiles::accept_creator_brand_connection_request),
+            post(crate::creators::face_profiles::accept_creator_brand_connection_request),
         )
         .route(
             "/api/creator/brand-connection-requests/:id/decline",
-            post(crate::face_profiles::decline_creator_brand_connection_request),
+            post(crate::creators::face_profiles::decline_creator_brand_connection_request),
         )
         .route(
             "/api/creator/brand-connections",
-            get(crate::face_profiles::list_creator_brand_connections),
+            get(crate::creators::face_profiles::list_creator_brand_connections),
         )
         .route(
             "/api/creator/brand-connections/:brand_id/disconnect",
-            post(crate::face_profiles::disconnect_creator_brand_connection),
+            post(crate::creators::face_profiles::disconnect_creator_brand_connection),
         )
         .route(
             "/api/talent/licensing-requests",
@@ -184,52 +184,52 @@ pub fn build_router(state: AppState) -> Router {
         // Creator/Talent Payouts
         .route(
             "/api/payouts/onboarding_link",
-            post(crate::payouts::create_onboarding_link),
+            post(crate::billing::payouts::create_onboarding_link),
         )
         .route(
             "/api/payouts/account_status",
-            get(crate::payouts::get_account_status),
+            get(crate::billing::payouts::get_account_status),
         )
-        .route("/api/payouts/balance", get(crate::payouts::get_balance))
-        .route("/api/payouts/request", post(crate::payouts::request_payout))
-        .route("/api/payouts/history", get(crate::payouts::get_history))
+        .route("/api/payouts/balance", get(crate::billing::payouts::get_balance))
+        .route("/api/payouts/request", post(crate::billing::payouts::request_payout))
+        .route("/api/payouts/history", get(crate::billing::payouts::get_history))
         // Talent-Specific Payouts (Portal variants)
         .route(
             "/api/talent/payouts/account-status",
-            get(crate::payouts::get_my_account_status),
+            get(crate::billing::payouts::get_my_account_status),
         )
         .route(
             "/api/talent/payouts/onboarding-link",
-            post(crate::payouts::create_my_onboarding_link),
+            post(crate::billing::payouts::create_my_onboarding_link),
         )
         .route(
             "/api/talent/payouts/balance",
-            get(crate::payouts::get_my_balance),
+            get(crate::billing::payouts::get_my_balance),
         )
         .route(
             "/api/talent/payouts/request",
-            post(crate::payouts::request_my_payout),
+            post(crate::billing::payouts::request_my_payout),
         )
         // Agency Payouts
         .route(
             "/api/agency/payouts/onboarding_link",
-            post(crate::payouts::create_agency_onboarding_link),
+            post(crate::billing::payouts::create_agency_onboarding_link),
         )
         .route(
             "/api/agency/payouts/account_status",
-            get(crate::payouts::get_agency_account_status),
+            get(crate::billing::payouts::get_agency_account_status),
         )
         .route(
             "/api/agency/payouts/balance",
-            get(crate::payouts::get_agency_balance),
+            get(crate::billing::payouts::get_agency_balance),
         )
         .route(
             "/api/agency/payouts/request",
-            post(crate::payouts::request_agency_payout),
+            post(crate::billing::payouts::request_agency_payout),
         )
         .route(
             "/api/agency/payouts/history",
-            get(crate::payouts::get_agency_payout_history),
+            get(crate::billing::payouts::get_agency_payout_history),
         )
         // Agency Payout Settings & Schedule
         .route(
@@ -243,110 +243,110 @@ pub fn build_router(state: AppState) -> Router {
         // Creator Balance & Payout (New from main)
         .route(
             "/api/creator/balance",
-            get(crate::payment_links::get_creator_balance),
+            get(crate::billing::payment_links::get_creator_balance),
         )
         .route(
             "/api/creator/payout-request",
-            post(crate::payment_links::request_creator_payout),
+            post(crate::billing::payment_links::request_creator_payout),
         )
         .route(
             "/api/creator/payout-history",
-            get(crate::payment_links::get_creator_payout_history),
+            get(crate::billing::payment_links::get_creator_payout_history),
         )
         // --- Agency Dashboard & Features ---
         .route(
             "/api/agency/dashboard/overview",
-            get(crate::agency_dashboard::get_dashboard_overview),
+            get(crate::agencies::dashboard::get_dashboard_overview),
         )
         .route(
             "/api/agency/dashboard/talent-performance",
-            get(crate::agency_dashboard::get_talent_performance),
+            get(crate::agencies::dashboard::get_talent_performance),
         )
         .route(
             "/api/agency/dashboard/revenue-breakdown",
-            get(crate::agency_dashboard::get_revenue_breakdown),
+            get(crate::agencies::dashboard::get_revenue_breakdown),
         )
         .route(
             "/api/agency/dashboard/licensing-pipeline",
-            get(crate::agency_dashboard::get_licensing_pipeline),
+            get(crate::agencies::dashboard::get_licensing_pipeline),
         )
         .route(
             "/api/agency/dashboard/recent-activity",
-            get(crate::agency_dashboard::get_recent_activity),
+            get(crate::agencies::dashboard::get_recent_activity),
         )
         .route(
             "/api/agency/dashboard/payment-history/top-earners",
-            get(crate::agency_dashboard::get_payment_history_top_earners),
+            get(crate::agencies::dashboard::get_payment_history_top_earners),
         )
         .route(
             "/api/agency/dashboard/performance-tiers",
-            get(crate::performance_tiers::get_performance_tiers),
+            get(crate::agencies::performance_tiers::get_performance_tiers),
         )
         .route(
             "/api/agency/dashboard/performance-tiers/configure",
-            post(crate::performance_tiers::configure_performance_tiers),
+            post(crate::agencies::performance_tiers::configure_performance_tiers),
         )
         .route(
             "/api/agency/dashboard/payout-weights",
-            get(crate::performance_tiers::get_agency_payout_weights),
+            get(crate::agencies::performance_tiers::get_agency_payout_weights),
         )
         .route(
             "/api/agency/dashboard/talent-commissions/update",
-            post(crate::performance_tiers::update_talent_commission),
+            post(crate::agencies::performance_tiers::update_talent_commission),
         )
         .route(
             "/api/agency/dashboard/talent-commissions/bulk-update",
-            post(crate::performance_tiers::bulk_update_talent_commissions),
+            post(crate::agencies::performance_tiers::bulk_update_talent_commissions),
         )
         .route(
             "/api/agency/dashboard/talent-commissions/history",
-            get(crate::performance_tiers::get_commission_history),
+            get(crate::agencies::performance_tiers::get_commission_history),
         )
         .route(
             "/api/agency/analytics/dashboard",
-            get(crate::analytics::get_analytics_dashboard),
+            get(crate::agencies::analytics::get_analytics_dashboard),
         )
         .route(
             "/api/agency/analytics/roster",
-            get(crate::analytics::get_roster_insights),
+            get(crate::agencies::analytics::get_roster_insights),
         )
         .route(
             "/api/agency/analytics/clients-campaigns",
-            get(crate::analytics::get_clients_campaigns_analytics),
+            get(crate::agencies::analytics::get_clients_campaigns_analytics),
         )
         .route(
             "/api/agency/analytics/royalties",
-            get(crate::analytics::get_royalties_payouts),
+            get(crate::agencies::analytics::get_royalties_payouts),
         )
         .route(
             "/api/agency/analytics/commission-breakdowns",
-            get(crate::performance_tiers::get_commission_breakdowns),
+            get(crate::agencies::performance_tiers::get_commission_breakdowns),
         )
         .route(
             "/api/agency/analytics/expired-licenses",
-            get(crate::analytics::get_expired_licenses),
+            get(crate::agencies::analytics::get_expired_licenses),
         )
-        .route("/api/agency/roster", get(crate::agency_roster::get_roster))
+        .route("/api/agency/roster", get(crate::agencies::roster::get_roster))
         .route(
             "/api/agency/talent",
-            post(crate::agency_roster::create_talent),
+            post(crate::agencies::roster::create_talent),
         )
         .route(
             "/api/agency/talent/:id",
-            post(crate::agency_roster::update_talent),
+            post(crate::agencies::roster::update_talent),
         )
         .route(
             "/api/agency/talent/:id/campaigns",
-            get(crate::agency_roster::list_talent_campaigns),
+            get(crate::agencies::roster::list_talent_campaigns),
         )
         .route(
             "/api/agency/talent-invites",
-            get(crate::agency_talent_invites::list_for_agency)
-                .post(crate::agency_talent_invites::create_for_agency),
+            get(crate::agencies::talent_invites::list_for_agency)
+                .post(crate::agencies::talent_invites::create_for_agency),
         )
         .route(
             "/api/agency/talent-invites/:id/revoke",
-            post(crate::agency_talent_invites::revoke_for_agency),
+            post(crate::agencies::talent_invites::revoke_for_agency),
         )
         .route("/api/team/context", get(crate::team::get_context))
         // --- Session Audit ---
@@ -390,59 +390,59 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route(
             "/api/agency/campaigns/:id",
-            post(crate::campaigns::update_campaign_split),
+            post(crate::agencies::campaigns::update_campaign_split),
         )
         .route(
             "/api/agency/licensing-requests",
-            get(crate::licensing_requests::list_for_agency).post(crate::licensing_requests::create),
+            get(crate::licenses::requests::list_for_agency).post(crate::licenses::requests::create),
         )
         .route(
             "/api/agency/licensing-requests/status",
-            post(crate::licensing_requests::update_status_bulk),
+            post(crate::licenses::requests::update_status_bulk),
         )
         .route(
             "/api/agency/licensing-requests/delete",
-            post(crate::licensing_requests::delete_archived_requests),
+            post(crate::licenses::requests::delete_archived_requests),
         )
         .route(
             "/api/agency/licensing-requests/:id/send-payment-link",
-            post(crate::licensing_requests::send_payment_link),
+            post(crate::licenses::requests::send_payment_link),
         )
         .route(
             "/api/agency/licensing-requests/pay-split",
-            get(crate::licensing_requests::get_pay_split)
-                .post(crate::licensing_requests::set_pay_split),
+            get(crate::licenses::requests::get_pay_split)
+                .post(crate::licenses::requests::set_pay_split),
         )
         .route(
             "/api/agency/brand-license-requests",
-            get(crate::brand_license_requests::list_for_agency),
+            get(crate::licenses::brand_requests::list_for_agency),
         )
         .route(
             "/api/agency/brand-license-requests/status",
-            post(crate::brand_license_requests::update_status_for_agency),
+            post(crate::licenses::brand_requests::update_status_for_agency),
         )
         .route(
             "/api/agency/active-licenses",
-            get(crate::active_licenses::list),
+            get(crate::licenses::active::list),
         )
         .route(
             "/api/agency/active-licenses/stats",
-            get(crate::active_licenses::stats),
+            get(crate::licenses::active::stats),
         )
         // Payment Links (for licensing)
         .route(
             "/api/agency/payment-links",
-            get(crate::payment_links::list_payment_links)
-                .post(crate::payment_links::generate_payment_link),
+            get(crate::billing::payment_links::list_payment_links)
+                .post(crate::billing::payment_links::generate_payment_link),
         )
         .route(
             "/api/agency/payment-links/:id",
-            get(crate::payment_links::get_payment_link)
-                .post(crate::payment_links::cancel_payment_link),
+            get(crate::billing::payment_links::get_payment_link)
+                .post(crate::billing::payment_links::cancel_payment_link),
         )
         .route(
             "/api/agency/payment-links/send",
-            post(crate::payment_links::send_payment_link_email),
+            post(crate::billing::payment_links::send_payment_link_email),
         )
         .route("/api/agency/talents", get(crate::agencies::list_talents))
         .route(
@@ -522,7 +522,7 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route(
             "/api/talent-statements",
-            get(crate::talent_statements::list),
+            get(crate::creators::statements::list),
         )
         .route(
             "/api/expenses",
@@ -547,123 +547,123 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route(
             "/api/agency/comp-cards/share",
-            post(crate::agency_clients::share_comp_card),
+            post(crate::agencies::clients::share_comp_card),
         )
         // --- License Management (Templates & Submissions) ---
         .route(
             "/api/license-templates",
-            get(crate::license_templates::list).post(crate::license_templates::create),
+            get(crate::licenses::templates::list).post(crate::licenses::templates::create),
         )
         .route(
             "/api/license-templates/stats",
-            get(crate::license_templates::stats),
+            get(crate::licenses::templates::stats),
         )
         .route(
             "/api/license-templates/:id",
-            post(crate::license_templates::update)
-                .delete(crate::license_templates::delete_template),
+            post(crate::licenses::templates::update)
+                .delete(crate::licenses::templates::delete_template),
         )
         .route(
             "/api/license-templates/:id/copy",
-            post(crate::license_templates::copy),
+            post(crate::licenses::templates::copy),
         )
         .route(
             "/api/docuseal/builder-token",
-            post(crate::license_templates::create_builder_token),
+            post(crate::licenses::templates::create_builder_token),
         )
         .route(
             "/api/license-submissions",
-            get(crate::license_submissions::list).post(crate::license_submissions::create),
+            get(crate::licenses::submissions::list).post(crate::licenses::submissions::create),
         )
         .route(
             "/api/marketplace/search",
-            get(crate::face_profiles::search_marketplace_profiles),
+            get(crate::creators::face_profiles::search_marketplace_profiles),
         )
         .route(
             "/api/marketplace/:profile_type/:id/details",
-            get(crate::face_profiles::get_marketplace_profile_details),
+            get(crate::creators::face_profiles::get_marketplace_profile_details),
         )
         .route(
             "/api/marketplace/connect",
-            post(crate::face_profiles::create_marketplace_connection_request),
+            post(crate::creators::face_profiles::create_marketplace_connection_request),
         )
         .route(
             "/api/brand/connected-agencies",
-            get(crate::face_profiles::list_brand_connected_agencies),
+            get(crate::creators::face_profiles::list_brand_connected_agencies),
         )
         .route(
             "/api/brand/agency-connections/:agency_id/disconnect",
-            post(crate::face_profiles::disconnect_brand_agency_connection_as_brand),
+            post(crate::creators::face_profiles::disconnect_brand_agency_connection_as_brand),
         )
         .route(
             "/api/brand/licensing-requests",
-            get(crate::licensing_requests::list_for_brand)
-                .post(crate::face_profiles::create_brand_licensing_request),
+            get(crate::licenses::requests::list_for_brand)
+                .post(crate::creators::face_profiles::create_brand_licensing_request),
         )
         .route(
             "/api/brand/licensing-requests/status",
-            post(crate::licensing_requests::update_status_for_brand),
+            post(crate::licenses::requests::update_status_for_brand),
         )
         .route(
             "/api/brand/licensing-requests/delete",
-            post(crate::licensing_requests::delete_archived_requests_for_brand),
+            post(crate::licenses::requests::delete_archived_requests_for_brand),
         )
         .route(
             "/api/brand/brand-license-requests",
-            get(crate::brand_license_requests::list_for_brand)
-                .post(crate::brand_license_requests::create),
+            get(crate::licenses::brand_requests::list_for_brand)
+                .post(crate::licenses::brand_requests::create),
         )
         .route(
             "/api/brand/agency-talent-rates",
-            get(crate::face_profiles::list_brand_agency_talent_rates),
+            get(crate::creators::face_profiles::list_brand_agency_talent_rates),
         )
         .route(
             "/api/agency/brand-connection-requests",
-            get(crate::face_profiles::list_agency_brand_connection_requests),
+            get(crate::creators::face_profiles::list_agency_brand_connection_requests),
         )
         .route(
             "/api/agency/brand-connections",
-            get(crate::face_profiles::list_agency_brand_connections),
+            get(crate::creators::face_profiles::list_agency_brand_connections),
         )
         .route(
             "/api/agency/brand-connection-requests/:id/accept",
-            post(crate::face_profiles::accept_agency_brand_connection_request),
+            post(crate::creators::face_profiles::accept_agency_brand_connection_request),
         )
         .route(
             "/api/agency/brand-connection-requests/:id/decline",
-            post(crate::face_profiles::decline_agency_brand_connection_request),
+            post(crate::creators::face_profiles::decline_agency_brand_connection_request),
         )
         .route(
             "/api/agency/brand-connections/:brand_id/disconnect",
-            post(crate::face_profiles::disconnect_brand_agency_connection_as_agency),
+            post(crate::creators::face_profiles::disconnect_brand_agency_connection_as_agency),
         )
         .route(
             "/api/license-submissions/draft",
-            post(crate::license_submissions::create_draft),
+            post(crate::licenses::submissions::create_draft),
         )
         .route(
             "/api/license-submissions/create-and-send",
-            post(crate::license_submissions::create_and_send),
+            post(crate::licenses::submissions::create_and_send),
         )
         .route(
             "/api/license-submissions/:id/finalize",
-            post(crate::license_submissions::finalize),
+            post(crate::licenses::submissions::finalize),
         )
         .route(
             "/api/license-submissions/:id/preview",
-            post(crate::license_submissions::preview),
+            post(crate::licenses::submissions::preview),
         )
         .route(
             "/api/license-submissions/:id",
-            get(crate::license_submissions::get).delete(crate::license_submissions::archive),
+            get(crate::licenses::submissions::get).delete(crate::licenses::submissions::archive),
         )
         .route(
             "/api/license-submissions/:id/resend",
-            post(crate::license_submissions::resend),
+            post(crate::licenses::submissions::resend),
         )
         .route(
             "/api/license-submissions/:id/sync-status",
-            post(crate::license_submissions::sync_status),
+            post(crate::licenses::submissions::sync_status),
         )
         // --- Storage (S3 / Supabase) ---
         .route(
@@ -708,46 +708,46 @@ pub fn build_router(state: AppState) -> Router {
         // --- Talent Packages ---
         .route(
             "/api/agency/packages",
-            get(crate::packages::list_packages).post(crate::packages::create_package),
+            get(crate::scouting::packages::list_packages).post(crate::scouting::packages::create_package),
         )
         .route(
             "/api/agency/packages/stats",
-            get(crate::packages::get_dashboard_stats),
+            get(crate::scouting::packages::get_dashboard_stats),
         )
         .route(
             "/api/agency/packages/:id",
-            get(crate::packages::get_package)
-                .delete(crate::packages::delete_package)
-                .put(crate::packages::update_package),
+            get(crate::scouting::packages::get_package)
+                .delete(crate::scouting::packages::delete_package)
+                .put(crate::scouting::packages::update_package),
         )
         .route(
             "/api/public/packages/:token",
-            get(crate::packages::get_public_package),
+            get(crate::scouting::packages::get_public_package),
         )
         // Catalogs
         .route(
             "/api/agency/catalogs",
-            get(crate::catalogs::list_catalogs).post(crate::catalogs::create_catalog),
+            get(crate::scouting::catalogs::list_catalogs).post(crate::scouting::catalogs::create_catalog),
         )
         .route(
             "/api/agency/catalogs/eligible-requests",
-            get(crate::catalogs::list_eligible_requests),
+            get(crate::scouting::catalogs::list_eligible_requests),
         )
         .route(
             "/api/agency/catalogs/:id",
-            delete(crate::catalogs::delete_catalog),
+            delete(crate::scouting::catalogs::delete_catalog),
         )
         .route(
             "/api/public/catalogs/:token",
-            get(crate::catalogs::get_public_catalog),
+            get(crate::scouting::catalogs::get_public_catalog),
         )
         .route(
             "/api/public/packages/:token/full-assets-request",
-            post(crate::packages::create_public_package_full_assets_request),
+            post(crate::scouting::packages::create_public_package_full_assets_request),
         )
         .route(
             "/api/public/packages/:token/interactions",
-            post(crate::packages::create_interaction).delete(crate::packages::delete_interaction),
+            post(crate::scouting::packages::create_interaction).delete(crate::scouting::packages::delete_interaction),
         )
         // --- Scouting ---
         .route(
@@ -807,37 +807,37 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route(
             "/api/bookings-campaigns",
-            get(crate::bookings_campaigns::list).post(crate::bookings_campaigns::create),
+            get(crate::bookings::campaigns::list).post(crate::bookings::campaigns::create),
         )
         .route(
             "/api/bookings-campaigns/:id",
-            post(crate::bookings_campaigns::update)
-                .delete(crate::bookings_campaigns::delete_campaign),
+            post(crate::bookings::campaigns::update)
+                .delete(crate::bookings::campaigns::delete_campaign),
         )
         .route(
             "/api/bookings-campaigns/:campaign_id/deliverables",
-            get(crate::booking_deliverables::list_deliverables)
-                .post(crate::booking_deliverables::upload_deliverable),
+            get(crate::bookings::deliverables::list_deliverables)
+                .post(crate::bookings::deliverables::upload_deliverable),
         )
         .route(
             "/api/bookings-campaigns/:campaign_id/deliverables/submit",
-            post(crate::booking_deliverables::submit_deliverables),
+            post(crate::bookings::deliverables::submit_deliverables),
         )
         .route(
             "/api/bookings-campaigns/:campaign_id/deliverables/submit-to-brand",
-            post(crate::booking_deliverables::submit_to_brand),
+            post(crate::bookings::deliverables::submit_to_brand),
         )
         .route(
             "/api/bookings-campaigns/:campaign_id/deliverables/:deliverable_id/review",
-            post(crate::booking_deliverables::review_deliverable),
+            post(crate::bookings::deliverables::review_deliverable),
         )
         .route(
             "/api/bookings-campaigns/:campaign_id/deliverables/:deliverable_id",
-            delete(crate::booking_deliverables::delete_deliverable),
+            delete(crate::bookings::deliverables::delete_deliverable),
         )
         .route(
             "/api/bookings-campaigns/:campaign_id/deliverables/:deliverable_id/file",
-            get(crate::booking_deliverables::serve_deliverable_file),
+            get(crate::bookings::deliverables::serve_deliverable_file),
         )
         .route("/api/bookings/:id", post(crate::bookings::update))
         .route(
@@ -851,11 +851,11 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/bookings/:id/cancel", post(crate::bookings::cancel))
         .route(
             "/api/book-outs",
-            get(crate::book_outs::list).post(crate::book_outs::create),
+            get(crate::bookings::book_outs::list).post(crate::bookings::book_outs::create),
         )
         .route(
             "/api/book-outs/:id",
-            delete(crate::book_outs::delete_book_out),
+            delete(crate::bookings::book_outs::delete_book_out),
         )
         // --- Brands & Marketing ---
         .route("/api/brand-register", post(crate::brands::register))
@@ -937,11 +937,11 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route(
             "/api/brand/billing/spend",
-            get(crate::brand_campaigns::get_brand_spend_analytics),
+            get(crate::brands::campaigns::get_brand_spend_analytics),
         )
         .route(
             "/api/brand/billing/escrow-summary",
-            get(crate::brand_campaigns::get_brand_escrow_summary),
+            get(crate::brands::campaigns::get_brand_escrow_summary),
         )
         .route(
             "/api/brand/billing/invoices",
@@ -970,49 +970,49 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route(
             "/api/brand/campaigns",
-            post(crate::brand_campaigns::create_campaign)
-                .get(crate::brand_campaigns::list_campaigns),
+            post(crate::brands::campaigns::create_campaign)
+                .get(crate::brands::campaigns::list_campaigns),
         )
         .route(
             "/api/brand/campaigns/metrics",
-            get(crate::brand_campaigns::get_campaign_metrics),
+            get(crate::brands::campaigns::get_campaign_metrics),
         )
         .route(
             "/api/brand/analytics",
-            get(crate::brand_campaigns::get_brand_analytics),
+            get(crate::brands::campaigns::get_brand_analytics),
         )
         .route(
             "/api/brand/activity-events",
-            get(crate::brand_campaigns::list_activity_events),
+            get(crate::brands::campaigns::list_activity_events),
         )
         .route(
             "/api/brand/campaigns/:campaign_id",
-            get(crate::brand_campaigns::get_campaign).post(crate::brand_campaigns::update_campaign),
+            get(crate::brands::campaigns::get_campaign).post(crate::brands::campaigns::update_campaign),
         )
         .route(
             "/api/brand/campaigns/:campaign_id/mark-done",
-            post(crate::brand_campaigns::mark_campaign_done),
+            post(crate::brands::campaigns::mark_campaign_done),
         )
         .route(
             "/api/brand/campaigns/:campaign_id/offer-options",
-            get(crate::brand_campaigns::list_offer_options),
+            get(crate::brands::campaigns::list_offer_options),
         )
         .route(
             "/api/brand/campaigns/:campaign_id/offers",
-            post(crate::brand_campaigns::create_campaign_offers)
-                .get(crate::brand_campaigns::list_campaign_offers),
+            post(crate::brands::campaigns::create_campaign_offers)
+                .get(crate::brands::campaigns::list_campaign_offers),
         )
         .route(
             "/api/brand/docuseal/templates/upload",
-            post(crate::brand_campaigns::upload_campaign_contract_template),
+            post(crate::brands::campaigns::upload_campaign_contract_template),
         )
         .route(
             "/api/campaign-offers/:offer_id/respond",
-            post(crate::brand_campaigns::respond_to_campaign_offer),
+            post(crate::brands::campaigns::respond_to_campaign_offer),
         )
         .route(
             "/api/campaign-offers/my",
-            get(crate::brand_campaigns::list_my_campaign_offers),
+            get(crate::brands::campaigns::list_my_campaign_offers),
         )
         .route(
             "/api/brand/campaign-offers/:id/checkout",
@@ -1020,154 +1020,154 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route(
             "/api/campaign-offers/:offer_id/contracts",
-            post(crate::brand_campaigns::create_offer_contract)
-                .get(crate::brand_campaigns::list_offer_contracts),
+            post(crate::brands::campaigns::create_offer_contract)
+                .get(crate::brands::campaigns::list_offer_contracts),
         )
         .route(
             "/api/campaign-offers/:offer_id/contracts/upload",
-            post(crate::brand_campaigns::upload_offer_contract),
+            post(crate::brands::campaigns::upload_offer_contract),
         )
         .route(
             "/api/campaign-offers/:offer_id/contracts/:contract_id/builder-token",
-            get(crate::brand_campaigns::get_offer_contract_builder_token),
+            get(crate::brands::campaigns::get_offer_contract_builder_token),
         )
         .route(
             "/api/campaign-offers/:offer_id/contracts/:contract_id",
-            delete(crate::brand_campaigns::delete_offer_contract),
+            delete(crate::brands::campaigns::delete_offer_contract),
         )
         .route(
             "/api/campaign-offers/:offer_id/contracts/:contract_id/download",
-            get(crate::brand_campaigns::download_offer_contract_document),
+            get(crate::brands::campaigns::download_offer_contract_document),
         )
         .route(
             "/api/campaign-offers/:offer_id/contracts/send",
-            post(crate::brand_campaigns::send_offer_contract),
+            post(crate::brands::campaigns::send_offer_contract),
         )
         .route(
             "/api/campaign-offers/:offer_id/contracts/sync",
-            post(crate::brand_campaigns::sync_offer_contract),
+            post(crate::brands::campaigns::sync_offer_contract),
         )
         .route(
             "/api/campaign-offers/:offer_id/contracts/:contract_id/refresh",
-            post(crate::brand_campaigns::refresh_offer_contract_status),
+            post(crate::brands::campaigns::refresh_offer_contract_status),
         )
         .route(
             "/api/campaign-offers/:offer_id/contracts/:contract_id/archive",
-            post(crate::brand_campaigns::archive_offer_contract),
+            post(crate::brands::campaigns::archive_offer_contract),
         )
         .route(
             "/api/campaign-offers/:offer_id/packages",
-            post(crate::brand_campaigns::create_offer_package),
+            post(crate::brands::campaigns::create_offer_package),
         )
         .route(
             "/api/campaign-offers/:offer_id/packages/send",
-            post(crate::brand_campaigns::send_offer_package),
+            post(crate::brands::campaigns::send_offer_package),
         )
         .route(
             "/api/brand/inbox/packages",
-            get(crate::brand_campaigns::list_brand_inbox_packages),
+            get(crate::brands::campaigns::list_brand_inbox_packages),
         )
         .route(
             "/api/campaign-offers/:offer_id/packages/:package_id/interactions",
-            get(crate::brand_campaigns::get_brand_package_interactions),
+            get(crate::brands::campaigns::get_brand_package_interactions),
         )
         .route(
             "/api/campaign-offers/:offer_id/packages/brand-done",
-            post(crate::brand_campaigns::mark_brand_package_done),
+            post(crate::brands::campaigns::mark_brand_package_done),
         )
         .route(
             "/api/campaign-offers/:offer_id/packages/:package_id/dismiss",
-            post(crate::brand_campaigns::dismiss_brand_inbox_package),
+            post(crate::brands::campaigns::dismiss_brand_inbox_package),
         )
         .route(
             "/api/campaign-offers/:offer_id/packages/brand-delete",
-            post(crate::brand_campaigns::delete_brand_inbox_package),
+            post(crate::brands::campaigns::delete_brand_inbox_package),
         )
         .route(
             "/api/agency/brand-offers/package-feedback",
-            get(crate::brand_campaigns::list_agency_package_feedback),
+            get(crate::brands::campaigns::list_agency_package_feedback),
         )
         .route(
             "/api/agency/brand-offers/packages",
-            get(crate::brand_campaigns::list_agency_offer_packages),
+            get(crate::brands::campaigns::list_agency_offer_packages),
         )
         .route(
             "/api/campaign-offers/:offer_id/deliverables",
-            post(crate::brand_campaigns::submit_offer_deliverable)
-                .get(crate::brand_campaigns::list_offer_deliverables),
+            post(crate::brands::campaigns::submit_offer_deliverable)
+                .get(crate::brands::campaigns::list_offer_deliverables),
         )
         .route(
             "/api/campaign-offers/:offer_id/assignments",
-            get(crate::brand_campaigns::list_offer_talent_assignments),
+            get(crate::brands::campaigns::list_offer_talent_assignments),
         )
         .route(
             "/api/campaign-offers/:offer_id/asset-requests",
-            get(crate::brand_campaigns::list_offer_asset_requests)
-                .post(crate::brand_campaigns::create_offer_asset_request),
+            get(crate::brands::campaigns::list_offer_asset_requests)
+                .post(crate::brands::campaigns::create_offer_asset_request),
         )
         .route(
             "/api/campaign-offers/:offer_id/asset-requests/upload",
-            post(crate::brand_campaigns::upload_offer_asset_request_file),
+            post(crate::brands::campaigns::upload_offer_asset_request_file),
         )
         .route(
             "/api/campaign-offers/:offer_id/deliverables/upload",
-            post(crate::brand_campaigns::upload_offer_deliverable),
+            post(crate::brands::campaigns::upload_offer_deliverable),
         )
         .route(
             "/api/campaign-offers/:offer_id/deliverables/upload-form",
-            post(crate::brand_campaigns::upload_offer_deliverable_form),
+            post(crate::brands::campaigns::upload_offer_deliverable_form),
         )
         .route(
             "/api/campaign-offers/:offer_id/deliverables/submit",
-            post(crate::brand_campaigns::submit_draft_deliverables),
+            post(crate::brands::campaigns::submit_draft_deliverables),
         )
         .route(
             "/api/campaign-offers/:offer_id/deliverables/:deliverable_id",
-            delete(crate::brand_campaigns::delete_offer_deliverable),
+            delete(crate::brands::campaigns::delete_offer_deliverable),
         )
         .route(
             "/api/campaign-offers/:offer_id/deliverables/:deliverable_id/file",
-            get(crate::brand_campaigns::serve_offer_deliverable),
+            get(crate::brands::campaigns::serve_offer_deliverable),
         )
         .route(
             "/api/campaign-offers/:offer_id/deliverables/:deliverable_id/review",
-            post(crate::brand_campaigns::review_offer_deliverable),
+            post(crate::brands::campaigns::review_offer_deliverable),
         )
         .route(
             "/api/campaign-offers/:offer_id/deliverables/:deliverable_id/downloaded",
-            post(crate::brand_campaigns::mark_offer_deliverable_downloaded),
+            post(crate::brands::campaigns::mark_offer_deliverable_downloaded),
         )
         .route(
             "/api/campaign-offers/:offer_id/deliverables/:deliverable_id/comments",
-            post(crate::brand_campaigns::comment_offer_deliverable),
+            post(crate::brands::campaigns::comment_offer_deliverable),
         )
         .route(
             "/api/agency/campaign-offers/:offer_id/transfer-status",
-            get(crate::brand_campaigns::get_offer_transfer_status),
+            get(crate::brands::campaigns::get_offer_transfer_status),
         )
         .route(
             "/api/agency/campaign-offers/:offer_id/retry-transfers",
-            post(crate::brand_campaigns::retry_offer_transfers),
+            post(crate::brands::campaigns::retry_offer_transfers),
         )
         .route(
             "/api/talent/offer-asset-requests",
-            get(crate::brand_campaigns::list_creator_asset_requests),
+            get(crate::brands::campaigns::list_creator_asset_requests),
         )
         .route(
             "/api/talent/offer-asset-requests/:request_id/viewed",
-            post(crate::brand_campaigns::mark_creator_asset_request_viewed),
+            post(crate::brands::campaigns::mark_creator_asset_request_viewed),
         )
         .route(
             "/api/talent/campaign-offers/transfer-status",
-            get(crate::brand_campaigns::get_creator_transfer_status),
+            get(crate::brands::campaigns::get_creator_transfer_status),
         )
         .route(
             "/api/brand/campaigns/:campaign_id/license-requests",
-            post(crate::licensing_requests::create_for_brand_campaign),
+            post(crate::licenses::requests::create_for_brand_campaign),
         )
         .route(
             "/api/brand/campaigns/:campaign_id/license-requests/options",
-            get(crate::licensing_requests::list_brand_campaign_license_options),
+            get(crate::licenses::requests::list_brand_campaign_license_options),
         )
         .route(
             "/api/jobs",
@@ -1201,42 +1201,42 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route(
             "/api/brand/storage/usage",
-            get(crate::brand_storage::get_brand_storage_usage),
+            get(crate::brands::storage::get_brand_storage_usage),
         )
         .route(
             "/api/brand/storage/folders",
-            get(crate::brand_storage::list_brand_folders)
-                .post(crate::brand_storage::create_brand_folder),
+            get(crate::brands::storage::list_brand_folders)
+                .post(crate::brands::storage::create_brand_folder),
         )
         .route(
             "/api/brand/storage/folders/:folder_id",
-            delete(crate::brand_storage::delete_brand_folder)
-                .patch(crate::brand_storage::update_brand_folder),
+            delete(crate::brands::storage::delete_brand_folder)
+                .patch(crate::brands::storage::update_brand_folder),
         )
         .route(
             "/api/brand/storage/files",
-            get(crate::brand_storage::list_brand_files),
+            get(crate::brands::storage::list_brand_files),
         )
         .route(
             "/api/brand/storage/files/upload",
-            post(crate::brand_storage::upload_brand_storage_file),
+            post(crate::brands::storage::upload_brand_storage_file),
         )
         .route(
             "/api/brand/storage/files/:file_id",
-            delete(crate::brand_storage::delete_brand_storage_file),
+            delete(crate::brands::storage::delete_brand_storage_file),
         )
         .route(
             "/api/brand/storage/files/:file_id/signed-url",
-            get(crate::brand_storage::get_brand_storage_file_signed_url),
+            get(crate::brands::storage::get_brand_storage_file_signed_url),
         )
         .route(
             "/api/brand/storage/analytics",
-            get(crate::brand_storage::get_brand_storage_analytics),
+            get(crate::brands::storage::get_brand_storage_analytics),
         )
         .route(
             "/api/creator-rates",
-            get(crate::creator_rates::get_creator_rates)
-                .post(crate::creator_rates::upsert_creator_rates),
+            get(crate::creators::rates::get_creator_rates)
+                .post(crate::creators::rates::upsert_creator_rates),
         )
         // --- KYC ---
         .route("/api/kyc/session", post(crate::kyc::create_session))
@@ -1255,13 +1255,13 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route(
             "/api/face-profiles",
-            post(crate::face_profiles::create_face_profile),
+            post(crate::creators::face_profiles::create_face_profile),
         )
         .route(
             "/api/face-profiles/:id",
-            post(crate::face_profiles::update_face_profile),
+            post(crate::creators::face_profiles::update_face_profile),
         )
-        .route("/api/faces/search", get(crate::face_profiles::search_faces))
+        .route("/api/faces/search", get(crate::creators::face_profiles::search_faces))
         .route("/api/email/available", get(crate::creators::check_email))
         .route(
             "/api/reference-images/upload",
@@ -1299,59 +1299,59 @@ pub fn build_router(state: AppState) -> Router {
         // --- Connections & Invites ---
         .route(
             "/api/creator/agency-invites",
-            get(crate::creator_agency_connection::list_invites),
+            get(crate::creators::agency_connection::list_invites),
         )
         .route(
             "/api/creator/agency-invites/:id/accept",
-            post(crate::creator_agency_connection::accept_invite),
+            post(crate::creators::agency_connection::accept_invite),
         )
         .route(
             "/api/creator/agency-invites/:id/decline",
-            post(crate::creator_agency_connection::decline_invite),
+            post(crate::creators::agency_connection::decline_invite),
         )
         .route(
             "/api/creator/agency-connections",
-            get(crate::creator_agency_connection::list_connections),
+            get(crate::creators::agency_connection::list_connections),
         )
         .route(
             "/api/creator/agency-connections/:agency_id/disconnect",
-            post(crate::creator_agency_connection::disconnect_agency),
+            post(crate::creators::agency_connection::disconnect_agency),
         )
         .route(
             "/api/agency/creator-connections/:creator_id/disconnect/approve",
-            post(crate::creator_agency_connection::approve_disconnect_request),
+            post(crate::creators::agency_connection::approve_disconnect_request),
         )
         .route(
             "/api/agency/creator-connections/:creator_id/disconnect/reject",
-            post(crate::creator_agency_connection::reject_disconnect_request),
+            post(crate::creators::agency_connection::reject_disconnect_request),
         )
         .route(
             "/api/agency/creator-connections/:creator_id/contract",
-            get(crate::creator_agency_connection::get_agency_contract_summary),
+            get(crate::creators::agency_connection::get_agency_contract_summary),
         )
         .route(
             "/api/marketplace/contracts/:id/sync",
-            post(crate::agency_marketplace_contracts::sync_contract_endpoint),
+            post(crate::agencies::marketplace_contracts::sync_contract_endpoint),
         )
         .route(
             "/api/marketplace/contracts/:id/finalize",
-            post(crate::agency_marketplace_contracts::finalize_contract_endpoint),
+            post(crate::agencies::marketplace_contracts::finalize_contract_endpoint),
         )
         .route(
             "/api/invites/agency-talent/:token",
-            get(crate::agency_talent_invites::get_by_token),
+            get(crate::agencies::talent_invites::get_by_token),
         )
         .route(
             "/api/invites/agency-talent/:token/accept",
-            post(crate::agency_talent_invites::accept_by_token),
+            post(crate::agencies::talent_invites::accept_by_token),
         )
         .route(
             "/api/invites/agency-talent/:token/decline",
-            post(crate::agency_talent_invites::decline_by_token),
+            post(crate::agencies::talent_invites::decline_by_token),
         )
         .route(
             "/api/invites/agency-talent/:token/magic-link",
-            get(crate::agency_talent_invites::get_magic_link_by_token),
+            get(crate::agencies::talent_invites::get_magic_link_by_token),
         )
         // --- Studio (AI Generation) ---
         .route("/api/studio/generate", post(crate::studio::generate))
@@ -1389,7 +1389,7 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::billing::create_checkout_session_legacy),
         )
         // --- Webhooks ---
-        .route("/webhooks/stripe", post(crate::payouts::stripe_webhook))
+        .route("/webhooks/stripe", post(crate::billing::payouts::stripe_webhook))
         .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))
         .route(
             "/webhooks/calendly",
@@ -1398,19 +1398,19 @@ pub fn build_router(state: AppState) -> Router {
         .route("/webhooks/docuseal", post(crate::scouting::handle_webhook))
         .route(
             "/webhooks/docuseal/marketplace-contracts",
-            post(crate::agency_marketplace_contracts::handle_webhook),
+            post(crate::agencies::marketplace_contracts::handle_webhook),
         )
         .route(
             "/webhooks/docuseal/campaign-contracts",
-            post(crate::brand_campaigns::handle_campaign_contract_webhook),
+            post(crate::brands::campaigns::handle_campaign_contract_webhook),
         )
         .route(
             "/api/webhooks/licenseContract",
-            post(crate::license_submissions::handle_webhook),
+            post(crate::licenses::submissions::handle_webhook),
         )
         .route(
             "/api/webhooks/brand-contracts",
-            post(crate::brand_campaigns::handle_webhook),
+            post(crate::brands::campaigns::handle_webhook),
         )
         // --- Instagram Scraper (Apify) ---
         .route(
