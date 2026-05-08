@@ -165,7 +165,10 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
     onSuccess: (data: LicenseTemplate) => {
       queryClient.invalidateQueries({ queryKey: ["license-templates"] });
       queryClient.invalidateQueries({ queryKey: ["license-templates-stats"] });
-      toast({ title: "Success", description: "Template created successfully" });
+      toast({
+        title: t("agencyDashboard.licenseTemplates.toast.success"),
+        description: t("agencyDashboard.licenseTemplates.toast.templateCreated"),
+      });
       // Automatically open builder for the new template
       if (data.docuseal_template_id) {
         setBuilderTarget({
@@ -178,8 +181,8 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to create template",
+        title: t("agencyDashboard.licenseTemplates.toast.error"),
+        description: t("agencyDashboard.licenseTemplates.toast.failedToCreate"),
         variant: "destructive",
       });
     },
@@ -191,7 +194,10 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
     onSuccess: (data: LicenseTemplate) => {
       queryClient.invalidateQueries({ queryKey: ["license-templates"] });
       queryClient.invalidateQueries({ queryKey: ["license-templates-stats"] });
-      toast({ title: "Success", description: "Template updated successfully" });
+      toast({
+        title: t("agencyDashboard.licenseTemplates.toast.success"),
+        description: t("agencyDashboard.licenseTemplates.toast.templateUpdated"),
+      });
       // Automatically open builder after update
       if (data.docuseal_template_id) {
         setBuilderTarget({
@@ -204,8 +210,8 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to update template",
+        title: t("agencyDashboard.licenseTemplates.toast.error"),
+        description: t("agencyDashboard.licenseTemplates.toast.failedToUpdate"),
         variant: "destructive",
       });
     },
@@ -216,12 +222,15 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["license-templates"] });
       queryClient.invalidateQueries({ queryKey: ["license-templates-stats"] });
-      toast({ title: "Success", description: "Template deleted successfully" });
+      toast({
+        title: t("agencyDashboard.licenseTemplates.toast.success"),
+        description: t("agencyDashboard.licenseTemplates.toast.templateDeleted"),
+      });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to delete template",
+        title: t("agencyDashboard.licenseTemplates.toast.error"),
+        description: t("agencyDashboard.licenseTemplates.toast.failedToDelete"),
         variant: "destructive",
       });
     },
@@ -233,14 +242,16 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
       queryClient.invalidateQueries({ queryKey: ["license-templates"] });
       queryClient.invalidateQueries({ queryKey: ["license-templates-stats"] });
       toast({
-        title: "Success",
-        description: "Template duplicated successfully",
+        title: t("agencyDashboard.licenseTemplates.toast.success"),
+        description: t(
+          "agencyDashboard.licenseTemplates.toast.templateDuplicated",
+        ),
       });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to copy template",
+        title: t("agencyDashboard.licenseTemplates.toast.error"),
+        description: t("agencyDashboard.licenseTemplates.toast.failedToCopy"),
         variant: "destructive",
       });
     },
@@ -282,9 +293,11 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
     );
     if (!linkedTemplate) {
       toast({
-        title: "Linked template not found",
+        title: t("agencyDashboard.licenseTemplates.toast.linkedTemplateNotFound"),
         description:
-          "The expired license is not linked to an available template.",
+          t(
+            "agencyDashboard.licenseTemplates.toast.linkedTemplateNotFoundDescription",
+          ),
         variant: "destructive",
         duration: 3000,
       });
@@ -446,8 +459,13 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
       {brandRequestContext && (
         <Card className="p-4 bg-amber-50 border border-amber-200">
           <div className="text-sm font-semibold text-amber-900">
-            Any contract submission created will be sent to{" "}
-            {brandRequestContext.brand_name || "the brand"}.
+            {t("agencyDashboard.licenseTemplates.brandContext", {
+              brand:
+                brandRequestContext.brand_name ||
+                t("agencyDashboard.brandConnections.ui.brandFallback", {
+                  defaultValue: "the brand",
+                }),
+            })}
           </div>
         </Card>
       )}
@@ -599,7 +617,22 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
                           variant="secondary"
                           className="bg-white text-indigo-600 border-indigo-100 text-[10px] uppercase font-bold tracking-tight px-1.5 py-0"
                         >
-                          {template.category}
+                          {t(
+                            `agencyDashboard.licenseTemplates.categories.${
+                              template.category === "Social Media"
+                                ? "socialMedia"
+                                : template.category === "E-commerce"
+                                  ? "ecommerce"
+                                  : template.category === "Film & TV"
+                                    ? "filmTv"
+                                    : String(template.category || "custom")
+                                        .toLowerCase()
+                                        .replace(/[^a-z0-9]+(.)/g, (_, c) =>
+                                          String(c).toUpperCase(),
+                                        )
+                            }`,
+                            { defaultValue: template.category },
+                          )}
                         </Badge>
                         <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">
                           {template.created_at
@@ -714,12 +747,9 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
               {t("agencyDashboard.licenseTemplates.delete.title")}
             </DialogTitle>
             <DialogDescription className="text-slate-500 font-medium">
-              Are you sure you want to delete{" "}
-              <span className="text-slate-900 font-bold">
-                "{templateToDelete?.name}"
-              </span>
-              ? This action cannot be undone and will remove the template from
-              your library.
+              {t("agencyDashboard.licenseTemplates.deleteModal.description", {
+                name: templateToDelete?.name || "",
+              })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-8 sm:justify-start gap-3">
@@ -728,14 +758,14 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
               onClick={() => setTemplateToDelete(null)}
               className="px-6 font-bold text-slate-500 rounded-xl h-10"
             >
-              Cancel
+              {t("agencyDashboard.licenseTemplates.deleteModal.cancel")}
             </Button>
             <Button
               variant="destructive"
               onClick={confirmDelete}
               className="bg-red-600 hover:bg-red-700 font-bold px-8 rounded-xl h-10 shadow-lg shadow-red-100"
             >
-              {t("agencyDashboard.licenseTemplates.delete.title")}
+              {t("agencyDashboard.licenseTemplates.deleteModal.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>

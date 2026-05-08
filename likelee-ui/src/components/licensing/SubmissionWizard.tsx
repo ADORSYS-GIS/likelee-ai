@@ -142,10 +142,29 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
   oldLicenseId,
   brandRequestContext,
 }) => {
-  const { t } = useTranslation("agency");
-  const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
-  const entityPluralLower = isSportsAgency ? "athletes" : "talents";
-  const entitySingularLower = isSportsAgency ? "athlete" : "talent";
+  const { t: baseT } = useTranslation("agency");
+  const t = (key: string, options?: Record<string, unknown>) => {
+    const aliases: Record<string, string> = {
+      "agencyDashboard.submissionWizard.dealSpecifics":
+        "agencyDashboard.licenseTemplates.wizard.dealSpecifics",
+      "agencyDashboard.submissionWizard.contentReview":
+        "agencyDashboard.licenseTemplates.wizard.contentReview",
+    };
+    return baseT(aliases[key] || key, options);
+  };
+  const entitySingularTitle = isSportsAgency
+    ? t("agencyDashboard.dashboard.entities.athlete")
+    : t("agencyDashboard.dashboard.entities.talent");
+  const entityPluralLower = isSportsAgency
+    ? t("agencyDashboard.dashboard.entities.athletes", {
+        defaultValue: "athletes",
+      })
+    : t("agencyDashboard.dashboard.entities.talents", {
+        defaultValue: "talents",
+      });
+  const entitySingularLower = isSportsAgency
+    ? t("agencyDashboard.dashboard.entities.athlete")
+    : t("agencyDashboard.dashboard.entities.talent");
   const [step, setStep] = useState(1);
   const [isSyncing, setIsSyncing] = useState(false);
   const [draftId, setDraftId] = useState<string | null>(null);
@@ -395,8 +414,16 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
         );
 
         toast({
-          title: "Missing Information",
-          description: "Please fill in all required fields marked with *",
+          title: t(
+            "agencyDashboard.licenseTemplates.wizard.missingInformation",
+            { defaultValue: "Missing Information" },
+          ),
+          description: t(
+            "agencyDashboard.licenseTemplates.wizard.missingInformationDesc",
+            {
+              defaultValue: "Please fill in all required fields marked with *",
+            },
+          ),
           variant: "warning",
         });
         return;
@@ -445,10 +472,16 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
         setStep(2);
       } catch (err: any) {
         toast({
-          title: "Preparation Failed",
+          title: t(
+            "agencyDashboard.licenseTemplates.wizard.preparationFailed",
+            { defaultValue: "Preparation Failed" },
+          ),
           description:
             getUserFriendlyError(err) ||
-            "We couldn't prepare this submission. Please try again.",
+            t("agencyDashboard.licenseTemplates.wizard.prepareTryAgain", {
+              defaultValue:
+                "We couldn't prepare this submission. Please try again.",
+            }),
           variant: "destructive",
         });
       } finally {
@@ -458,9 +491,18 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
       // Validate contract body before proceeding
       if (!currentData.contract_body || !currentData.contract_body.trim()) {
         toast({
-          title: "Contract Body Required",
+          title: t(
+            "agencyDashboard.licenseTemplates.wizard.contractBodyRequired",
+            { defaultValue: "Contract Body Required" },
+          ),
           description:
-            "The contract body cannot be empty. Please ensure the template has contract content or add content before proceeding.",
+            t(
+              "agencyDashboard.licenseTemplates.wizard.contractBodyRequiredDesc",
+              {
+                defaultValue:
+                  "The contract body cannot be empty. Please ensure the template has contract content or add content before proceeding.",
+              },
+            ),
           variant: "warning",
         });
         return;
@@ -490,7 +532,13 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
 
       if (identityErrors.length > 0) {
         toast({
-          title: "Contract is missing required identity information",
+          title: t(
+            "agencyDashboard.licenseTemplates.wizard.contractMissingIdentity",
+            {
+              defaultValue:
+                "Contract is missing required identity information",
+            },
+          ),
           description: `The contract body must include the ${identityErrors.join(" and ")}. Use the insert buttons below the editor to add them, or type them directly.`,
           variant: "destructive",
         });
@@ -519,10 +567,15 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
       setStep(3);
     } catch (err: any) {
       toast({
-        title: "Sync Failed",
+        title: t("agencyDashboard.licenseTemplates.wizard.syncFailed", {
+          defaultValue: "Sync Failed",
+        }),
         description:
           getUserFriendlyError(err) ||
-          "We couldn't continue to document setup. Please try again.",
+          t("agencyDashboard.licenseTemplates.wizard.syncTryAgain", {
+            defaultValue:
+              "We couldn't continue to document setup. Please try again.",
+          }),
         variant: "destructive",
       });
     } finally {
@@ -597,7 +650,10 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
       if (requiresAgencySignature) {
         if (!embedUrl) {
           throw new Error(
-            "The agency signature link is not ready yet. Please reopen the submission and try again.",
+            t("agencyDashboard.licenseTemplates.wizard.signatureLinkNotReady", {
+              defaultValue:
+                "The agency signature link is not ready yet. Please reopen the submission and try again.",
+            }),
           );
         }
 
@@ -608,26 +664,39 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
         setAgencySignUrl(embedUrl);
         setAgencySignOpen(true);
         toast({
-          title: "Agency signature required",
+          title: t(
+            "agencyDashboard.licenseTemplates.wizard.agencySignatureRequired",
+            { defaultValue: "Agency signature required" },
+          ),
           description:
-            "Complete your signature to release this contract to the client.",
+            t("agencyDashboard.licenseTemplates.wizard.signToRelease", {
+              defaultValue:
+                "Complete your signature to release this contract to the client.",
+            }),
         });
         return;
       }
 
       toast({
-        title: "Success",
-        description: "License sent and recorded successfully.",
+        title: t("agencyDashboard.licenseTemplates.toast.success"),
+        description: t("agencyDashboard.licenseTemplates.wizard.licenseSent", {
+          defaultValue: "License sent and recorded successfully.",
+        }),
       });
 
       onComplete();
       onClose();
     } catch (err: any) {
       toast({
-        title: "Send Failed",
+        title: t("agencyDashboard.licenseTemplates.wizard.sendFailed", {
+          defaultValue: "Send Failed",
+        }),
         description:
           getUserFriendlyError(err) ||
-          "We couldn't send this contract right now. Please try again.",
+          t("agencyDashboard.licenseTemplates.wizard.sendTryAgain", {
+            defaultValue:
+              "We couldn't send this contract right now. Please try again.",
+          }),
         variant: "destructive",
       });
     } finally {
@@ -653,7 +722,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                     <FileText className="w-4 h-4 text-indigo-600" />
                   </div>
                   <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest">
-                    Step {step} of 3
+                    {t("agencyDashboard.licenseTemplates.wizard.stepOf", {
+                      step,
+                    })}
                   </span>
                 </div>
                 <DialogTitle className="text-xl sm:text-2xl font-bold text-slate-900">
@@ -663,8 +734,12 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                 </DialogTitle>
                 <p className="text-sm text-slate-500 font-medium">
                   {step === 1
-                    ? "Enter the core details of this licensing deal"
-                    : "Review and personalize the contract content"}
+                    ? t(
+                        "agencyDashboard.licenseTemplates.wizard.dealSpecificsSubtitle",
+                      )
+                    : t(
+                        "agencyDashboard.licenseTemplates.wizard.contentReviewSubtitle",
+                      )}
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -673,7 +748,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                   onClick={onClose}
                   className="rounded-xl font-bold text-slate-500 px-4 sm:px-6 h-9 sm:h-10 text-sm"
                 >
-                  Cancel
+                  {t("agencyDashboard.licenseTemplates.deleteModal.cancel")}
                 </Button>
                 {step > 1 && (
                   <Button
@@ -682,7 +757,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                     className="rounded-xl font-bold border-slate-200 h-9 sm:h-10 text-sm px-3 sm:px-4"
                   >
                     <ArrowLeft className="w-4 h-4 sm:mr-2" />{" "}
-                    <span className="hidden sm:inline">Back</span>
+                    <span className="hidden sm:inline">
+                      {t("agencyDashboard.catalogs.builder.actions.back")}
+                    </span>
                   </Button>
                 )}
                 <Button
@@ -693,12 +770,22 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                   }
                   title={
                     step === 2 && missingIdentityFields.length > 0
-                      ? "Add the missing talent and brand names to the contract body before proceeding"
+                      ? t(
+                          "agencyDashboard.licenseTemplates.wizard.missingIdentityTitle",
+                          {
+                            defaultValue:
+                              "Add the missing talent and brand names to the contract body before proceeding",
+                          },
+                        )
                       : undefined
                   }
                   className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-9 sm:h-10 px-4 sm:px-8 rounded-xl shadow-lg shadow-indigo-100/50 transition-all active:scale-95 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isSyncing ? "..." : step === 3 ? "Finalize" : "Next"}
+                  {isSyncing
+                    ? "..."
+                    : step === 3
+                      ? t("agencyDashboard.licenseTemplates.wizard.finalize")
+                      : t("agencyDashboard.catalogs.builder.actions.next")}
                   {!isSyncing && step < 3 && (
                     <ArrowRight className="w-4 h-4 ml-1.5 sm:ml-2" />
                   )}
@@ -744,11 +831,14 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                       </div>
                       <div>
                         <p className="text-sm font-bold text-emerald-900">
-                          Renewal Prefill
+                          {t(
+                            "agencyDashboard.licenseTemplates.wizard.renewalPrefill",
+                          )}
                         </p>
                         <p className="text-sm text-emerald-800">
-                          This renewal was prefilled from the previous license
-                          request. Adjust anything you need before sending.
+                          {t(
+                            "agencyDashboard.licenseTemplates.wizard.renewalPrefillDesc",
+                          )}
                         </p>
                       </div>
                     </div>
@@ -779,14 +869,23 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                       </div>
                       <div>
                         <p className="text-sm font-bold text-slate-800">
-                          Creating a contract for an external client
+                          {t(
+                            "agencyDashboard.licenseTemplates.wizard.externalClientTitle",
+                            {
+                              defaultValue:
+                                "Creating a contract for an external client",
+                            },
+                          )}
                         </p>
                         <p className="text-sm text-slate-600 mt-0.5 leading-relaxed">
-                          You're initiating this contract directly — all fields
-                          are open for you to fill in. Enter the client's
-                          details and select the {entitySingularLower} you've
-                          agreed to license, typically based on the package you
-                          sent and the client's selection from it.
+                          {t(
+                            "agencyDashboard.licenseTemplates.wizard.externalClientDescription",
+                            {
+                              entity: entitySingularLower,
+                              defaultValue:
+                                "You're initiating this contract directly - all fields are open for you to fill in. Enter the client's details and select the {{entity}} you've agreed to license, typically based on the package you sent and the client's selection from it.",
+                            },
+                          )}
                         </p>
                       </div>
                     </div>
@@ -799,13 +898,17 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                         <FileText className="w-5 h-5 text-indigo-600" />
                       </div>
                       <h3 className="font-bold text-slate-900">
-                        Identification
+                        {t(
+                          "agencyDashboard.licenseTemplates.wizard.identification",
+                        )}
                       </h3>
                     </div>
                     <div className="space-y-6">
                       <div className="space-y-3">
                         <Label className="text-sm font-bold text-slate-800 ml-1">
-                          Brand Name *
+                          {t(
+                            "agencyDashboard.licenseTemplates.wizard.brandName",
+                          )}
                         </Label>
                         {brandRequestBrandId ? (
                           // Locked — brand is fixed when coming from a brand request
@@ -814,19 +917,25 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                               {formData.client_name || brandRequestBrandName}
                             </span>
                             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-200 px-2 py-0.5 rounded-full shrink-0">
-                              Locked
+                              {t("agencyDashboard.common.locked", {
+                                defaultValue: "Locked",
+                              })}
                             </span>
                           </div>
                         ) : (
                           <Input
                             {...register("client_name", { required: true })}
-                            placeholder="e.g. Nike, Spotify"
+                            placeholder={t(
+                              "agencyDashboard.licenseTemplates.wizard.brandNamePlaceholder",
+                            )}
                             className="h-12 bg-slate-50 border-slate-200 rounded-xl font-medium focus:ring-4 focus:ring-indigo-50 transition-all"
                           />
                         )}
                         {errors.client_name && (
                           <p className="text-amber-700 text-xs font-bold px-1 dark:text-amber-400">
-                            This field is mandatory.
+                            {t(
+                              "agencyDashboard.licenseTemplates.wizard.clientEmailRequired",
+                            )}
                           </p>
                         )}
                       </div>
@@ -858,7 +967,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                 ))}
                             </div>
                             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-200 px-2 py-0.5 rounded-full shrink-0">
-                              Locked
+                              {t("agencyDashboard.common.locked", {
+                                defaultValue: "Locked",
+                              })}
                             </span>
                           </div>
                         ) : (
@@ -899,7 +1010,13 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                       ))
                                   ) : (
                                     <span className="text-slate-400">
-                                      {`Select ${entityPluralLower}...`}
+                                      {t(
+                                        "agencyDashboard.licenseTemplates.wizard.selectTalents",
+                                        {
+                                          entity: entityPluralLower,
+                                          defaultValue: "Select {{entity}}...",
+                                        },
+                                      )}
                                     </span>
                                   )}
                                 </div>
@@ -917,14 +1034,26 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                   shouldFilter={false}
                                 >
                                   <CommandInput
-                                    placeholder={`Search ${entitySingularLower}...`}
+                                    placeholder={t(
+                                      "agencyDashboard.licenseTemplates.wizard.searchTalent",
+                                      {
+                                        entity: entitySingularLower,
+                                        defaultValue: "Search {{entity}}...",
+                                      },
+                                    )}
                                     className="border-none focus:ring-0 h-12"
                                     value={talentSearchQuery}
                                     onValueChange={setTalentSearchQuery}
                                   />
                                   <CommandList className="max-h-[300px]">
                                     <CommandEmpty className="py-6 text-center text-sm text-slate-500 font-medium">
-                                      {`No ${entitySingularLower} found.`}
+                                      {t(
+                                        "agencyDashboard.licenseTemplates.wizard.noTalentFound",
+                                        {
+                                          entity: entitySingularLower,
+                                          defaultValue: "No {{entity}} found.",
+                                        },
+                                      )}
                                     </CommandEmpty>
                                     <CommandGroup>
                                       {talents
@@ -1052,14 +1181,22 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                         )}
                         {errors.talent_name && (
                           <span className="text-amber-700 text-xs font-bold px-1 dark:text-amber-400">
-                            {`This ${entitySingularLower} is mandatory.`}
+                            {t(
+                              "agencyDashboard.licenseTemplates.wizard.talentRequired",
+                              {
+                                entity: entitySingularLower,
+                                defaultValue: "This {{entity}} is mandatory.",
+                              },
+                            )}
                           </span>
                         )}
                       </div>
                       <div className="space-y-3">
                         <div className="flex items-start justify-between ml-1 gap-2">
                           <Label className="text-sm font-bold text-slate-800 whitespace-nowrap">
-                            Client Email *
+                            {t(
+                              "agencyDashboard.licenseTemplates.wizard.clientEmail",
+                            )}
                           </Label>
                           {!brandRequestBrandId && brandOptions.length > 0 && (
                             <div className="flex items-center gap-2">
@@ -1067,7 +1204,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                 htmlFor="allow-brand-change-wizard"
                                 className="text-xs text-gray-500 cursor-pointer"
                               >
-                                Send to connected brands
+                                {t(
+                                  "agencyDashboard.licenseTemplates.wizard.sendToConnectedBrands",
+                                )}
                               </Label>
                               <Switch
                                 id="allow-brand-change-wizard"
@@ -1085,7 +1224,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                               {formData.client_email || brandRequestBrandEmail}
                             </span>
                             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-200 px-2 py-0.5 rounded-full shrink-0">
-                              Locked
+                              {t("agencyDashboard.common.locked", {
+                                defaultValue: "Locked",
+                              })}
                             </span>
                           </div>
                         ) : brandOptions.length > 0 && allowBrandChange ? (
@@ -1109,7 +1250,11 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                               }}
                             >
                               <SelectTrigger className="h-12 bg-slate-50 border-slate-200 rounded-xl font-medium focus:ring-4 focus:ring-indigo-50 transition-all">
-                                <SelectValue placeholder="Select brand" />
+                                <SelectValue
+                                  placeholder={t(
+                                    "agencyDashboard.licenseTemplates.wizard.selectBrand",
+                                  )}
+                                />
                               </SelectTrigger>
                               <SelectContent>
                                 {brandRequestContext &&
@@ -1122,7 +1267,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                       value={brandRequestContext.brand_id}
                                     >
                                       {brandRequestContext.brand_name ||
-                                        "Selected Brand"}
+                                        t(
+                                          "agencyDashboard.licenseTemplates.wizard.selectedBrand",
+                                        )}
                                     </SelectItem>
                                   )}
                                 {brandOptions.map((brand) => (
@@ -1133,8 +1280,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                               </SelectContent>
                             </Select>
                             <p className="text-xs text-gray-500 ml-1">
-                              Select from your connected brands. Toggle off to
-                              enter email manually.
+                              {t(
+                                "agencyDashboard.licenseTemplates.wizard.connectedBrandsHelp",
+                              )}
                             </p>
                           </>
                         ) : (
@@ -1142,24 +1290,32 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                             <Input
                               type="email"
                               {...register("client_email", { required: true })}
-                              placeholder="client@example.com"
+                              placeholder={t(
+                                "agencyDashboard.licenseTemplates.wizard.clientEmailPlaceholder",
+                              )}
                               className="h-12 bg-slate-50 border-slate-200 rounded-xl font-medium focus:ring-4 focus:ring-indigo-50 transition-all"
                             />
                             {brandOptions.length > 0 && (
                               <p className="text-xs text-gray-500 ml-1">
-                                Toggle on to select from connected brands.
+                                {t(
+                                  "agencyDashboard.licenseTemplates.wizard.toggleConnectedBrands",
+                                )}
                               </p>
                             )}
                           </>
                         )}
                         <p className="text-[11px] font-medium text-amber-700 ml-1 dark:text-amber-400">
-                          This field is mandatory.
+                          {t(
+                            "agencyDashboard.licenseTemplates.wizard.clientEmailRequired",
+                          )}
                         </p>
                       </div>
                       <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                         <div className="flex items-center justify-between">
                           <Label className="text-sm font-bold text-slate-800">
-                            Agency signs first (on platform)
+                            {t(
+                              "agencyDashboard.licenseTemplates.wizard.agencySignsFirst",
+                            )}
                           </Label>
                           <Switch
                             checked={requiresAgencySignature}
@@ -1167,13 +1323,16 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                           />
                         </div>
                         <p className="text-xs text-slate-500 mt-1">
-                          Client receives the contract only after agency
-                          signature.
+                          {t(
+                            "agencyDashboard.licenseTemplates.wizard.agencySignsFirstDesc",
+                          )}
                         </p>
                       </div>
                       <div className="space-y-2">
                         <Label className="text-sm font-bold text-slate-800 ml-1">
-                          Start Date
+                          {t(
+                            "agencyDashboard.licenseTemplates.wizard.startDate",
+                          )}
                         </Label>
                         <Input
                           type="date"
@@ -1189,13 +1348,19 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                       <div className="w-10 h-10 bg-amber-50 rounded-2xl flex items-center justify-center">
                         <Layout className="w-5 h-5 text-amber-600" />
                       </div>
-                      <h3 className="font-bold text-slate-900">Commercials</h3>
+                      <h3 className="font-bold text-slate-900">
+                        {t(
+                          "agencyDashboard.licenseTemplates.wizard.commercials",
+                        )}
+                      </h3>
                     </div>
                     <div className="space-y-6">
                       <div className="grid grid-cols-2 gap-6">
                         <div className="space-y-3">
                           <Label className="text-sm font-bold text-slate-800 ml-1">
-                            Duration (days)
+                            {t(
+                              "agencyDashboard.licenseTemplates.wizard.durationDays",
+                            )}
                           </Label>
                           <Input
                             type="number"
@@ -1207,7 +1372,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                         </div>
                         <div className="space-y-3">
                           <Label className="text-sm font-bold text-slate-800 ml-1">
-                            Territory
+                            {t(
+                              "agencyDashboard.licenseTemplates.wizard.territory",
+                            )}
                           </Label>
                           <Input
                             {...register("territory")}
@@ -1217,7 +1384,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                       </div>
                       <div className="space-y-3">
                         <Label className="text-sm font-bold text-slate-800 ml-1">
-                          Exclusivity
+                          {t(
+                            "agencyDashboard.licenseTemplates.form.exclusivity",
+                          )}
                         </Label>
                         <Select
                           value={formData.exclusivity}
@@ -1233,7 +1402,16 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                 value={opt}
                                 className="font-medium rounded-lg"
                               >
-                                {opt}
+                                {t(
+                                  `agencyDashboard.licenseTemplates.form.exclusivityOptions.${
+                                    opt === "Non-exclusive"
+                                      ? "nonExclusive"
+                                      : opt === "Category exclusive"
+                                        ? "categoryExclusive"
+                                        : "fullExclusivity"
+                                  }`,
+                                  { defaultValue: opt },
+                                )}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -1241,17 +1419,24 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                       </div>
                       <div className="space-y-3">
                         <Label className="text-sm font-bold text-slate-800 ml-1">
-                          Modifications Allowed
+                          {t(
+                            "agencyDashboard.licenseTemplates.form.modificationsAllowed",
+                          )}
                         </Label>
                         <Input
                           {...register("modifications_allowed")}
-                          placeholder="e.g. Yes, with approval"
+                          placeholder={t(
+                            "agencyDashboard.licenseTemplates.wizard.modificationsPlaceholder",
+                            { defaultValue: "e.g. Yes, with approval" },
+                          )}
                           className="h-12 bg-slate-50 border-slate-200 rounded-xl font-medium"
                         />
                       </div>
                       <div className="space-y-3">
                         <Label className="text-sm font-bold text-slate-800 ml-1">
-                          License Fee ($)
+                          {t(
+                            "agencyDashboard.licenseTemplates.form.licenseFee",
+                          )}
                         </Label>
                         <Input
                           type="number"
@@ -1266,11 +1451,17 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
 
                 <div className="p-8 bg-white rounded-3xl border border-slate-200/60 shadow-sm space-y-4">
                   <Label className="text-sm font-bold text-slate-800 ml-1">
-                    Additional Custom Terms
+                    {t("agencyDashboard.licenseTemplates.form.customTerms")}
                   </Label>
                   <Textarea
                     {...register("custom_terms")}
-                    placeholder="Describe any other conditions for this specific deal..."
+                    placeholder={t(
+                      "agencyDashboard.licenseTemplates.wizard.customTermsPlaceholder",
+                      {
+                        defaultValue:
+                          "Describe any other conditions for this specific deal...",
+                      },
+                    )}
                     className="min-h-[140px] bg-slate-50 border-slate-200 rounded-2xl font-medium p-6"
                   />
                 </div>
@@ -1288,7 +1479,13 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                     onChangeBody={(val) => setValue("contract_body", val)}
                     onChangeFormat={() => {}} // Format locked in submission
                     variables={AVAILABLE_CONTRACT_VARIABLES}
-                    placeholder="The contract content will appear here..."
+                    placeholder={t(
+                      "agencyDashboard.licenseTemplates.wizard.contractContentPlaceholder",
+                      {
+                        defaultValue:
+                          "The contract content will appear here...",
+                      },
+                    )}
                   />
                 </div>
 
@@ -1313,25 +1510,53 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                       </div>
                       <div className="flex-1">
                         <p className="font-bold text-amber-900 text-sm">
-                          Contract is missing required identity information
+                          {t(
+                            "agencyDashboard.licenseTemplates.wizard.contractMissingIdentity",
+                            {
+                              defaultValue:
+                                "Contract is missing required identity information",
+                            },
+                          )}
                         </p>
                         <p className="text-amber-800 text-xs mt-1 leading-relaxed">
-                          The contract body does not contain the{" "}
+                          {t(
+                            "agencyDashboard.licenseTemplates.wizard.contractMissingPrefix",
+                            {
+                              defaultValue:
+                                "The contract body does not contain the",
+                            },
+                          )}{" "}
                           {missingIdentityFields.includes(
                             "talent_name_placeholder",
                           ) &&
                           missingIdentityFields.includes(
                             "client_name_placeholder",
                           )
-                            ? "talent name or brand name"
+                            ? t(
+                                "agencyDashboard.licenseTemplates.wizard.talentOrBrandName",
+                                {
+                                  defaultValue: "talent name or brand name",
+                                },
+                              )
                             : missingIdentityFields.includes(
                                   "talent_name_placeholder",
                                 )
-                              ? "talent name"
-                              : "brand name"}
-                          . You cannot proceed until these are present. Click
-                          below to insert them, or type them directly in the
-                          editor above.
+                              ? t(
+                                  "agencyDashboard.licenseTemplates.wizard.talentName",
+                                  { defaultValue: "talent name" },
+                                )
+                              : t(
+                                  "agencyDashboard.licenseTemplates.wizard.brandNameLower",
+                                  { defaultValue: "brand name" },
+                                )}
+                          .{" "}
+                          {t(
+                            "agencyDashboard.licenseTemplates.wizard.contractMissingSuffix",
+                            {
+                              defaultValue:
+                                "You cannot proceed until these are present. Click below to insert them, or type them directly in the editor above.",
+                            },
+                          )}
                         </p>
                       </div>
                     </div>
@@ -1339,8 +1564,8 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                       {missingIdentityFields.map((placeholder) => {
                         const label =
                           placeholder === "talent_name_placeholder"
-                            ? "Talent"
-                            : "Brand";
+                            ? t("agencyDashboard.dashboard.entities.talent")
+                            : t("agencyDashboard.brandConnections.ui.brandFallback");
                         const value =
                           placeholder === "talent_name_placeholder"
                             ? formData.talent_name
@@ -1371,7 +1596,14 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                 d="M12 4.5v15m7.5-7.5h-15"
                               />
                             </svg>
-                            Insert {label} Name ({value})
+                            {t(
+                              "agencyDashboard.licenseTemplates.wizard.insertName",
+                              {
+                                label,
+                                value,
+                                defaultValue: "Insert {{label}} Name ({{value}})",
+                              },
+                            )}
                           </button>
                         );
                       })}
@@ -1385,12 +1617,19 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                     </div>
                     <div>
                       <h4 className="font-bold text-indigo-900 mb-1">
-                        Pre-filled Data Applied
+                        {t(
+                          "agencyDashboard.licenseTemplates.wizard.prefilledApplied",
+                          { defaultValue: "Pre-filled Data Applied" },
+                        )}
                       </h4>
                       <p className="text-sm text-indigo-800/80 leading-relaxed font-medium">
-                        We've automatically replaced all placeholders with your
-                        deal specifics. You can still make quick edits directly
-                        in the editor before finalizing.
+                        {t(
+                          "agencyDashboard.licenseTemplates.wizard.prefilledAppliedDesc",
+                          {
+                            defaultValue:
+                              "We've automatically replaced all placeholders with your deal specifics. You can still make quick edits directly in the editor before finalizing.",
+                          },
+                        )}
                       </p>
                     </div>
                   </div>
@@ -1438,23 +1677,33 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
             Review and complete the agency signature.
           </DialogDescription>
           <DialogHeader className="p-4 border-b">
-            <DialogTitle>Agency Signature</DialogTitle>
+            <DialogTitle>
+              {t("agencyDashboard.licenseTemplates.wizard.agencySignature", {
+                defaultValue: "Agency Signature",
+              })}
+            </DialogTitle>
           </DialogHeader>
           <div className="flex-1 w-full bg-gray-50 overflow-hidden flex flex-col">
             <div className="px-6 py-3 border-b border-gray-200 bg-white shadow-sm flex items-center justify-between shrink-0">
               <div className="text-xs sm:text-sm text-gray-700 font-medium flex items-center gap-4">
                 <span className="text-gray-400 font-bold uppercase tracking-wider text-[10px]">
-                  Party mapping:
+                  {t("agencyDashboard.licenseTemplates.wizard.partyMapping", {
+                    defaultValue: "Party mapping:",
+                  })}
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="inline-flex items-center rounded-full bg-red-50 text-red-700 border border-red-100 px-3 py-1 text-xs font-bold">
                     <span className="w-2 h-2 rounded-full bg-red-500 mr-2 shadow-sm shadow-red-200" />
-                    First Party = Agency
+                    {t("agencyDashboard.licenseTemplates.wizard.firstParty", {
+                      defaultValue: "First Party = Agency",
+                    })}
                   </span>
                   <ArrowRight className="w-3 h-3 text-gray-300" />
                   <span className="inline-flex items-center rounded-full bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1 text-xs font-bold">
                     <span className="w-2 h-2 rounded-full bg-blue-500 mr-2 shadow-sm shadow-blue-200" />
-                    Second Party = Client
+                    {t("agencyDashboard.licenseTemplates.wizard.secondParty", {
+                      defaultValue: "Second Party = Client",
+                    })}
                   </span>
                 </div>
               </div>
@@ -1479,7 +1728,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                 onClose();
               }}
             >
-              Done
+              {t("agencyDashboard.common.done", { defaultValue: "Done" })}
             </Button>
           </div>
         </DialogContent>

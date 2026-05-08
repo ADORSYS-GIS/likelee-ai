@@ -82,14 +82,18 @@ export const LicenseSubmissionsTab = ({
         type: "active",
       });
       toast({
-        title: "Email Resent",
-        description: "The license submission email has been resent.",
+        title: t("agencyDashboard.licenseSubmissions.toast.emailResent"),
+        description: t(
+          "agencyDashboard.licenseSubmissions.toast.emailResentDescription",
+        ),
       });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to resend email.",
+        title: t("agencyDashboard.licenseSubmissions.toast.error"),
+        description: t(
+          "agencyDashboard.licenseSubmissions.toast.failedToResendEmail",
+        ),
         variant: "destructive",
       });
     },
@@ -102,12 +106,19 @@ export const LicenseSubmissionsTab = ({
     mutationFn: archiveLicenseSubmission,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["license-submissions"] });
-      toast({ title: "Archived", description: "Submission archived." });
+      toast({
+        title: t("agencyDashboard.licenseSubmissions.toast.archived"),
+        description: t(
+          "agencyDashboard.licenseSubmissions.toast.submissionArchived",
+        ),
+      });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to archive submission.",
+        title: t("agencyDashboard.licenseSubmissions.toast.error"),
+        description: t(
+          "agencyDashboard.licenseSubmissions.toast.failedToArchive",
+        ),
         variant: "destructive",
       });
     },
@@ -118,14 +129,18 @@ export const LicenseSubmissionsTab = ({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["license-submissions"] });
       toast({
-        title: "Recovered",
-        description: "Submission recovered to active.",
+        title: t("agencyDashboard.licenseSubmissions.toast.recovered"),
+        description: t(
+          "agencyDashboard.licenseSubmissions.toast.submissionRecovered",
+        ),
       });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to recover submission.",
+        title: t("agencyDashboard.licenseSubmissions.toast.error"),
+        description: t(
+          "agencyDashboard.licenseSubmissions.toast.failedToRecover",
+        ),
         variant: "destructive",
       });
     },
@@ -138,19 +153,43 @@ export const LicenseSubmissionsTab = ({
       case "signed":
         return (
           <Badge className="bg-green-100 text-green-800 border-green-200 text-xs px-2 py-0.5">
-            <CheckCircle className="w-3 h-3 mr-1" /> Signed
+            <CheckCircle className="w-3 h-3 mr-1" />{" "}
+            {t("agencyDashboard.licenseSubmissions.status.signed")}
           </Badge>
         );
       case "sent":
         return (
           <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-xs px-2 py-0.5">
-            <Mail className="w-3 h-3 mr-1" /> Sent
+            <Mail className="w-3 h-3 mr-1" />{" "}
+            {t("agencyDashboard.licenseSubmissions.status.sent")}
+          </Badge>
+        );
+      case "client_pending":
+        return (
+          <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-xs px-2 py-0.5">
+            <Clock className="w-3 h-3 mr-1" />{" "}
+            {t("agencyDashboard.licenseSubmissions.status.clientPending")}
+          </Badge>
+        );
+      case "agency_pending":
+        return (
+          <Badge className="bg-purple-100 text-purple-800 border-purple-200 text-xs px-2 py-0.5">
+            <Clock className="w-3 h-3 mr-1" />{" "}
+            {t("agencyDashboard.licenseSubmissions.status.agencyPending")}
+          </Badge>
+        );
+      case "archived":
+        return (
+          <Badge className="bg-gray-100 text-gray-800 border-gray-200 text-xs px-2 py-0.5">
+            <Archive className="w-3 h-3 mr-1" />{" "}
+            {t("agencyDashboard.licenseSubmissions.status.archived")}
           </Badge>
         );
       case "opened":
         return (
           <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 text-xs px-2 py-0.5">
-            <ExternalLink className="w-3 h-3 mr-1" /> Opened
+            <ExternalLink className="w-3 h-3 mr-1" />{" "}
+            {t("agencyDashboard.licenseSubmissions.status.opened")}
           </Badge>
         );
       case "declined":
@@ -159,12 +198,15 @@ export const LicenseSubmissionsTab = ({
             <Tooltip>
               <TooltipTrigger>
                 <Badge className="bg-red-100 text-red-800 border-red-200 cursor-help text-xs px-2 py-0.5">
-                  <XCircle className="w-3 h-3 mr-1" /> Declined
+                  <XCircle className="w-3 h-3 mr-1" />{" "}
+                  {t("agencyDashboard.licenseSubmissions.status.declined")}
                 </Badge>
               </TooltipTrigger>
               {sub.decline_reason && (
                 <TooltipContent className="max-w-[300px]">
-                  <p className="font-semibold mb-1">Reason:</p>
+                  <p className="font-semibold mb-1">
+                    {t("agencyDashboard.licenseSubmissions.reason")}
+                  </p>
                   <p>{sub.decline_reason}</p>
                 </TooltipContent>
               )}
@@ -174,7 +216,8 @@ export const LicenseSubmissionsTab = ({
       case "expired":
         return (
           <Badge className="bg-gray-100 text-gray-800 border-gray-200 text-xs px-2 py-0.5">
-            <Clock className="w-3 h-3 mr-1" /> Expired
+            <Clock className="w-3 h-3 mr-1" />{" "}
+            {t("agencyDashboard.licenseSubmissions.status.expired")}
           </Badge>
         );
       default:
@@ -218,13 +261,21 @@ export const LicenseSubmissionsTab = ({
     try {
       await navigator.clipboard.writeText(url);
       toast({
-        title: `${label} copied`,
-        description: `Share this ${label.toLowerCase()} when needed.`,
+        title: t("agencyDashboard.licenseSubmissions.toast.linkCopied", {
+          label,
+        }),
+        description: t(
+          "agencyDashboard.licenseSubmissions.toast.linkCopiedDescription",
+          { labelLower: label.toLowerCase() },
+        ),
       });
     } catch {
       toast({
-        title: "Copy failed",
-        description: `Could not copy ${label.toLowerCase()}.`,
+        title: t("agencyDashboard.licenseSubmissions.toast.copyFailed"),
+        description: t(
+          "agencyDashboard.licenseSubmissions.toast.copyFailedDescription",
+          { labelLower: label.toLowerCase() },
+        ),
         variant: "destructive",
       });
     }
@@ -240,10 +291,10 @@ export const LicenseSubmissionsTab = ({
             <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
             <div className="text-left">
               <p className="text-sm font-semibold text-slate-900">
-                Resending contract email
+                {t("agencyDashboard.licenseSubmissions.resendingContractEmail")}
               </p>
               <p className="text-xs text-slate-500">
-                Refreshing submissions so the updated send appears here.
+                {t("agencyDashboard.licenseSubmissions.refreshingSubmissions")}
               </p>
             </div>
           </div>
@@ -312,7 +363,7 @@ export const LicenseSubmissionsTab = ({
                 {isLoading ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center h-24">
-                      Loading...
+                      {t("agencyDashboard.licenseSubmissions.loadingTable")}
                     </TableCell>
                   </TableRow>
                 ) : filteredSubmissions.length === 0 ? (
@@ -322,8 +373,12 @@ export const LicenseSubmissionsTab = ({
                       className="text-center h-24 text-muted-foreground"
                     >
                       {activeTab === "Active"
-                        ? "No active submissions found."
-                        : "No archived submissions found."}
+                        ? t(
+                            "agencyDashboard.licenseSubmissions.noActiveSubmissions",
+                          )
+                        : t(
+                            "agencyDashboard.licenseSubmissions.noArchivedSubmissions",
+                          )}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -349,7 +404,9 @@ export const LicenseSubmissionsTab = ({
                           {getStatusBadge(sub)}
                           {sub.status === "declined" && sub.decline_reason && (
                             <p className="text-[10px] text-red-600 bg-red-50 p-1.5 rounded border border-red-100 mt-1 max-w-[200px]">
-                              <span className="font-bold">Reason:</span>{" "}
+                              <span className="font-bold">
+                                {t("agencyDashboard.licenseSubmissions.reason")}
+                              </span>{" "}
                               {sub.decline_reason}
                             </p>
                           )}
@@ -368,7 +425,9 @@ export const LicenseSubmissionsTab = ({
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              title="Recover"
+                              title={t(
+                                "agencyDashboard.licenseSubmissions.actions.recover",
+                              )}
                               onClick={() => recoverMutation.mutate(sub.id)}
                             >
                               <RotateCcw className="h-4 w-4 text-blue-600" />
@@ -381,7 +440,9 @@ export const LicenseSubmissionsTab = ({
                                   variant="outline"
                                   size="sm"
                                   className="h-8 px-3 text-xs font-semibold text-blue-700 border-blue-200 hover:bg-blue-50"
-                                  title="Open Agency Signing Link"
+                                  title={t(
+                                    "agencyDashboard.licenseSubmissions.actions.openAgencySigningLink",
+                                  )}
                                   onClick={() =>
                                     window.open(
                                       getAgencySigningUrl(sub)!,
@@ -389,7 +450,9 @@ export const LicenseSubmissionsTab = ({
                                     )
                                   }
                                 >
-                                  Sign here
+                                  {t(
+                                    "agencyDashboard.licenseSubmissions.actions.signHere",
+                                  )}
                                 </Button>
                               ) : (
                                 sub.status !== "completed" &&
@@ -398,7 +461,9 @@ export const LicenseSubmissionsTab = ({
                                     variant="ghost"
                                     size="icon"
                                     className="h-8 w-8"
-                                    title="Resend"
+                                    title={t(
+                                      "agencyDashboard.licenseSubmissions.resend",
+                                    )}
                                     disabled={isBlockingResend}
                                     onClick={() =>
                                       resendMutation.mutate(sub.id)
@@ -417,7 +482,9 @@ export const LicenseSubmissionsTab = ({
                                   variant="ghost"
                                   size="icon"
                                   className="h-8 w-8"
-                                  title="Download"
+                                  title={t(
+                                    "agencyDashboard.licenseSubmissions.actions.download",
+                                  )}
                                   onClick={() =>
                                     window.open(
                                       sub.signed_document_url,
@@ -432,7 +499,9 @@ export const LicenseSubmissionsTab = ({
                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8"
-                                title="Archive"
+                                title={t(
+                                  "agencyDashboard.licenseSubmissions.actions.archive",
+                                )}
                                 onClick={() => archiveMutation.mutate(sub.id)}
                               >
                                 <Archive className="h-4 w-4 text-red-600" />
@@ -446,7 +515,9 @@ export const LicenseSubmissionsTab = ({
                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8"
-                                title="More actions"
+                                title={t(
+                                  "agencyDashboard.licenseSubmissions.actions.moreActions",
+                                )}
                               >
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
@@ -466,18 +537,24 @@ export const LicenseSubmissionsTab = ({
                                     }
                                   >
                                     <Link2 className="mr-2 h-4 w-4 text-red-600" />
-                                    Open Agency Link
+                                    {t(
+                                      "agencyDashboard.licenseSubmissions.actions.openAgencyLink",
+                                    )}
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={() =>
                                       copyLink(
                                         getAgencySigningUrl(sub)!,
-                                        "Agency link",
+                                        t(
+                                          "agencyDashboard.licenseSubmissions.agencyLink",
+                                        ),
                                       )
                                     }
                                   >
                                     <Copy className="mr-2 h-4 w-4 text-red-600" />
-                                    Copy Agency Link
+                                    {t(
+                                      "agencyDashboard.licenseSubmissions.actions.copyAgencyLink",
+                                    )}
                                   </DropdownMenuItem>
                                 </>
                               )}
@@ -493,18 +570,24 @@ export const LicenseSubmissionsTab = ({
                                     }
                                   >
                                     <Link2 className="mr-2 h-4 w-4 text-blue-600" />
-                                    Open Client Link
+                                    {t(
+                                      "agencyDashboard.licenseSubmissions.actions.openClientLink",
+                                    )}
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={() =>
                                       copyLink(
                                         getClientSigningUrl(sub)!,
-                                        "Client link",
+                                        t(
+                                          "agencyDashboard.licenseSubmissions.clientLink",
+                                        ),
                                       )
                                     }
                                   >
                                     <Copy className="mr-2 h-4 w-4 text-blue-600" />
-                                    Copy Client Link
+                                    {t(
+                                      "agencyDashboard.licenseSubmissions.actions.copyClientLink",
+                                    )}
                                   </DropdownMenuItem>
                                 </>
                               )}
@@ -519,7 +602,9 @@ export const LicenseSubmissionsTab = ({
                                   onClick={() => recoverMutation.mutate(sub.id)}
                                 >
                                   <RotateCcw className="mr-2 h-4 w-4 text-blue-600" />
-                                  Recover to Active
+                                  {t(
+                                    "agencyDashboard.licenseSubmissions.actions.recoverToActive",
+                                  )}
                                 </DropdownMenuItem>
                               ) : (
                                 <>
@@ -536,7 +621,9 @@ export const LicenseSubmissionsTab = ({
                                         ) : (
                                           <RotateCcw className="mr-2 h-4 w-4 text-blue-600" />
                                         )}
-                                        Resend Email
+                                        {t(
+                                          "agencyDashboard.licenseSubmissions.actions.resendEmail",
+                                        )}
                                       </DropdownMenuItem>
                                     )}
                                   {sub.signed_document_url && (
@@ -549,7 +636,9 @@ export const LicenseSubmissionsTab = ({
                                       }
                                     >
                                       <Download className="mr-2 h-4 w-4 text-green-600" />
-                                      Download PDF
+                                      {t(
+                                        "agencyDashboard.licenseSubmissions.actions.downloadPdf",
+                                      )}
                                     </DropdownMenuItem>
                                   )}
                                   <DropdownMenuItem
@@ -558,7 +647,9 @@ export const LicenseSubmissionsTab = ({
                                     }
                                   >
                                     <Archive className="mr-2 h-4 w-4 text-red-600" />
-                                    Archive
+                                    {t(
+                                      "agencyDashboard.licenseSubmissions.actions.archive",
+                                    )}
                                   </DropdownMenuItem>
                                 </>
                               )}
