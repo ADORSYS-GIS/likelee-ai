@@ -8377,13 +8377,61 @@ async fn try_release_campaign_offer_escrow(
         });
     }
 
-    // Guard against already-released or in-progress releasing state
-    if escrow_status == "released" || escrow_status == "releasing" {
+    // Guard against already-released or in-progress releasing state.
+    // Exception: if escrow is "releasing" but transfers have failed, it means
+    // a previous attempt was interrupted. Allow recovery by treating it as
+    // "holding" so the release can be retried. A genuinely in-flight "releasing"
+    // (no failed transfers yet) is still protected from race conditions.
+    if escrow_status == "released" {
         return Ok(EscrowReleaseOutcome {
             payment_status: payment_status.to_string(),
             escrow_status: escrow_status.to_string(),
             released_now: false,
         });
+    }
+    if escrow_status == "releasing" {
+        // Check whether any transfer for this offer has failed — if so, the
+        // "releasing" state is stale and we should allow a retry.
+        let has_failed_transfers: bool = async {
+            let resp = match state
+                .pg
+                .from("campaign_offer_transfers")
+                .select("id")
+                .eq("offer_id", offer_id)
+                .eq("status", "failed")
+                .limit(1)
+                .execute()
+                .await
+            {
+                Ok(r) => r,
+                Err(_) => return false,
+            };
+            if !resp.status().is_success() {
+                return false;
+            }
+            let text = match resp.text().await {
+                Ok(t) => t,
+                Err(_) => return false,
+            };
+            let rows: Vec<serde_json::Value> =
+                serde_json::from_str(&text).unwrap_or_default();
+            !rows.is_empty()
+        }
+        .await;
+
+        if !has_failed_transfers {
+            // Genuinely in-flight — protect from concurrent release attempts.
+            return Ok(EscrowReleaseOutcome {
+                payment_status: payment_status.to_string(),
+                escrow_status: escrow_status.to_string(),
+                released_now: false,
+            });
+        }
+        // Has failed transfers — fall through and retry the release.
+        tracing::info!(
+            offer_id = %offer_id,
+            "Escrow is in 'releasing' state with failed transfers; retrying release"
+        );
     }
 
     // Escrow releases when at least ONE deliverable is approved.
@@ -8735,7 +8783,10 @@ async fn try_release_campaign_offer_escrow(
         });
     }
 
-    // Execute transfers BEFORE marking as released. If transfers fail, escrow stays in "releasing" state.
+    // Execute all transfers best-effort. Individual failures are recorded in
+    // campaign_offer_transfers and retryable via the retry-transfers endpoint.
+    // The escrow is marked "released" regardless — it signals that the brand
+    // has approved and funds should flow, not that all transfers succeeded.
     release_campaign_offer_transfers(state, offer_id, agency_id, billing_request_id).await?;
 
     // Only mark as "released" AFTER transfers succeed
@@ -8809,35 +8860,59 @@ async fn release_campaign_offer_transfers(
         .and_then(|v| v.as_i64())
         .unwrap_or(0);
 
+    // ── Agency transfer ───────────────────────────────────────────────────────
+    // Best-effort: a failed agency transfer is recorded and retryable but must
+    // NOT abort the talent transfers. Funds are held in escrow until retried.
     if agency_amount_cents > 0 {
-        let agency_account_id = get_agency_stripe_account(state, agency_id)
-            .await
-            .map_err(|e| format!("Failed to get agency Stripe account: {}", e))?;
+        match get_agency_stripe_account(state, agency_id).await {
+            Err(e) => {
+                tracing::warn!(
+                    offer_id = %offer_id,
+                    agency_id = %agency_id,
+                    error = %e,
+                    "Skipping agency transfer — Stripe account not found; retryable"
+                );
+            }
+            Ok(agency_account_id) => {
+                let metadata = std::collections::HashMap::from([
+                    ("offer_id".to_string(), offer_id.to_string()),
+                    ("agency_id".to_string(), agency_id.to_string()),
+                    ("type".to_string(), "agency_commission".to_string()),
+                ]);
 
-        let metadata = std::collections::HashMap::from([
-            ("offer_id".to_string(), offer_id.to_string()),
-            ("agency_id".to_string(), agency_id.to_string()),
-            ("type".to_string(), "agency_commission".to_string()),
-        ]);
-
-        crate::payouts::execute_and_record_stripe_transfer(
-            state,
-            &client,
-            &currency,
-            currency_enum,
-            "agency",
-            agency_id,
-            &agency_account_id,
-            agency_amount_cents,
-            metadata,
-            "record_campaign_offer_transfer",
-            "p_offer_id",
-            offer_id,
-        )
-        .await
-        .map_err(|e| format!("Stripe transfer to agency failed: {}", e))?;
+                if let Err(e) = crate::payouts::execute_and_record_stripe_transfer(
+                    state,
+                    &client,
+                    &currency,
+                    currency_enum,
+                    "agency",
+                    agency_id,
+                    &agency_account_id,
+                    agency_amount_cents,
+                    metadata,
+                    "record_campaign_offer_transfer",
+                    "p_offer_id",
+                    offer_id,
+                )
+                .await
+                {
+                    // Failure is already recorded in campaign_offer_transfers by
+                    // execute_and_record_stripe_transfer. Log and continue so
+                    // talent transfers are not blocked.
+                    tracing::warn!(
+                        offer_id = %offer_id,
+                        agency_id = %agency_id,
+                        error = %e,
+                        "Agency Stripe transfer failed; recorded as failed, continuing to talent transfers"
+                    );
+                }
+            }
+        }
     }
 
+    // ── Talent transfers ──────────────────────────────────────────────────────
+    // Each talent split is attempted independently. A failure on one talent
+    // does not block others. All failures are recorded and retryable.
     let talent_splits = payout
         .get("talent_splits")
         .and_then(|v| v.as_array())
@@ -8889,7 +8964,7 @@ async fn release_campaign_offer_transfers(
                     creator_id = %creator_id,
                     talent_id = %talent_id,
                     error = %e,
-                    "Skipping talent split — Stripe account not connected"
+                    "Skipping talent split — Stripe account not connected; retryable"
                 );
                 continue;
             }
@@ -8904,7 +8979,7 @@ async fn release_campaign_offer_transfers(
             metadata.insert("talent_id".to_string(), talent_id.to_string());
         }
 
-        crate::payouts::execute_and_record_stripe_transfer(
+        if let Err(e) = crate::payouts::execute_and_record_stripe_transfer(
             state,
             &client,
             &currency,
@@ -8919,7 +8994,15 @@ async fn release_campaign_offer_transfers(
             offer_id,
         )
         .await
-        .map_err(|e| format!("Stripe transfer to talent failed: {}", e))?;
+        {
+            tracing::warn!(
+                offer_id = %offer_id,
+                creator_id = %creator_id,
+                talent_id = %talent_id,
+                error = %e,
+                "Talent Stripe transfer failed; recorded as failed, continuing to next split"
+            );
+        }
     }
 
     Ok(())

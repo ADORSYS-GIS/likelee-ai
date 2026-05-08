@@ -1534,7 +1534,7 @@
       "collaborators": "Collaborators",
       "noCollaborators": "No collaborators assigned yet.",
       "deliverablesFeedback": "Deliverables & Feedback",
-      "approvalThresholdWarning": "Approving more than half of deliverables triggers escrow payout (once) and unlocks downloads for all deliverables. Approvals are final and cannot be undone.",
+      "approvalThresholdWarning": "Approving 1 deliverable triggers escrow payout (once) and unlocks downloads for all deliverables. Approvals are final and cannot be undone.",
       "assetsCount_one": "{{count}} asset",
       "assetsCount_other": "{{count}} assets",
       "videoLocked": "Video locked",

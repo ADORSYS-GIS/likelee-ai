@@ -1269,7 +1269,7 @@
       "collaborators": "Mitarbeiter",
       "noCollaborators": "Noch keine Mitarbeiter zugewiesen.",
       "deliverablesFeedback": "Deliverables & Feedback",
-      "approvalThresholdWarning": "Wenn mehr als die Hälfte der Deliverables genehmigt wird, wird die Treuhand-Auszahlung einmalig ausgelöst und Downloads für alle Deliverables freigeschaltet. Genehmigungen sind endgültig und können nicht rückgängig gemacht werden.",
+      "approvalThresholdWarning": "Die Genehmigung von 1 Deliverable löst die Treuhand-Auszahlung einmalig aus und schaltet Downloads für alle Deliverables frei. Genehmigungen sind endgültig und können nicht rückgängig gemacht werden.",
       "assetsCount_one": "{{count}} Asset",
       "assetsCount_other": "{{count}} Assets",
       "videoLocked": "Video gesperrt",
