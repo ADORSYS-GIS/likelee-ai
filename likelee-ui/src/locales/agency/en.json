@@ -1516,6 +1516,34 @@
         "loading": "Verlauf wird geladen...",
         "previousUpdates": "Frühere Aktualisierungen",
         "unknown": "Unbekannt"
+      },
+      "commissionStructure": {
+        "connectionRequired": "Connection Required",
+        "connectionRequiredDescription": "Only talents with an active creator account are listed here. To manage commissions for pending or uninvited roster members, please ensure they have accepted their invitation to the talent portal. Marketplace-connected creator accounts are shown as contract controlled once their signed agreement becomes active.",
+        "currentTier": "Current Tier",
+        "commissionSource": "Commission Source",
+        "effectiveRate": "Effective Rate",
+        "settingsRate": "Settings Rate (%)",
+        "contractControlled": "Contract Controlled",
+        "customOverride": "Custom Override",
+        "tierDefault": "Tier Default",
+        "marketplaceConnected": "Marketplace Connected",
+        "agencyManaged": "Agency Managed",
+        "locked": "Locked",
+        "agencyShare": "Agency Share",
+        "commissionModel": "Commission Model",
+        "modelDescriptionPrefix": "Commission rates represent the",
+        "modelDescriptionBody": ". Agency-managed {{entity}} accounts can be adjusted here with settings overrides, while marketplace-connected {{entity}} accounts follow the active signed contract rate and stay locked on this screen.",
+        "saveChanges": "Save Changes",
+        "discardAll": "Discard All",
+        "saving": "Saving...",
+        "loadingRoster": "Loading roster...",
+        "loadFailed": "Failed to load commission settings",
+        "tryAgain": "Try Again",
+        "discardChange": "Discard change",
+        "resetToTierDefault": "Reset to tier default",
+        "noResultsFound": "No results found",
+        "noEntityFound": "No {{entity}} found"
       }
     },
     "digitals": {
@@ -4700,7 +4728,11 @@
         "pendingApproval": "Pending Approval",
         "awaitingPayoutProcessing": "Awaiting Payout Processing",
         "ytdPaidToEntity": "YTD Paid to {{entitySingular}}",
-        "totalNetPayouts": "Total Net Payouts 2024"
+        "totalNetPayouts": "Total Net Payouts 2024",
+        "searchTalentByName": "Search {{entity}} by name...",
+        "contractLocked": "Contract Locked",
+        "customOverride": "Custom Override",
+        "tierDefault": "Tier Default"
       }
     },
     "performanceTiers": {

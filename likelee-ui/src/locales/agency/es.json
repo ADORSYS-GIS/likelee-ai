@@ -1516,7 +1516,35 @@
         }
       },
       "comingSoon": "Coming soon",
-      "comingSoonDescription": "Coming soon."
+      "comingSoonDescription": "Coming soon.",
+      "commissionStructure": {
+        "connectionRequired": "Conexión requerida",
+        "connectionRequiredDescription": "Solo los talentos con una cuenta de creador activa se enumeran aquí. Para administrar comisiones para miembros del roster pendientes o no invitados, asegúrese de que hayan aceptado su invitación al portal de talentos. Las cuentas de creador conectadas al marketplace se muestran como controladas por contrato una vez que su acuerdo firmado se activa.",
+        "currentTier": "Nivel actual",
+        "commissionSource": "Fuente de comisión",
+        "effectiveRate": "Tasa efectiva",
+        "settingsRate": "Tasa de configuración (%)",
+        "contractControlled": "Controlado por contrato",
+        "customOverride": "Anulación personalizada",
+        "tierDefault": "Predeterminado de nivel",
+        "marketplaceConnected": "Conectado al marketplace",
+        "agencyManaged": "Gestionado por agencia",
+        "locked": "Bloqueado",
+        "agencyShare": "Participación de la agencia",
+        "commissionModel": "Modelo de comisión",
+        "modelDescriptionPrefix": "Las tasas de comisión representan la",
+        "modelDescriptionBody": ". Las cuentas de {{entity}} gestionadas por la agencia se pueden ajustar aquí con anulaciones de configuración, mientras que las cuentas de {{entity}} conectadas al marketplace siguen la tasa del contrato firmado activo y permanecen bloqueadas en esta pantalla.",
+        "saveChanges": "Guardar cambios",
+        "discardAll": "Descartar todo",
+        "saving": "Guardando...",
+        "loadingRoster": "Cargando roster...",
+        "loadFailed": "Error al cargar la configuración de comisiones",
+        "tryAgain": "Intentar de nuevo",
+        "discardChange": "Descartar cambio",
+        "resetToTierDefault": "Restablecer al predeterminado de nivel",
+        "noResultsFound": "No se encontraron resultados",
+        "noEntityFound": "No se encontró {{entity}}"
+      }
     },
     "navigation": {
       "dashboard": "Panel",
@@ -3302,7 +3330,11 @@
         "pendingApproval": "Pendiente de aprobacion",
         "awaitingPayoutProcessing": "Esperando procesamiento del pago",
         "ytdPaidToEntity": "Pagado a {{entitySingular}} en el ano",
-        "totalNetPayouts": "Pagos netos totales 2024"
+        "totalNetPayouts": "Pagos netos totales 2024",
+        "searchTalentByName": "Buscar {{entity}} por nombre...",
+        "contractLocked": "Contrato bloqueado",
+        "customOverride": "Anulación personalizada",
+        "tierDefault": "Predeterminado de nivel"
       }
     },
     "subscribe": {

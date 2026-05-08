@@ -1516,7 +1516,35 @@
         }
       },
       "comingSoon": "Coming soon",
-      "comingSoonDescription": "Coming soon."
+      "comingSoonDescription": "Coming soon.",
+      "commissionStructure": {
+        "connectionRequired": "Verbindung erforderlich",
+        "connectionRequiredDescription": "Nur Talente mit einem aktiven Creator-Konto werden hier aufgelistet. Um Provisionen für ausstehende oder nicht eingeladene Roster-Mitglieder zu verwalten, stellen Sie bitte sicher, dass sie ihre Einladung zum Talent-Portal akzeptiert haben. Marketplace-verbundene Creator-Konten werden als vertraglich kontrolliert angezeigt, sobald ihre unterzeichnete Vereinbarung aktiv wird.",
+        "currentTier": "Aktuelle Stufe",
+        "commissionSource": "Provisionsquelle",
+        "effectiveRate": "Effektiver Satz",
+        "settingsRate": "Einstellungssatz (%)",
+        "contractControlled": "Vertraglich kontrolliert",
+        "customOverride": "Benutzerdefinierte Überschreibung",
+        "tierDefault": "Stufen-Standard",
+        "marketplaceConnected": "Marketplace verbunden",
+        "agencyManaged": "Agentur verwaltet",
+        "locked": "Gesperrt",
+        "agencyShare": "Agenturanteil",
+        "commissionModel": "Provisionsmodell",
+        "modelDescriptionPrefix": "Provisionssätze repräsentieren den",
+        "modelDescriptionBody": ". Agentur-verwaltete {{entity}}-Konten können hier mit Einstellungsüberschreibungen angepasst werden, während Marketplace-verbundene {{entity}}-Konten dem aktiven unterzeichneten Vertragssatz folgen und auf diesem Bildschirm gesperrt bleiben.",
+        "saveChanges": "Änderungen speichern",
+        "discardAll": "Alle verwerfen",
+        "saving": "Speichern...",
+        "loadingRoster": "Roster wird geladen...",
+        "loadFailed": "Fehler beim Laden der Provisionseinstellungen",
+        "tryAgain": "Erneut versuchen",
+        "discardChange": "Änderung verwerfen",
+        "resetToTierDefault": "Auf Stufen-Standard zurücksetzen",
+        "noResultsFound": "Keine Ergebnisse gefunden",
+        "noEntityFound": "Keine {{entity}} gefunden"
+      }
     },
     "navigation": {
       "dashboard": "Dashboard",
@@ -3338,7 +3366,11 @@
         "pendingApproval": "Ausstehende Freigabe",
         "awaitingPayoutProcessing": "Warten auf Auszahlungsverarbeitung",
         "ytdPaidToEntity": "YTD an {{entitySingular}} ausgezahlt",
-        "totalNetPayouts": "Gesamte Nettoauszahlungen 2024"
+        "totalNetPayouts": "Gesamte Nettoauszahlungen 2024",
+        "searchTalentByName": "{{entity}} nach Name suchen...",
+        "contractLocked": "Vertrag gesperrt",
+        "customOverride": "Benutzerdefinierte Überschreibung",
+        "tierDefault": "Stufen-Standard"
       }
     },
     "subscribe": {
