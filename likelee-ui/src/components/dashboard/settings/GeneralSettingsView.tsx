@@ -97,7 +97,10 @@ type GeneralSettingsViewProps = {
 const CALENDLY_USE_DEFAULT_VALUE = "__use_default_mapping__";
 const CALENDLY_EVENT_TYPE_URI_PREFIX = "https://api.calendly.com/event_types/";
 const CALENDLY_BOOKING_TYPE_OPTIONS = [
-  { key: "default", label: "Calendly Event Type" },
+  {
+    key: "default",
+    label: i18n.t("settings.integrations.calendlyEventType", { ns: "agency" }),
+  },
 ] as const;
 
 type CalendlySettingsState = {
@@ -191,7 +194,7 @@ const CalendlyAutosaveStatus = ({
     return (
       <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-500">
         <RefreshCw className="h-3 w-3 animate-spin" />
-        Saving...
+        {i18n.t("settings.integrations.fieldStatus.saving", { ns: "agency" })}
       </span>
     );
   }
@@ -200,7 +203,7 @@ const CalendlyAutosaveStatus = ({
     return (
       <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600">
         <Check className="h-3 w-3" />
-        Saved
+        {i18n.t("settings.integrations.fieldStatus.saved", { ns: "agency" })}
       </span>
     );
   }
@@ -208,7 +211,7 @@ const CalendlyAutosaveStatus = ({
   return (
     <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600">
       <XCircle className="h-3 w-3" />
-      Save failed
+      {i18n.t("settings.integrations.fieldStatus.saveFailed", { ns: "agency" })}
     </span>
   );
 };
@@ -1133,10 +1136,9 @@ const GeneralSettingsView = ({
         }
         if (!silentSuccess) {
           toast({
-            title: "Settings Saved",
+            title: t("settings.saveProfile.settingsSaved"),
             description:
-              data.message ||
-              "Calendly integration settings have been updated.",
+              data.message || t("settings.integrations.connectSuccess"),
           });
         }
         if (
@@ -1715,8 +1717,8 @@ const GeneralSettingsView = ({
 
       if (error) throw error;
       toast({
-        title: "Notification settings saved",
-        description: "Your notification preferences have been updated.",
+        title: t("settings.notifications.settingsSaved"),
+        description: t("settings.notifications.settingsSavedDescription"),
       });
     } catch (e: any) {
       toast({
@@ -1759,8 +1761,8 @@ const GeneralSettingsView = ({
 
       if (error) throw error;
       toast({
-        title: "Tax & currency settings saved",
-        description: "Your settings have been updated.",
+        title: t("settings.taxAndCurrency.settingsSaved"),
+        description: t("settings.taxAndCurrency.settingsSavedDescription"),
       });
     } catch (e: any) {
       toast({
@@ -1891,8 +1893,8 @@ const GeneralSettingsView = ({
 
       if (error) throw error;
       toast({
-        title: "Email templates saved",
-        description: "Your email templates have been saved.",
+        title: t("settings.emailTemplates.settingsSaved"),
+        description: t("settings.emailTemplates.settingsSavedDescription"),
       });
     } catch (e: any) {
       toast({
@@ -1926,8 +1928,8 @@ const GeneralSettingsView = ({
       if (error) throw error;
 
       toast({
-        title: "Commission settings saved",
-        description: "Your commission settings have been saved.",
+        title: t("settings.commissions.settingsSaved"),
+        description: t("settings.commissions.settingsSavedDescription"),
       });
     } catch (error: any) {
       toast({
@@ -1967,7 +1969,7 @@ const GeneralSettingsView = ({
       await refreshProfile();
       toast({
         title: "Settings Saved",
-        description: "Your agency profile has been updated successfully.",
+        description: t("settings.saveProfile.profileUpdated"),
       });
     } catch (error: any) {
       console.error("Error saving profile:", error);
@@ -2402,7 +2404,9 @@ const GeneralSettingsView = ({
                 ) : (
                   <Save className="w-5 h-5" />
                 )}
-                {isSaving ? "Saving..." : "Save Profile Settings"}
+                {isSaving
+                  ? t("settings.saveProfile.saving")
+                  : t("settings.saveProfile.saveProfileSettings")}
               </Button>
             </div>
           </div>
@@ -2484,7 +2488,9 @@ const GeneralSettingsView = ({
                 ) : (
                   <Save className="w-5 h-5" />
                 )}
-                {isSavingCommissions ? "Saving..." : "Save Commission Settings"}
+                {isSavingCommissions
+                  ? t("settings.commissions.saving")
+                  : t("settings.commissions.saveCommissionSettings")}
               </Button>
             </div>
           </div>
@@ -2622,7 +2628,9 @@ const GeneralSettingsView = ({
                 ) : (
                   <Save className="w-5 h-5" />
                 )}
-                {isSavingEmailTemplates ? "Saving..." : "Save Email Templates"}
+                {isSavingEmailTemplates
+                  ? t("settings.emailTemplates.saving")
+                  : t("settings.emailTemplates.save")}
               </Button>
             </div>
 
@@ -3515,8 +3523,9 @@ const GeneralSettingsView = ({
                               Calendly Event Type
                             </h4>
                             <p className="text-xs text-gray-500 font-medium">
-                              Select the Calendly event type Likelee should use
-                              for booking invites and reminders
+                              {t(
+                                "settings.integrations.calendlyEventTypeDescription",
+                              )}
                             </p>
                           </div>
                           <ChevronDown
@@ -3680,17 +3689,20 @@ const GeneralSettingsView = ({
                                     className="h-10 bg-white border-gray-200 rounded-lg text-xs font-medium"
                                   />
                                   <p className="text-[10px] text-gray-400 font-medium leading-relaxed">
-                                    Paste the full Calendly event type URI that
-                                    Likelee should use for bookings. This works
-                                    even when the token cannot list event types
-                                    automatically.
+                                    {t(
+                                      "settings.integrations.calendlyEventTypeManualPaste",
+                                    )}
                                   </p>
                                 </div>
                               ) : (
                                 <div className="p-3 bg-white border border-gray-100 rounded-lg text-[10px] text-gray-400 font-bold flex items-center justify-center text-center">
                                   {hasSavedCalendlyToken
-                                    ? "No active Calendly event types found for this account"
-                                    : "Save a valid Calendly token to load event types"}
+                                    ? t(
+                                        "settings.integrations.calendlyNoEventTypes",
+                                      )
+                                    : t(
+                                        "settings.integrations.calendlySaveTokenFirst",
+                                      )}
                                 </div>
                               )}
                             </div>

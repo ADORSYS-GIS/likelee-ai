@@ -1296,11 +1296,17 @@
         },
         "saveProfile": {
           "saving": "Saving...",
-          "saveProfileSettings": "Save Profile Settings"
+          "saveProfileSettings": "Save Profile Settings",
+          "settingsSaved": "Settings Saved",
+          "profileUpdated": "Your agency profile has been updated successfully."
         },
         "commissions": {
           "title": "Default Commission Rate",
-          "subtitle": "Set the default commission rate for new talent"
+          "subtitle": "Set the default commission rate for new talent",
+          "saveCommissionSettings": "Save Commission Settings",
+          "saving": "Saving...",
+          "settingsSaved": "Commission settings saved",
+          "settingsSavedDescription": "Your commission settings have been saved."
         },
         "team": {
           "title": "Team Members",
@@ -1336,7 +1342,9 @@
             "net15": "Net 15",
             "net30": "Net 30",
             "net60": "Net 60"
-          }
+          },
+          "settingsSaved": "Tax & currency settings saved",
+          "settingsSavedDescription": "Your settings have been updated."
         },
         "subTabs": {
           "profile": "Profile",
@@ -1353,6 +1361,9 @@
           "subtitle": "Customize automated email messages",
           "newTemplate": "New Template",
           "save": "Save Email Templates",
+          "saving": "Saving...",
+          "settingsSaved": "Email templates saved",
+          "settingsSavedDescription": "Your email templates have been saved.",
           "availableVariables": "Available Variables:",
           "editTemplate": "Edit Template",
           "templateName": "Template Name",
@@ -1474,7 +1485,19 @@
           "connectSuccess": "Integration connected successfully",
           "connectFailed": "Failed to connect integration",
           "disconnectSuccess": "Integration disconnected successfully",
-          "disconnectFailed": "Failed to disconnect integration"
+          "disconnectFailed": "Failed to disconnect integration",
+          "calendlyEventType": "Calendly Event Type",
+          "calendlyEventTypeDescription": "Select the Calendly event type Likelee should use for booking invites and reminders",
+          "calendlyEventTypeManualPaste": "Paste the full Calendly event type URI that Likelee should use for bookings. This works even when the token cannot list event types automatically.",
+          "calendlyNoEventTypes": "No active Calendly event types found for this account",
+          "calendlySaveTokenFirst": "Save a valid Calendly token to load event types",
+          "fieldStatus": {
+            "saving": "Saving...",
+            "saved": "Saved",
+            "saveFailed": "Save failed"
+          },
+          "saveSettings": "Save Settings",
+          "saving": "Saving..."
         },
         "billing": {
           "title": "Billing",
@@ -1492,7 +1515,9 @@
           "sms": "SMS Notifications",
           "preferences": "Notification Preferences",
           "saveSuccess": "Preferences saved successfully",
-          "saveFailed": "Failed to save preferences"
+          "saveFailed": "Failed to save preferences",
+          "settingsSaved": "Notification settings saved",
+          "settingsSavedDescription": "Your notification preferences have been updated."
         }
       },
       "comingSoon": "Coming soon",
