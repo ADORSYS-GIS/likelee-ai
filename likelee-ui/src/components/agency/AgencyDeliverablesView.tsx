@@ -79,14 +79,10 @@ import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
 import { useTeamAccess } from "@/features/team/useTeamAccess";
 
 export function AgencyDeliverablesView() {
-  const { t } = useTranslation(
-    t("agencyDashboard.deliverables.payoutStatus.agency"),
-  );
+  const { t } = useTranslation("agency");
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { hasPermission } = useTeamAccess(
-    t("agencyDashboard.deliverables.payoutStatus.agency"),
-  );
+  const { hasPermission } = useTeamAccess("agency");
   const canApproveDeliverables = hasPermission("approve_deliverables");
   const canViewDeliverables = hasPermission("view_deliverables");
   const isReadOnly = canViewDeliverables && !canApproveDeliverables;

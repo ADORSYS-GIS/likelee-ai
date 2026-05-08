@@ -2254,10 +2254,12 @@ const RosterView = ({
                           <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-1 text-xs text-gray-500 font-medium">
                             <span className="flex items-center gap-1.5">
                               <Clock className="w-3.5 h-3.5 text-gray-400" />
-                              Last updated:{" "}
+                              {t(
+                                "agencyDashboard.roster.history.lastUpdated",
+                              )}{" "}
                               {lastUpdated
                                 ? format(new Date(lastUpdated), "MMM d, yyyy")
-                                : "Never"}
+                                : t("agencyDashboard.roster.history.never")}
                             </span>
                             <span className="text-gray-300">|</span>
                             {lastUpdated
@@ -2266,7 +2268,10 @@ const RosterView = ({
                                 })
                               : t("agencyDashboard.roster.digitals.never")}
                             <span className="text-gray-300">|</span>
-                            <span>{totalPhotos || 0} photos</span>
+                            <span>
+                              {totalPhotos || 0}{" "}
+                              {t("agencyDashboard.roster.history.photos")}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -2277,7 +2282,8 @@ const RosterView = ({
                           onClick={() => openHistory(talent)}
                           className="h-8 gap-2 text-gray-700 border-gray-200 font-bold text-xs hover:bg-gray-50"
                         >
-                          <Eye className="w-3 h-3" /> View History
+                          <Eye className="w-3 h-3" />{" "}
+                          {t("agencyDashboard.roster.history.viewHistory")}
                         </Button>
                         <Button
                           variant="outline"
@@ -2934,7 +2940,8 @@ const RosterView = ({
 
             {historyLoading ? (
               <div className="mt-6 flex items-center gap-2 text-sm text-gray-500 font-medium">
-                <Loader2 className="w-4 h-4 animate-spin" /> Loading history…
+                <Loader2 className="w-4 h-4 animate-spin" />{" "}
+                {t("agencyDashboard.roster.history.loading")}
               </div>
             ) : (
               <div className="mt-6 space-y-6">
@@ -2967,7 +2974,7 @@ const RosterView = ({
 
                 <div>
                   <div className="text-sm font-bold text-gray-700 mb-3">
-                    Previous Updates
+                    {t("agencyDashboard.roster.history.previousUpdates")}
                   </div>
                   <div className="space-y-4">
                     {historyGroups.map((g) => {
@@ -2992,7 +2999,8 @@ const RosterView = ({
                                 variant="secondary"
                                 className="text-[10px] font-bold"
                               >
-                                {photos.length} photos
+                                {photos.length}{" "}
+                                {t("agencyDashboard.roster.history.photos")}
                               </Badge>
                             </div>
                             <Button
@@ -3000,7 +3008,8 @@ const RosterView = ({
                               size="sm"
                               className="h-8 gap-2 text-gray-700 border-gray-200 font-bold text-xs hover:bg-gray-50"
                             >
-                              <Eye className="w-3 h-3" /> View
+                              <Eye className="w-3 h-3" />{" "}
+                              {t("agencyDashboard.roster.history.view")}
                             </Button>
                           </div>
                           <div className="mt-3 flex gap-3 overflow-x-auto pb-1">

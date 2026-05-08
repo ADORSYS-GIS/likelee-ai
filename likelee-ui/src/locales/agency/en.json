@@ -1708,7 +1708,13 @@
       "title": "Digitals History - {{name}}",
       "loading": "Loading history...",
       "previousUpdates": "Previous Updates",
-      "unknown": "Unknown"
+      "unknown": "Unknown",
+      "view": "View",
+      "photos": "photos",
+      "lastUpdated": "Last updated:",
+      "never": "Never",
+      "viewHistory": "View History",
+      "uploadPhoto": "Upload Photo"
     },
     "activeLicenses": {
       "status": {

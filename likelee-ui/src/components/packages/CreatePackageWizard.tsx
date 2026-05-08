@@ -1755,7 +1755,7 @@ export function CreatePackageWizard({
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   ) : (
                     <span className="flex items-center gap-2">
-                      t("agencyDashboard.packages.wizard.buttons.continue"){" "}
+                      {t("agencyDashboard.packages.wizard.buttons.continue")}{" "}
                       <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                     </span>
                   )}
