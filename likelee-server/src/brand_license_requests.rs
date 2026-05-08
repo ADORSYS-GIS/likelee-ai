@@ -817,52 +817,6 @@ pub async fn update_status_for_agency(
         update.insert("decline_reason".to_string(), json!(reason));
     }
 
-    // If approving, fetch brand_id and talent_id to generate deliverables
-    let mut deliverables_generated = 0i32;
-    if payload.status == "approved" {
-        let fetch_resp = state
-            .pg
-            .from("brand_license_requests")
-            .select("id,brand_id,talent_id")
-            .in_("id", ids.clone())
-            .eq("agency_id", agency_id)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-        let fetch_text = fetch_resp
-            .text()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let requests: Vec<serde_json::Value> =
-            serde_json::from_str(&fetch_text).unwrap_or_default();
-
-        for req in &requests {
-            let brand_id = req.get("brand_id").and_then(|v| v.as_str());
-            let talent_id = req.get("talent_id").and_then(|v| v.as_str());
-            let req_id = req.get("id").and_then(|v| v.as_str());
-
-            if let (Some(brand_id), Some(req_id)) = (brand_id, req_id) {
-                // Only generate if talent_id is present (specific talent license)
-                // Agency-wide licenses need explicit talent tracking elsewhere
-                match crate::licensed_deliverables::generate_licensed_deliverables(
-                    &state, brand_id, req_id, talent_id,
-                )
-                .await
-                {
-                    Ok(count) => deliverables_generated += count,
-                    Err(e) => {
-                        tracing::warn!(
-                            license_request_id = %req_id,
-                            error = %e.1,
-                            "failed to generate licensed deliverables"
-                        );
-                    }
-                }
-            }
-        }
-    }
-
     let resp = state
         .pg
         .from("brand_license_requests")
@@ -883,8 +837,5 @@ pub async fn update_status_for_agency(
         return Err(sanitize_db_error(status.as_u16(), text));
     }
 
-    Ok(Json(json!({
-        "status": "ok",
-        "deliverables_generated": deliverables_generated
-    })))
+    Ok(Json(json!({ "status": "ok" })))
 }

@@ -44,7 +44,6 @@ pub mod jobs;
 pub mod kyc;
 pub mod license_submissions;
 pub mod license_templates;
-pub mod licensed_deliverables;
 pub mod licenses;
 pub mod licensing_requests;
 pub mod messages;

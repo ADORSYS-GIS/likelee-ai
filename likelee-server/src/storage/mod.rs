@@ -228,7 +228,6 @@ pub enum StorageContextType {
     StudioDocument,
     BrandStorage,
     StudioGeneration,
-    LicensedDeliverable,
 }
 
 impl StorageContextType {
@@ -248,7 +247,6 @@ impl StorageContextType {
             Self::StudioDocument => "studio_document",
             Self::BrandStorage => "brand_storage",
             Self::StudioGeneration => "studio_generation",
-            Self::LicensedDeliverable => "licensed_deliverable",
         }
     }
 }
