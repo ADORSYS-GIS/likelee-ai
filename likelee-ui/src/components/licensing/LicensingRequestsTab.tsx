@@ -70,6 +70,10 @@ export const LicensingRequestsTab = ({
   const [activeRequestTab, setActiveRequestTab] = useState<
     "Active" | "Archive"
   >("Active");
+  const tabLabels = {
+    Active: t("agencyDashboard.licensingRequests.tabs.active"),
+    Archive: t("agencyDashboard.licensingRequests.tabs.archive"),
+  };
   const [showFilterDialog, setShowFilterDialog] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterMinLicenseFee, setFilterMinLicenseFee] = useState<string>("");
@@ -441,7 +445,7 @@ export const LicensingRequestsTab = ({
                   onClick={() => setActiveRequestTab(tab as any)}
                   className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${activeRequestTab === tab ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
                 >
-                  {tab}
+                  {tabLabels[tab as keyof typeof tabLabels]}
                 </button>
               ))}
             </div>

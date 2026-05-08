@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
@@ -140,9 +141,10 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
   } | null>(null);
 
   const [builderMode, setBuilderMode] = useState<"template" | "submission">(
-    "template",
+    isSportsAgency ? "submission" : "template",
   );
 
+  const { t } = useTranslation("agency");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -456,19 +458,19 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
               value="templates"
               className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 px-4 sm:px-6 font-bold whitespace-nowrap"
             >
-              Templates
+              {t("agencyDashboard.licenseTemplates.tabs.templates")}
             </TabsTrigger>
             <TabsTrigger
               value="submissions"
               className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 px-4 sm:px-6 font-bold whitespace-nowrap"
             >
-              Submissions
+              {t("agencyDashboard.licenseTemplates.tabs.submissions")}
             </TabsTrigger>
             <TabsTrigger
               value="requests"
               className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 px-4 sm:px-6 font-bold whitespace-nowrap"
             >
-              Requests
+              {t("agencyDashboard.licenseTemplates.tabs.requests")}
             </TabsTrigger>
           </TabsList>
         </div>
@@ -476,9 +478,11 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
         <TabsContent value="templates" className="space-y-6 mt-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight">Templates</h2>
+              <h2 className="text-2xl font-bold tracking-tight">
+                {t("agencyDashboard.licenseTemplates.title")}
+              </h2>
               <p className="text-muted-foreground">
-                Manage your agency license agreements and contract templates
+                {t("agencyDashboard.licenseTemplates.description")}
               </p>
             </div>
             <div className="flex w-full sm:w-auto items-center gap-2">
@@ -486,7 +490,8 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
                 onClick={openNewTemplateModal}
                 className="w-full sm:w-auto bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-10 px-6 rounded-xl shadow-lg shadow-indigo-100/50"
               >
-                <Plus className="mr-2 h-4 w-4" /> New Contract Template
+                <Plus className="mr-2 h-4 w-4" />{" "}
+                {t("agencyDashboard.licenseTemplates.newTemplate")}
               </Button>
             </div>
           </div>
@@ -494,13 +499,13 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {loadingTemplates ? (
               <p className="text-muted-foreground col-span-3 text-center py-20">
-                Loading templates...
+                {t("agencyDashboard.licenseTemplates.loading")}
               </p>
             ) : filteredTemplates.length === 0 ? (
               <p className="text-muted-foreground col-span-3 text-center py-20">
                 {searchTerm || selectedCategory !== "All Categories"
-                  ? "No templates match your criteria."
-                  : "No templates yet. Create your first one to get started!"}
+                  ? t("agencyDashboard.licenseTemplates.noMatch")
+                  : t("agencyDashboard.licenseTemplates.noTemplates")}
               </p>
             ) : (
               filteredTemplates.map((template) => (
@@ -695,7 +700,7 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
               <Trash2 className="w-6 h-6 text-red-600" />
             </div>
             <DialogTitle className="text-xl font-bold text-slate-900">
-              Delete Template
+              {t("agencyDashboard.licenseTemplates.delete.title")}
             </DialogTitle>
             <DialogDescription className="text-slate-500 font-medium">
               Are you sure you want to delete{" "}
@@ -719,7 +724,7 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
               onClick={confirmDelete}
               className="bg-red-600 hover:bg-red-700 font-bold px-8 rounded-xl h-10 shadow-lg shadow-red-100"
             >
-              Delete Template
+              {t("agencyDashboard.licenseTemplates.delete.title")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import {
   Dialog,
@@ -187,15 +188,15 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
               <div>
                 <DialogTitle className="text-xl sm:text-2xl font-bold text-slate-900 mb-1">
                   {readOnly
-                    ? "License Template Details"
+                    ? t("agencyDashboard.templateModal.details.title")
                     : initialData
-                      ? "Edit License Template"
-                      : "New Contract Template"}
+                      ? t("agencyDashboard.templateModal.edit.title")
+                      : t("agencyDashboard.templateModal.new.title")}
                 </DialogTitle>
                 <p className="text-sm text-slate-500 font-medium tracking-tight">
                   {readOnly
-                    ? "View your standardized agency terms and details"
-                    : "Standardize your agency terms with dynamic placeholders"}
+                    ? t("agencyDashboard.templateModal.details.description")
+                    : t("agencyDashboard.templateModal.description")}
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">

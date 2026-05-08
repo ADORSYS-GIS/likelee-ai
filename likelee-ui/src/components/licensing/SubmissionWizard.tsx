@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -141,6 +142,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
   oldLicenseId,
   brandRequestContext,
 }) => {
+  const { t } = useTranslation("agency");
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entityPluralLower = isSportsAgency ? "athletes" : "talents";
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
@@ -655,7 +657,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                   </span>
                 </div>
                 <DialogTitle className="text-xl sm:text-2xl font-bold text-slate-900">
-                  {step === 1 ? "Deal Specifics" : "Content Review"}
+                  {step === 1
+                    ? t("agencyDashboard.submissionWizard.dealSpecifics")
+                    : t("agencyDashboard.submissionWizard.contentReview")}
                 </DialogTitle>
                 <p className="text-sm text-slate-500 font-medium">
                   {step === 1

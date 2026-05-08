@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getLicenseSubmissions,
@@ -53,6 +54,7 @@ export const LicenseSubmissionsTab = ({
 }: {
   isSportsAgency?: boolean;
 }) => {
+  const { t } = useTranslation("agency");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
@@ -181,6 +183,10 @@ export const LicenseSubmissionsTab = ({
   };
 
   const [activeTab, setActiveTab] = useState<"Active" | "Archive">("Active");
+  const tabLabels = {
+    Active: t("agencyDashboard.licenseSubmissions.tabs.active"),
+    Archive: t("agencyDashboard.licenseSubmissions.tabs.archive"),
+  };
 
   const getClientSigningUrl = (sub: LicenseSubmission) => {
     const appBase =
@@ -246,19 +252,28 @@ export const LicenseSubmissionsTab = ({
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start">
         <div className="flex flex-col gap-1">
           <h2 className="text-2xl font-bold tracking-tight">
-            License Submissions
+            {t("agencyDashboard.licenseSubmissions.title")}
           </h2>
           <p className="text-muted-foreground">
-            Track contracts sent to clients for signature
+            {t("agencyDashboard.licenseSubmissions.description")}
           </p>
           <div className="flex bg-gray-100 p-1 rounded-lg w-fit mt-4">
-            {["Active", "Archive"].map((tab) => (
+            {[
+              {
+                key: "Active",
+                label: tabLabels["Active"],
+              },
+              {
+                key: "Archive",
+                label: tabLabels["Archive"],
+              },
+            ].map((tab) => (
               <button
-                key={tab}
-                onClick={() => setActiveTab(tab as any)}
-                className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === tab ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key as any)}
+                className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === tab.key ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
               >
-                {tab}
+                {tab.label}
               </button>
             ))}
           </div>
