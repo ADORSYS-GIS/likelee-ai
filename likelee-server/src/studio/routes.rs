@@ -886,7 +886,10 @@ async fn fetch_brand_licensed_assets(
         Ok(resp) => {
             if let Ok(text) = resp.text().await {
                 if let Ok(brand) = serde_json::from_str::<serde_json::Value>(&text) {
-                    brand.get("stripe_customer_id").and_then(|v| v.as_str()).map(|s| s.to_string())
+                    brand
+                        .get("stripe_customer_id")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string())
                 } else {
                     None
                 }
@@ -921,7 +924,8 @@ async fn fetch_brand_licensed_assets(
 
         if let Ok(resp) = grants_resp {
             if let Ok(text) = resp.text().await {
-                let grants: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+                let grants: Vec<serde_json::Value> =
+                    serde_json::from_str(&text).unwrap_or_default();
                 has_active_payment = !grants.is_empty();
             }
         }
@@ -940,7 +944,8 @@ async fn fetch_brand_licensed_assets(
 
             if let Ok(resp) = sessions_resp {
                 if let Ok(text) = resp.text().await {
-                    let sessions: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+                    let sessions: Vec<serde_json::Value> =
+                        serde_json::from_str(&text).unwrap_or_default();
                     has_active_payment = !sessions.is_empty();
                 }
             }
