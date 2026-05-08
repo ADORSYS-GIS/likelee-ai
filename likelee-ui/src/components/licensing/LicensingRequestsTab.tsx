@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Filter,
@@ -48,6 +49,7 @@ export const LicensingRequestsTab = ({
 }) => {
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entityPluralLower = isSportsAgency ? "athlete" : "talent";
+  const { t } = useTranslation("agency");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -93,6 +95,11 @@ export const LicensingRequestsTab = ({
     return "bg-gray-100 text-gray-700";
   };
 
+  const statusLabel = (status: string) =>
+    t(`agencyDashboard.licensingRequests.status.${status}`, {
+      defaultValue: status,
+    });
+
   const formatLicenseFee = (fee?: number | null) => {
     if (typeof fee !== "number" || !Number.isFinite(fee)) return "—";
     return fee.toLocaleString(undefined, {
@@ -117,13 +124,17 @@ export const LicensingRequestsTab = ({
         queryKey: ["agency", "licensing-requests"],
       });
       toast({
-        title: "Request declined",
-        description: "The licensing request has been declined.",
+        title: t("agencyDashboard.licensingRequests.messages.requestDeclined"),
+        description: t(
+          "agencyDashboard.licensingRequests.messages.requestDeclinedDescription",
+        ),
       });
     } catch (e: any) {
       toast({
-        title: "Decline failed",
-        description: e?.message || "Could not decline licensing request",
+        title: t("agencyDashboard.licensingRequests.messages.updateFailed"),
+        description:
+          e?.message ||
+          t("agencyDashboard.licensingRequests.messages.couldNotUpdate"),
         variant: "destructive" as any,
       });
     } finally {
@@ -150,16 +161,24 @@ export const LicensingRequestsTab = ({
         queryKey: ["agency", "licensing-requests"],
       });
       toast({
-        title: "Counter offer sent",
-        description: "The client has been notified.",
+        title: t("agencyDashboard.licensingRequests.messages.counterOfferSent"),
+        description: t(
+          "agencyDashboard.licensingRequests.messages.clientNotified",
+        ),
       });
       setCounterOfferModalOpen(false);
       setCounterOfferMessage("");
       setGroupToCounter(null);
     } catch (e: any) {
       toast({
-        title: "Failed to send counter offer",
-        description: e?.message || "Could not send counter offer",
+        title: t(
+          "agencyDashboard.licensingRequests.messages.failedToSendCounterOffer",
+        ),
+        description:
+          e?.message ||
+          t(
+            "agencyDashboard.licensingRequests.messages.couldNotSendCounterOffer",
+          ),
         variant: "destructive" as any,
       });
     } finally {
@@ -192,14 +211,20 @@ export const LicensingRequestsTab = ({
         setCounterOfferMessage("");
         setGroupToCounter(null);
         toast({
-          title: "Counter offer sent",
-          description: "The client has been notified.",
+          title: t(
+            "agencyDashboard.licensingRequests.messages.counterOfferSent",
+          ),
+          description: t(
+            "agencyDashboard.licensingRequests.messages.clientNotified",
+          ),
         });
       }
     } catch (e: any) {
       toast({
-        title: "Update failed",
-        description: e?.message || "Could not update licensing request",
+        title: t("agencyDashboard.licensingRequests.messages.updateFailed"),
+        description:
+          e?.message ||
+          t("agencyDashboard.licensingRequests.messages.couldNotUpdate"),
         variant: "destructive" as any,
       });
     }
@@ -210,7 +235,7 @@ export const LicensingRequestsTab = ({
     const licensingRequestId = firstTalent?.licensing_request_id;
     if (!licensingRequestId) {
       toast({
-        title: "No licensing request ID found",
+        title: t("agencyDashboard.licensingRequests.messages.couldNotFindIds"),
         variant: "destructive" as any,
       });
       return;
@@ -225,14 +250,22 @@ export const LicensingRequestsTab = ({
         queryKey: ["agency", "licensing-requests"],
       });
       toast({
-        title: "Payment link sent!",
+        title: t("agencyDashboard.licensingRequests.messages.paymentLinkSent"),
         description: emailSent
-          ? "The payment link has been emailed to the client."
-          : "Payment link generated. No client email found — please share the link manually.",
+          ? t("agencyDashboard.licensingRequests.messages.paymentLinkEmailed")
+          : t(
+              "agencyDashboard.licensingRequests.messages.paymentLinkGeneratedManual",
+            ),
       });
     } catch (e: any) {
-      let friendlyTitle = "Failed to send payment link";
-      let friendlyDesc = e?.message || "Could not generate payment link";
+      let friendlyTitle = t(
+        "agencyDashboard.licensingRequests.messages.sendPaymentLinkFailed",
+      );
+      let friendlyDesc =
+        e?.message ||
+        t(
+          "agencyDashboard.licensingRequests.messages.couldNotGenerateSendPaymentLink",
+        );
       try {
         const parsed = JSON.parse(String(e?.message || ""));
         if (
@@ -281,13 +314,17 @@ export const LicensingRequestsTab = ({
         queryKey: ["agency", "licensing-requests"],
       });
       toast({
-        title: "Deleted",
-        description: "Licensing request(s) permanently deleted.",
+        title: t("agencyDashboard.licensingRequests.messages.deleted"),
+        description: t(
+          "agencyDashboard.licensingRequests.messages.deletedDescription",
+        ),
       });
     } catch (e: any) {
       toast({
-        title: "Delete failed",
-        description: e?.message || "Could not delete licensing request",
+        title: t("agencyDashboard.licensingRequests.messages.deleteFailed"),
+        description:
+          e?.message ||
+          t("agencyDashboard.licensingRequests.messages.couldNotDelete"),
         variant: "destructive" as any,
       });
     } finally {
@@ -415,7 +452,11 @@ export const LicensingRequestsTab = ({
     filterMaxDuration;
 
   const feePresets = [
-    { label: "Any", min: "", max: "" },
+    {
+      label: t("agencyDashboard.licensingRequests.filterModal.any"),
+      min: "",
+      max: "",
+    },
     { label: "< $1k", min: "", max: "999" },
     { label: "$1k - $5k", min: "1000", max: "5000" },
     { label: "$5k - $10k", min: "5001", max: "10000" },
@@ -423,11 +464,31 @@ export const LicensingRequestsTab = ({
   ];
 
   const durationPresets = [
-    { label: "Any", min: "", max: "" },
-    { label: "0-7 days", min: "0", max: "7" },
-    { label: "8-30 days", min: "8", max: "30" },
-    { label: "31-90 days", min: "31", max: "90" },
-    { label: "90+ days", min: "91", max: "" },
+    {
+      label: t("agencyDashboard.licensingRequests.filterModal.any"),
+      min: "",
+      max: "",
+    },
+    {
+      label: t("agencyDashboard.licensingRequests.filterModal.days0to7"),
+      min: "0",
+      max: "7",
+    },
+    {
+      label: t("agencyDashboard.licensingRequests.filterModal.days8to30"),
+      min: "8",
+      max: "30",
+    },
+    {
+      label: t("agencyDashboard.licensingRequests.filterModal.days31to90"),
+      min: "31",
+      max: "90",
+    },
+    {
+      label: t("agencyDashboard.licensingRequests.filterModal.days90Plus"),
+      min: "91",
+      max: "",
+    },
   ];
 
   return (
@@ -436,7 +497,7 @@ export const LicensingRequestsTab = ({
         <div className="flex justify-between items-center">
           <div className="flex flex-col gap-1">
             <h2 className="text-2xl font-bold text-gray-900">
-              Licensing Requests
+              {t("agencyDashboard.licensingRequests.title")}
             </h2>
             <div className="flex bg-gray-100 p-1 rounded-lg w-fit mt-2">
               {["Active", "Archive"].map((tab) => (
@@ -458,7 +519,8 @@ export const LicensingRequestsTab = ({
                 onClick={clearFilters}
                 className="text-gray-500 hover:text-gray-700"
               >
-                <X className="w-3 h-3 mr-1" /> Clear
+                <X className="w-3 h-3 mr-1" />{" "}
+                {t("agencyDashboard.licensingRequests.filter.clear")}
               </Button>
             )}
             <Button
@@ -466,7 +528,8 @@ export const LicensingRequestsTab = ({
               className={`flex items-center gap-2 border-gray-300 font-bold text-gray-700 bg-white ${hasActiveFilters ? "border-indigo-300 bg-indigo-50" : ""}`}
               onClick={() => setShowFilterDialog(true)}
             >
-              <Filter className="w-4 h-4" /> Filter
+              <Filter className="w-4 h-4" />{" "}
+              {t("agencyDashboard.licensingRequests.filter.button")}
               {hasActiveFilters && (
                 <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-indigo-500 text-white rounded-full">
                   {
@@ -501,22 +564,23 @@ export const LicensingRequestsTab = ({
                 />
               </svg>
               <p className="text-xs text-amber-800">
-                Licensing requests past their end date are automatically moved
-                to the Archive tab.
+                {t("agencyDashboard.licensingRequests.archiveNotice")}
               </p>
             </div>
           )}
 
           {isLoading && (
             <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
-              <div className="text-gray-500 font-medium">Loading...</div>
+              <div className="text-gray-500 font-medium">
+                {t("agencyDashboard.licensingRequests.loading")}
+              </div>
             </Card>
           )}
 
           {!isLoading && error && (
             <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
               <div className="text-red-600 font-medium">
-                Failed to load licensing requests
+                {t("agencyDashboard.licensingRequests.loadFailed")}
               </div>
             </Card>
           )}
@@ -525,8 +589,8 @@ export const LicensingRequestsTab = ({
             <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
               <div className="text-gray-500 font-medium">
                 {activeRequestTab === "Active"
-                  ? "No active licensing requests"
-                  : "No archived licensing requests"}
+                  ? t("agencyDashboard.licensingRequests.noActiveRequests")
+                  : t("agencyDashboard.licensingRequests.noArchivedRequests")}
               </div>
             </Card>
           )}
@@ -539,7 +603,8 @@ export const LicensingRequestsTab = ({
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <h3 className="text-xl font-bold text-gray-900 mb-1">
-                    {group.brand_name || "Unknown brand"}
+                    {group.brand_name ||
+                      t("agencyDashboard.licensingRequests.unknownBrand")}
                   </h3>
                   <p className="text-gray-500 font-medium">
                     {(group.campaign_title || "").trim() || "—"}
@@ -548,7 +613,7 @@ export const LicensingRequestsTab = ({
                 <span
                   className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${statusStyle(group.status)}`}
                 >
-                  {group.status}
+                  {statusLabel(group.status)}
                 </span>
               </div>
 
@@ -573,7 +638,7 @@ export const LicensingRequestsTab = ({
                 <div className="space-y-4">
                   <div>
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                      License Fee
+                      {t("agencyDashboard.licensingRequests.fields.licenseFee")}
                     </p>
                     <p className="text-sm font-bold text-gray-900">
                       {formatLicenseFee(group.license_fee)}
@@ -581,7 +646,7 @@ export const LicensingRequestsTab = ({
                   </div>
                   <div>
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                      Regions
+                      {t("agencyDashboard.licensingRequests.fields.regions")}
                     </p>
                     <p className="text-sm font-bold text-gray-900">
                       {group.regions || "—"}
@@ -591,7 +656,7 @@ export const LicensingRequestsTab = ({
                 <div className="space-y-4">
                   <div>
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                      Usage Scope
+                      {t("agencyDashboard.licensingRequests.fields.usageScope")}
                     </p>
                     <p className="text-sm font-bold text-gray-900">
                       {(group.usage_scope || "").trim() || "—"}
@@ -599,13 +664,21 @@ export const LicensingRequestsTab = ({
                   </div>
                   <div>
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                      {group.license_start_date ? "Duration" : "Deadline"}
+                      {group.license_start_date
+                        ? t("agencyDashboard.licensingRequests.fields.duration")
+                        : t(
+                            "agencyDashboard.licensingRequests.fields.deadline",
+                          )}
                     </p>
                     <p className="text-sm font-bold text-gray-900">
                       {group.license_start_date && group.license_end_date
                         ? `${new Date(group.license_start_date).toLocaleDateString()} - ${new Date(group.license_end_date).toLocaleDateString()}`
                         : group.license_start_date
-                          ? `From ${new Date(group.license_start_date).toLocaleDateString()}`
+                          ? t("agencyDashboard.licensingRequests.fromDate", {
+                              date: new Date(
+                                group.license_start_date,
+                              ).toLocaleDateString(),
+                            })
                           : group.deadline
                             ? new Date(group.deadline).toLocaleDateString()
                             : "—"}
@@ -624,15 +697,21 @@ export const LicensingRequestsTab = ({
                     {sendingPaymentLink[group.group_key] ? (
                       <>
                         <RefreshCw className="w-4 h-4 animate-spin" />{" "}
-                        Sending...
+                        {t("agencyDashboard.licensingRequests.buttons.sending")}
                       </>
                     ) : group.payment_link_id || group.payment_link_url ? (
                       <>
-                        <Send className="w-4 h-4" /> Resend payment link
+                        <Send className="w-4 h-4" />{" "}
+                        {t(
+                          "agencyDashboard.licensingRequests.buttons.resendPaymentLink",
+                        )}
                       </>
                     ) : (
                       <>
-                        <Send className="w-4 h-4" /> Send payment link
+                        <Send className="w-4 h-4" />{" "}
+                        {t(
+                          "agencyDashboard.licensingRequests.buttons.sendPaymentLink",
+                        )}
                       </>
                     )}
                   </Button>
@@ -645,7 +724,9 @@ export const LicensingRequestsTab = ({
                     className="border-gray-300 text-gray-700 font-bold h-10 rounded-md flex items-center justify-center gap-2"
                   >
                     <RefreshCw className="w-4 h-4" />
-                    Recover to Active
+                    {t(
+                      "agencyDashboard.licensingRequests.buttons.recoverToActive",
+                    )}
                   </Button>
                   <Button
                     variant="outline"
@@ -659,12 +740,16 @@ export const LicensingRequestsTab = ({
                     {deletingGroup === group.group_key ? (
                       <>
                         <RefreshCw className="w-4 h-4 animate-spin" />
-                        Deleting...
+                        {t(
+                          "agencyDashboard.licensingRequests.messages.deleting",
+                        )}
                       </>
                     ) : (
                       <>
                         <Trash2 className="w-4 h-4" />
-                        Delete Permanently
+                        {t(
+                          "agencyDashboard.licensingRequests.actions.deletePermanently",
+                        )}
                       </>
                     )}
                   </Button>
@@ -679,11 +764,14 @@ export const LicensingRequestsTab = ({
                     {sendingPaymentLink[group.group_key] ? (
                       <>
                         <RefreshCw className="w-4 h-4 animate-spin" />{" "}
-                        Sending...
+                        {t("agencyDashboard.licensingRequests.buttons.sending")}
                       </>
                     ) : (
                       <>
-                        <Send className="w-4 h-4" /> Send Payment Link
+                        <Send className="w-4 h-4" />{" "}
+                        {t(
+                          "agencyDashboard.licensingRequests.actionButtons.sendPaymentLink",
+                        )}
                       </>
                     )}
                   </Button>
@@ -695,7 +783,9 @@ export const LicensingRequestsTab = ({
                     }}
                     className="border-gray-300 text-gray-700 font-bold h-10 rounded-md"
                   >
-                    Counter Offer
+                    {t(
+                      "agencyDashboard.licensingRequests.actionButtons.counterOffer",
+                    )}
                   </Button>
                   <Button
                     variant="outline"
@@ -709,14 +799,18 @@ export const LicensingRequestsTab = ({
                     {decliningGroup === group.group_key ? (
                       <>
                         <RefreshCw className="w-4 h-4 animate-spin" />
-                        Declining...
+                        {t(
+                          "agencyDashboard.licensingRequests.declineModal.declining",
+                        )}
                       </>
                     ) : (
                       <>
                         <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
                           <span className="text-[10px]">✕</span>
                         </div>
-                        Decline
+                        {t(
+                          "agencyDashboard.licensingRequests.actionButtons.decline",
+                        )}
                       </>
                     )}
                   </Button>
@@ -732,20 +826,29 @@ export const LicensingRequestsTab = ({
         >
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Send Counter Offer</DialogTitle>
+              <DialogTitle>
+                {t("agencyDashboard.licensingRequests.counterOfferModal.title")}
+              </DialogTitle>
               <DialogDescription>
-                Explain your proposed terms to the client. They will be notified
-                by email.
+                {t(
+                  "agencyDashboard.licensingRequests.counterOfferModal.description",
+                )}
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 py-2">
               <div className="space-y-2">
-                <Label>Message to Client</Label>
+                <Label>
+                  {t(
+                    "agencyDashboard.licensingRequests.counterOfferModal.messageLabel",
+                  )}
+                </Label>
                 <Textarea
                   value={counterOfferMessage}
                   onChange={(e) => setCounterOfferMessage(e.target.value)}
-                  placeholder="Describe your counter offer terms..."
+                  placeholder={t(
+                    "agencyDashboard.licensingRequests.counterOfferModal.messagePlaceholder",
+                  )}
                   rows={5}
                   className="resize-none"
                 />
@@ -758,7 +861,9 @@ export const LicensingRequestsTab = ({
                 onClick={() => setCounterOfferModalOpen(false)}
                 className="font-bold"
               >
-                Cancel
+                {t(
+                  "agencyDashboard.licensingRequests.counterOfferModal.cancel",
+                )}
               </Button>
               <Button
                 onClick={handleSendCounterOffer}
@@ -768,10 +873,12 @@ export const LicensingRequestsTab = ({
                 {sendingCounterOffer ? (
                   <>
                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    Sending...
+                    {t(
+                      "agencyDashboard.licensingRequests.messages.sendingCounterOffer",
+                    )}
                   </>
                 ) : (
-                  "Send Counter Offer"
+                  t("agencyDashboard.licensingRequests.counterOfferModal.send")
                 )}
               </Button>
             </DialogFooter>
@@ -782,34 +889,61 @@ export const LicensingRequestsTab = ({
         <Dialog open={showFilterDialog} onOpenChange={setShowFilterDialog}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Filter Licensing Requests</DialogTitle>
+              <DialogTitle>
+                {t("agencyDashboard.licensingRequests.filterModal.title")}
+              </DialogTitle>
               <DialogDescription>
-                Narrow down your licensing requests by status, license fee, and
-                duration.
+                {t("agencyDashboard.licensingRequests.filterModal.description")}
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 py-2">
               <div className="space-y-2">
-                <Label>Status</Label>
+                <Label>
+                  {t("agencyDashboard.licensingRequests.filterModal.status")}
+                </Label>
                 <Select value={filterStatus} onValueChange={setFilterStatus}>
                   <SelectTrigger>
-                    <SelectValue placeholder="All statuses" />
+                    <SelectValue
+                      placeholder={t(
+                        "agencyDashboard.licensingRequests.filterModal.allStatuses",
+                      )}
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="approved">Approved</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
-                    <SelectItem value="negotiating">Negotiating</SelectItem>
-                    <SelectItem value="declined">Declined</SelectItem>
-                    <SelectItem value="archived">Archived</SelectItem>
+                    <SelectItem value="all">
+                      {t(
+                        "agencyDashboard.licensingRequests.filterModal.allStatuses",
+                      )}
+                    </SelectItem>
+                    <SelectItem value="pending">
+                      {statusLabel("pending")}
+                    </SelectItem>
+                    <SelectItem value="approved">
+                      {statusLabel("approved")}
+                    </SelectItem>
+                    <SelectItem value="rejected">
+                      {statusLabel("rejected")}
+                    </SelectItem>
+                    <SelectItem value="negotiating">
+                      {statusLabel("negotiating")}
+                    </SelectItem>
+                    <SelectItem value="declined">
+                      {statusLabel("declined")}
+                    </SelectItem>
+                    <SelectItem value="archived">
+                      {statusLabel("archived")}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label>License Fee</Label>
+                <Label>
+                  {t(
+                    "agencyDashboard.licensingRequests.filterModal.licenseFee",
+                  )}
+                </Label>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {feePresets.map((preset) => {
                     const active =
@@ -834,7 +968,9 @@ export const LicensingRequestsTab = ({
               </div>
 
               <div className="space-y-2">
-                <Label>Duration</Label>
+                <Label>
+                  {t("agencyDashboard.licensingRequests.filterModal.duration")}
+                </Label>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {durationPresets.map((preset) => {
                     const active =
@@ -865,10 +1001,14 @@ export const LicensingRequestsTab = ({
                 onClick={clearFilters}
                 className="font-bold"
               >
-                Clear Filters
+                {t(
+                  "agencyDashboard.licensingRequests.filterModal.clearFilters",
+                )}
               </Button>
               <Button onClick={() => setShowFilterDialog(false)}>
-                Apply Filters
+                {t(
+                  "agencyDashboard.licensingRequests.filterModal.applyFilters",
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -878,18 +1018,24 @@ export const LicensingRequestsTab = ({
         <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Delete Licensing Request</DialogTitle>
+              <DialogTitle>
+                {t("agencyDashboard.licensingRequests.deleteModal.title")}
+              </DialogTitle>
               <DialogDescription>
-                This will permanently delete this licensing request. This action
-                cannot be undone.
+                {t("agencyDashboard.licensingRequests.deleteModal.description")}
               </DialogDescription>
             </DialogHeader>
 
             <div className="py-4">
               <p className="text-sm text-gray-600">
-                Are you sure you want to delete the licensing request for{" "}
+                {t(
+                  "agencyDashboard.licensingRequests.deleteModal.confirmQuestion",
+                )}{" "}
                 <span className="font-semibold">
-                  {groupToDelete?.brand_name || "Unknown brand"}
+                  {groupToDelete?.brand_name ||
+                    t(
+                      "agencyDashboard.licensingRequests.deleteModal.unknownBrand",
+                    )}
                 </span>
                 ?
               </p>
@@ -904,7 +1050,7 @@ export const LicensingRequestsTab = ({
                 }}
                 className="font-bold"
               >
-                Cancel
+                {t("agencyDashboard.licensingRequests.deleteModal.cancel")}
               </Button>
               <Button
                 variant="destructive"
@@ -915,12 +1061,14 @@ export const LicensingRequestsTab = ({
                 {deletingGroup === groupToDelete?.group_key ? (
                   <>
                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    Deleting...
+                    {t(
+                      "agencyDashboard.licensingRequests.deleteModal.deleting",
+                    )}
                   </>
                 ) : (
                   <>
                     <Trash2 className="w-4 h-4 mr-2" />
-                    Delete Permanently
+                    {t("agencyDashboard.licensingRequests.deleteModal.delete")}
                   </>
                 )}
               </Button>
@@ -932,18 +1080,26 @@ export const LicensingRequestsTab = ({
         <Dialog open={showDeclineConfirm} onOpenChange={setShowDeclineConfirm}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Confirm Decline</DialogTitle>
+              <DialogTitle>
+                {t("agencyDashboard.licensingRequests.declineModal.title")}
+              </DialogTitle>
               <DialogDescription>
-                Are you sure you want to decline this licensing request? This
-                action cannot be undone.
+                {t(
+                  "agencyDashboard.licensingRequests.declineModal.description",
+                )}
               </DialogDescription>
             </DialogHeader>
 
             <div className="py-4">
               <p className="text-sm text-gray-600">
-                You are about to decline the request from{" "}
+                {t(
+                  "agencyDashboard.licensingRequests.declineModal.confirmQuestion",
+                )}{" "}
                 <span className="font-semibold">
-                  {groupToDecline?.brand_name || "this brand"}
+                  {groupToDecline?.brand_name ||
+                    t(
+                      "agencyDashboard.licensingRequests.declineModal.thisBrand",
+                    )}
                 </span>
                 .
               </p>
@@ -958,7 +1114,7 @@ export const LicensingRequestsTab = ({
                 }}
                 className="font-bold"
               >
-                Cancel
+                {t("agencyDashboard.licensingRequests.declineModal.cancel")}
               </Button>
               <Button
                 variant="destructive"
@@ -969,10 +1125,12 @@ export const LicensingRequestsTab = ({
                 {decliningGroup === groupToDecline?.group_key ? (
                   <>
                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    Declining...
+                    {t(
+                      "agencyDashboard.licensingRequests.declineModal.declining",
+                    )}
                   </>
                 ) : (
-                  "Yes, Decline"
+                  t("agencyDashboard.licensingRequests.declineModal.yesDecline")
                 )}
               </Button>
             </DialogFooter>
