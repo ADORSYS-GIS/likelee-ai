@@ -72,7 +72,15 @@ const TalentSideModal = ({
   const [inviteSending, setInviteSending] = useState(false);
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [campaignsLoading, setCampaignsLoading] = useState(false);
-  const roleCategories = ["Model", "Actor", "Creator", "Voice", "Athlete"];
+  const roleCategories = [
+    "Model",
+    "Actor",
+    "Creator",
+    "Voice",
+    "Athlete",
+    "Music",
+    "Vice",
+  ];
   const skillsText = safeTextFromMaybeJsonArray(
     (talent as any)?.special_skills,
   );
@@ -364,14 +372,10 @@ const TalentSideModal = ({
       <SheetContent className="sm:max-w-md w-full overflow-y-auto bg-white p-6 border-l border-gray-200 shadow-2xl">
         <SheetHeader className="mb-6 flex flex-row items-center justify-between border-b border-gray-100 pb-4 space-y-0">
           <SheetTitle className="text-xl font-bold text-gray-900">
-            {t("agencyDashboard.talentSideModal.title", {
-              defaultValue: "Talent Details",
-            })}
+            {t("agencyDashboard.roster.table.talentDetails")}
           </SheetTitle>
           <SheetDescription className="sr-only">
-            {t("agencyDashboard.talentSideModal.title", {
-              defaultValue: "Talent Details",
-            })}
+            {t("agencyDashboard.roster.table.talentDetails")}
           </SheetDescription>
           {/* Close button is handled by Sheet primitive usually, but we can have custom if needed */}
         </SheetHeader>

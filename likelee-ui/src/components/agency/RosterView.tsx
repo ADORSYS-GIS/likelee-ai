@@ -1066,7 +1066,7 @@ const RosterView = ({
               className="w-full bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 font-semibold gap-2 transition-all sm:w-auto shadow-sm"
               onClick={() => navigate("/agencysubscribe")}
             >
-              Upgrade plan
+              {t("agencyDashboard.roster.header.upgradePlanAction")}
             </Button>
             <Button
               variant="outline"
@@ -1075,7 +1075,7 @@ const RosterView = ({
               disabled={!onEditProfile}
             >
               <Pencil className="w-4 h-4" />
-              Edit Profile
+              {t("agencyDashboard.roster.header.editProfile")}
             </Button>
             <Button
               variant="outline"
@@ -1084,7 +1084,7 @@ const RosterView = ({
               disabled={!onViewMarketplace}
             >
               <Eye className="w-4 h-4" />
-              View Marketplace
+              {t("agencyDashboard.roster.header.viewMarketplace")}
             </Button>
           </div>
         </div>
@@ -1100,12 +1100,14 @@ const RosterView = ({
             />
             <span className="font-medium">
               {stripeStatusLoading
-                ? "Stripe status"
+                ? t("agencyDashboard.roster.header.stripe.status")
                 : stripeConnected
                   ? stripeReady
-                    ? "Stripe Connected"
-                    : "Stripe Connected (setup incomplete)"
-                  : "Stripe Not Connected"}
+                    ? t("agencyDashboard.roster.header.stripe.connected")
+                    : t(
+                        "agencyDashboard.roster.header.stripe.connectedIncomplete",
+                      )
+                  : t("agencyDashboard.roster.header.stripe.notConnected")}
             </span>
           </div>
           <button
@@ -1117,7 +1119,10 @@ const RosterView = ({
           >
             <Users className="w-4 h-4 text-gray-400 group-hover:text-[#0B9DA2]" />
             <span className="font-medium group-hover:text-[#0B9DA2]">
-              {rosterData.length} / {seatsLimit || 0} seats used
+              {t("agencyDashboard.roster.header.seatsUsed", {
+                used: rosterData.length,
+                total: seatsLimit || 0,
+              })}
             </span>
           </button>
         </div>
@@ -1460,6 +1465,9 @@ const RosterView = ({
                       <option value="Athlete">
                         {t("agencyDashboard.roster.categories.athlete")}
                       </option>
+                      <option value="Music">
+                        {t("agencyDashboard.roster.categories.music")}
+                      </option>
                     </select>
                     <Button
                       variant="outline"
@@ -1674,7 +1682,9 @@ const RosterView = ({
                                         {Icon && (
                                           <Icon className="h-3.5 w-3.5" />
                                         )}
-                                        {usage}
+                                        {t(
+                                          `agencyDashboard.roster.aiUsage.${usage.toLowerCase()}`,
+                                        )}
                                       </Badge>
                                     );
                                   })}
@@ -1880,7 +1890,9 @@ const RosterView = ({
                                       className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-white text-gray-900 border border-gray-200 shadow-sm"
                                     >
                                       {Icon && <Icon className="w-3.5 h-3.5" />}
-                                      {u}
+                                      {t(
+                                        `agencyDashboard.roster.aiUsage.${u.toLowerCase()}`,
+                                      )}
                                     </Badge>
                                   );
                                 })}
