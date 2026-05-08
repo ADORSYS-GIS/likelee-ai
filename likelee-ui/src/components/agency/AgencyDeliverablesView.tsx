@@ -79,6 +79,7 @@ import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
 import { useTeamAccess } from "@/features/team/useTeamAccess";
 
 export function AgencyDeliverablesView() {
+  const { t } = useTranslation("agency");
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { hasPermission } = useTeamAccess("agency");
