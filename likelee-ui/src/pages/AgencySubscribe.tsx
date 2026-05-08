@@ -400,10 +400,10 @@ export default function AgencySubscribe() {
     profileLoading ||
     requiresContactSales;
   const studioAddonCtaLabel = checkingOutStudioAddon
-    ? "Processing..."
+    ? t("agencyDashboard.subscribe.cta.processing")
     : hasStudioAddon
-      ? "Open Studio"
-      : "Activate Studio Add-on";
+      ? t("agencyDashboard.subscribe.addons.studio.openStudio")
+      : t("agencyDashboard.subscribe.addons.studio.activate");
   const planChangeRaisesCost =
     currentPlanTier !== null &&
     (selectedPlanRank > currentPlanRank ||
@@ -535,8 +535,10 @@ export default function AgencySubscribe() {
     }
     if (hasIrlBookingAddon) {
       toast({
-        title: "IRL Booking already active",
-        description: "This agency account already has the IRL Booking add-on.",
+        title: t("agencyDashboard.subscribe.toasts.irlAlreadyActive"),
+        description: t(
+          "agencyDashboard.subscribe.toasts.irlAlreadyActiveDescription",
+        ),
       });
       return;
     }
@@ -547,9 +549,8 @@ export default function AgencySubscribe() {
         role: "agency",
       });
       toast({
-        title: "Sign in required",
-        description:
-          "Sign in with your agency account to buy the IRL Booking add-on.",
+        title: t("agencyDashboard.subscribe.toasts.signInRequired"),
+        description: t("agencyDashboard.subscribe.toasts.signInDescription"),
       });
       navigate(`/Login?${loginParams.toString()}`);
       return;
@@ -581,15 +582,18 @@ export default function AgencySubscribe() {
         setHasIrlBookingAddon(true);
         setIncludeIrlBookingInPlan(false);
         toast({
-          title: "IRL Booking already active",
-          description:
-            "This agency account already has the IRL Booking add-on.",
+          title: t("agencyDashboard.subscribe.toasts.irlAlreadyActive"),
+          description: t(
+            "agencyDashboard.subscribe.toasts.irlAlreadyActiveDescription",
+          ),
         });
         return;
       }
       toast({
-        title: "Checkout failed",
-        description: String(e?.message || e || "Please try again."),
+        title: t("agencyDashboard.subscribe.toasts.checkoutFailed"),
+        description: String(
+          e?.message || e || t("agencyDashboard.subscribe.toasts.tryAgain"),
+        ),
         variant: "destructive",
       });
     } finally {
@@ -608,9 +612,8 @@ export default function AgencySubscribe() {
         role: "agency",
       });
       toast({
-        title: "Sign in required",
-        description:
-          "Sign in with your agency account to activate the Studio add-on.",
+        title: t("agencyDashboard.subscribe.toasts.signInRequired"),
+        description: t("agencyDashboard.subscribe.toasts.signInDescription"),
       });
       navigate(`/Login?${loginParams.toString()}`);
       return;
@@ -707,8 +710,10 @@ export default function AgencySubscribe() {
       window.location.href = url;
     } catch (e: any) {
       toast({
-        title: "Could not start trial",
-        description: String(e?.message || e || "Please try again."),
+        title: t("agencyDashboard.subscribe.toasts.couldNotStartTrial"),
+        description: String(
+          e?.message || e || t("agencyDashboard.subscribe.toasts.tryAgain"),
+        ),
         variant: "destructive",
       });
     } finally {
@@ -775,8 +780,10 @@ export default function AgencySubscribe() {
     }
     if (!seatCountChanged) {
       toast({
-        title: "Seats already up to date",
-        description: "Your separate seat add-on already matches this count.",
+        title: t("agencyDashboard.subscribe.toasts.seatsAlreadyUpToDate"),
+        description: t(
+          "agencyDashboard.subscribe.toasts.seatsAlreadyUpToDateDescription",
+        ),
       });
       return;
     }
@@ -798,20 +805,31 @@ export default function AgencySubscribe() {
       }
       setCurrentSeatsLimit(nextSeats);
       toast({
-        title: "Seat add-on updated",
+        title: t("agencyDashboard.subscribe.toasts.seatAddonUpdated"),
         description:
           invoiceStatus && invoiceStatus.trim().length > 0
-            ? `Your separate seat billing is now set to ${formatNumber(nextSeats)} seats. Invoice status: ${invoiceStatus}.`
-            : `Your separate seat billing is now set to ${formatNumber(nextSeats)} seats.`,
+            ? t(
+                "agencyDashboard.subscribe.toasts.seatAddonUpdatedWithInvoice",
+                {
+                  count: formatNumber(nextSeats),
+                  status: invoiceStatus,
+                },
+              )
+            : t(
+                "agencyDashboard.subscribe.toasts.seatAddonUpdatedDescription",
+                {
+                  count: formatNumber(nextSeats),
+                },
+              ),
         action:
           invoiceUrl && invoiceUrl.trim().length > 0 ? (
             <ToastAction
-              altText="View invoice"
+              altText={t("agencyDashboard.subscribe.toasts.viewInvoice")}
               onClick={() =>
                 window.open(invoiceUrl, "_blank", "noopener,noreferrer")
               }
             >
-              View invoice
+              {t("agencyDashboard.subscribe.toasts.viewInvoice")}
             </ToastAction>
           ) : undefined,
       });
@@ -822,9 +840,10 @@ export default function AgencySubscribe() {
       );
       if (contactSales) {
         toast({
-          title: "Contact Sales",
-          description:
-            "Self-serve seats support 2 to 1,000 models. Larger rosters use custom pricing.",
+          title: t("agencyDashboard.subscribe.toasts.contactSales"),
+          description: t(
+            "agencyDashboard.subscribe.toasts.contactSalesDescription",
+          ),
         });
         onContact();
         return;
@@ -841,14 +860,19 @@ export default function AgencySubscribe() {
         setRosterModels(currentRoster);
         setRosterInput(String(currentRoster));
         toast({
-          title: "Roster updated",
-          description: `Your current roster is ${formatNumber(currentRoster)} models. The seat add-on has to cover at least that many.`,
+          title: t("agencyDashboard.subscribe.toasts.rosterUpdated"),
+          description: t(
+            "agencyDashboard.subscribe.toasts.rosterUpdatedDescription",
+            {
+              count: formatNumber(currentRoster),
+            },
+          ),
         });
         return;
       }
       toast({
-        title: "Seat checkout failed",
-        description: msg || "Please try again.",
+        title: t("agencyDashboard.subscribe.toasts.seatCheckoutFailed"),
+        description: msg || t("agencyDashboard.subscribe.toasts.tryAgain"),
         variant: "destructive",
       });
     } finally {
@@ -948,32 +972,38 @@ export default function AgencySubscribe() {
   };
 
   const footerCtaLabel = (() => {
-    if (!initialized || profileLoading) return "Loading...";
-    if (requiresContactSales) return "Contact Sales";
-    if (!authenticated) return "Sign in";
-    if (!isAgencyUser) return "Agency account required";
-    if (isDowngradeSelection || alreadySubscribedToPlan) return "Current Plan";
-    if (checkingOut) return "Processing...";
+    if (!initialized || profileLoading)
+      return t("agencyDashboard.subscribe.cta.loading");
+    if (requiresContactSales)
+      return t("agencyDashboard.subscribe.cta.contactSales");
+    if (!authenticated) return t("agencyDashboard.subscribe.cta.signIn");
+    if (!isAgencyUser) return t("agencyDashboard.subscribe.cta.agencyRequired");
+    if (isDowngradeSelection || alreadySubscribedToPlan)
+      return t("agencyDashboard.subscribe.cta.currentPlan");
+    if (checkingOut) return t("agencyDashboard.subscribe.cta.processing");
     if (currentPlanTier === "none" || currentPlanTier === null)
-      return "Get Started";
-    if (includeSeatsInPlan && seatCountChanged) return "Update Plan";
-    return "Upgrade Plan";
+      return t("agencyDashboard.subscribe.cta.getStarted");
+    if (includeSeatsInPlan && seatCountChanged)
+      return t("agencyDashboard.subscribe.cta.updatePlan");
+    return t("agencyDashboard.subscribe.cta.upgradePlan");
   })();
 
   const irlAddonCtaLabel = (() => {
     if (!initialized || profileLoading) {
-      return "Loading...";
+      return t("agencyDashboard.subscribe.cta.loading");
     }
     if (hasIrlBookingAddon) {
-      return "Already Active";
+      return t("agencyDashboard.subscribe.addons.irlBooking.alreadyActive");
     }
     if (!authenticated) {
-      return "Sign in to Buy";
+      return t("agencyDashboard.subscribe.cta.signIn");
     }
     if (!isAgencyUser) {
-      return "Agency account required";
+      return t("agencyDashboard.subscribe.cta.agencyRequired");
     }
-    return checkingOutIrlAddon ? "Redirecting..." : "Buy Separately";
+    return checkingOutIrlAddon
+      ? t("agencyDashboard.subscribe.addons.irlBooking.redirecting")
+      : t("agencyDashboard.subscribe.addons.irlBooking.buySeparately");
   })();
 
   const onSelectPlan = async (targetPlan: "basic" | "pro") => {
@@ -996,9 +1026,8 @@ export default function AgencySubscribe() {
 
     if (periodEndDowngrade || periodEndAnnualToMonthly) {
       toast({
-        title: "Scheduled for period end",
-        description:
-          "This change will take effect at the end of your current billing period. Manage it in the billing portal.",
+        title: t("agencyDashboard.subscribe.toasts.scheduledForPeriodEnd"),
+        description: t("agencyDashboard.subscribe.toasts.scheduledDescription"),
       });
       void openAgencyBillingPortal();
       return;
@@ -1061,16 +1090,20 @@ export default function AgencySubscribe() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-10 sm:pt-16 pb-16 sm:pb-24">
         <div className="text-center">
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tight font-display">
-            Simple, transparent pricing
+            {t("agencyDashboard.subscribe.pageTitle")}
           </h1>
           <p className="text-gray-500 mt-3 sm:mt-4 text-base sm:text-lg">
-            Start with licensing. Add what you need. Scale when you're ready.
+            {t("agencyDashboard.subscribe.pageSubtitle")}
           </p>
 
           <div className="flex items-center justify-center gap-3 mt-6 flex-wrap">
             <Badge variant="outline" className="bg-white/70">
-              Plans are billed{" "}
-              {billingInterval === "year" ? "annually" : "monthly"}
+              {t("agencyDashboard.subscribe.billedInterval", {
+                interval:
+                  billingInterval === "year"
+                    ? t("agencyDashboard.subscribe.billedAnnually")
+                    : t("agencyDashboard.subscribe.billedMonthly"),
+              })}
             </Badge>
             <div className="flex items-center gap-2 rounded-full border border-[#D9E4F1] bg-white/90 px-3 py-1.5">
               <button
@@ -1096,7 +1129,7 @@ export default function AgencySubscribe() {
                   navigate({ search: sp.toString() }, { replace: true });
                 }}
               >
-                Monthly
+                {t("agencyDashboard.subscribe.monthly")}
               </button>
               <div
                 className={`h-5 w-10 rounded-full border border-[#D9E4F1] p-0.5 transition-colors cursor-pointer ${
@@ -1171,30 +1204,30 @@ export default function AgencySubscribe() {
                   navigate({ search: sp.toString() }, { replace: true });
                 }}
               >
-                Annual
+                {t("agencyDashboard.subscribe.annual")}
               </button>
               <Badge className="ml-1 border border-emerald-200 bg-emerald-100 text-emerald-700">
-                SAVE 20%
+                {t("agencyDashboard.subscribe.save20")}
               </Badge>
             </div>
             {!authenticated && initialized && (
               <Badge variant="outline" className="bg-white/70">
-                Public pricing preview
+                {t("agencyDashboard.subscribe.publicPricingPreview")}
               </Badge>
             )}
             {success && (
               <Badge className="bg-emerald-100 text-emerald-700 border border-emerald-200">
-                Subscription started
+                {t("agencyDashboard.subscribe.subscriptionStarted")}
               </Badge>
             )}
             {postSignup && !success && (
               <Badge className="bg-[#EEF4FF] text-[#17315F] border border-[#D9E4F1]">
-                Finish setup by starting a trial
+                {t("agencyDashboard.subscribe.finishSetup")}
               </Badge>
             )}
             {canceled && (
               <Badge variant="outline" className="bg-white/70">
-                Checkout canceled
+                {t("agencyDashboard.subscribe.checkoutCanceled")}
               </Badge>
             )}
           </div>
@@ -1211,14 +1244,22 @@ export default function AgencySubscribe() {
             <div className="flex flex-col gap-4 sm:gap-6">
               <div>
                 <div className="text-xl sm:text-2xl font-black font-display">
-                  How many models on your roster?
+                  {t("agencyDashboard.subscribe.rosterCard.title")}
                 </div>
                 <div className="text-gray-500 mt-1 text-sm sm:text-base">
                   {requiresContactSales
-                    ? `Self-serve supports 2 to 1,000 models. Your current setup is ${formatNumber(rosterModels)}, so pricing goes through Sales.`
+                    ? t(
+                        "agencyDashboard.subscribe.rosterCard.contactSalesDescription",
+                        { count: formatNumber(rosterModels) },
+                      )
                     : minimumRosterModels > MIN_ROSTER_MODELS
-                      ? `Minimum ${formatNumber(minimumRosterModels)} based on your active roster.`
-                      : "Choose a self-serve roster size between 2 and 1,000."}
+                      ? t(
+                          "agencyDashboard.subscribe.rosterCard.minimumDescription",
+                          { count: formatNumber(minimumRosterModels) },
+                        )
+                      : t(
+                          "agencyDashboard.subscribe.rosterCard.defaultDescription",
+                        )}
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -1239,7 +1280,9 @@ export default function AgencySubscribe() {
                   aria-label="Roster size"
                   className="h-14 sm:h-16 w-24 sm:w-32 rounded-2xl border-gray-200 bg-white text-center text-2xl sm:text-3xl font-black font-display"
                 />
-                <div className="text-gray-400">models</div>
+                <div className="text-gray-400">
+                  {t("agencyDashboard.subscribe.rosterCard.models")}
+                </div>
               </div>
             </div>
 
@@ -1256,8 +1299,16 @@ export default function AgencySubscribe() {
                 aria-label="Roster size slider"
               />
               <div className="mt-3 flex items-center justify-between text-xs font-bold uppercase tracking-[0.18em] text-gray-400">
-                <span>{formatNumber(sliderMin)} min</span>
-                <span>{formatNumber(maxRosterModels)} max</span>
+                <span>
+                  {t("agencyDashboard.subscribe.rosterCard.minLabel", {
+                    count: formatNumber(sliderMin),
+                  })}
+                </span>
+                <span>
+                  {t("agencyDashboard.subscribe.rosterCard.maxLabel", {
+                    count: formatNumber(maxRosterModels),
+                  })}
+                </span>
               </div>
             </div>
 
@@ -1276,7 +1327,7 @@ export default function AgencySubscribe() {
                 className="rounded-2xl font-black"
                 onClick={openSeatAddonModal}
               >
-                Buy Seats Separately
+                {t("agencyDashboard.subscribe.rosterCard.buySeparately")}
               </Button>
             </div>
           </Card>
@@ -1303,7 +1354,7 @@ export default function AgencySubscribe() {
                 >
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                 </svg>
-                Basic
+                {t("agencyDashboard.subscribe.plans.basic.badge")}
               </span>
               <span className="flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-600 font-bold text-[10px] tracking-[0.15em] rounded-full uppercase">
                 <svg
@@ -1316,21 +1367,21 @@ export default function AgencySubscribe() {
                 >
                   <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                 </svg>
-                Most Popular
+                {t("agencyDashboard.subscribe.plans.basic.mostPopular")}
               </span>
             </div>
 
             <div className="mt-8 pt-4 flex justify-between items-start">
               <div className="pr-4">
                 <div className="text-3xl font-black font-display text-gray-900">
-                  Basic
+                  {t("agencyDashboard.subscribe.plans.basic.title")}
                 </div>
                 <div className="text-gray-500 mt-2 text-sm leading-relaxed min-h-[40px]">
-                  Get started with licensing
+                  {t("agencyDashboard.subscribe.plans.basic.subtitle")}
                 </div>
               </div>
               <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none shrink-0 font-bold text-xs px-2 py-0.5">
-                10% fee
+                {t("agencyDashboard.subscribe.plans.basic.fee")}
               </Badge>
             </div>
 
@@ -1355,12 +1406,12 @@ export default function AgencySubscribe() {
                   ${formatNumber(displayedMonthlyBasic)}
                 </span>
                 <span className="text-gray-500 font-medium pb-1 tracking-tight text-sm">
-                  per month
+                  {t("agencyDashboard.subscribe.plans.basic.perMonth")}
                 </span>
               </div>
               {billingInterval === "year" && (
                 <div className="text-emerald-600 text-xs font-bold mt-1">
-                  Billed annually (20% discount applied)
+                  {t("agencyDashboard.subscribe.plans.basic.billedAnnually")}
                 </div>
               )}
             </div>
@@ -1413,7 +1464,7 @@ export default function AgencySubscribe() {
                 currentPlanInterval === billingInterval ? (
                   <span className="flex items-center gap-2 text-gray-500">
                     <Check className="w-5 h-5 text-gray-400" />
-                    Current
+                    {t("agencyDashboard.subscribe.plans.basic.current")}
                   </span>
                 ) : (
                   getPlanCtaLabel("basic")
@@ -1424,18 +1475,32 @@ export default function AgencySubscribe() {
             <hr className="my-8 border-gray-100" />
 
             <div className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-400 mb-4">
-              Included
+              {t("agencyDashboard.subscribe.plans.basic.included")}
             </div>
             <div className="space-y-4 flex-grow">
               {[
-                "Roster Management & Performance Tiers",
-                "Licensing Requests",
-                "Active Licenses",
-                "License Templates",
-                "Invoice Generation & Management",
-                "Payment Tracking",
-                "Talent Statements",
-                "5 team seats",
+                t(
+                  "agencyDashboard.subscribe.plans.basic.features.rosterManagement",
+                ),
+                t(
+                  "agencyDashboard.subscribe.plans.basic.features.licensingRequests",
+                ),
+                t(
+                  "agencyDashboard.subscribe.plans.basic.features.activeLicenses",
+                ),
+                t(
+                  "agencyDashboard.subscribe.plans.basic.features.licenseTemplates",
+                ),
+                t(
+                  "agencyDashboard.subscribe.plans.basic.features.invoiceGeneration",
+                ),
+                t(
+                  "agencyDashboard.subscribe.plans.basic.features.paymentTracking",
+                ),
+                t(
+                  "agencyDashboard.subscribe.plans.basic.features.talentStatements",
+                ),
+                t("agencyDashboard.subscribe.plans.basic.features.teamSeats"),
               ].map((label) => (
                 <div key={label} className="flex items-start gap-3">
                   <div className="mt-0.5 w-[18px] h-[18px] rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
@@ -1448,7 +1513,7 @@ export default function AgencySubscribe() {
               ))}
             </div>
             <div className="mt-6 text-[#3B82F6] font-bold text-xs uppercase tracking-wider">
-              10% fee applied on all licensing bookings
+              {t("agencyDashboard.subscribe.plans.basic.feeNote")}
             </div>
           </Card>
 
@@ -1456,21 +1521,21 @@ export default function AgencySubscribe() {
           <Card className="rounded-2xl border-none bg-[#0B1828] text-white p-8 relative flex flex-col shadow-xl">
             <div className="absolute top-6 left-8">
               <span className="px-2 py-1 bg-[#1A2E44] text-emerald-300 font-bold text-[10px] tracking-[0.15em] rounded uppercase">
-                Pro
+                {t("agencyDashboard.subscribe.plans.pro.badge")}
               </span>
             </div>
 
             <div className="mt-8 pt-4 flex justify-between items-start">
               <div className="pr-4">
                 <div className="text-3xl font-black font-display text-white">
-                  Pro
+                  {t("agencyDashboard.subscribe.plans.pro.title")}
                 </div>
                 <div className="text-gray-300 mt-2 text-sm leading-relaxed min-h-[40px]">
-                  Full licensing power
+                  {t("agencyDashboard.subscribe.plans.pro.subtitle")}
                 </div>
               </div>
               <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none shrink-0 font-bold text-xs px-2 py-0.5">
-                5% fee
+                {t("agencyDashboard.subscribe.plans.pro.fee")}
               </Badge>
             </div>
 
@@ -1495,12 +1560,12 @@ export default function AgencySubscribe() {
                   ${formatNumber(displayedMonthlyPro)}
                 </span>
                 <span className="text-gray-400 font-medium pb-1 tracking-tight text-sm">
-                  per month
+                  {t("agencyDashboard.subscribe.plans.pro.perMonth")}
                 </span>
               </div>
               {billingInterval === "year" && (
                 <div className="text-emerald-400 text-xs font-bold mt-1">
-                  Billed annually (20% discount applied)
+                  {t("agencyDashboard.subscribe.plans.pro.billedAnnually")}
                 </div>
               )}
             </div>
@@ -1551,7 +1616,7 @@ export default function AgencySubscribe() {
                 currentPlanInterval === billingInterval ? (
                   <span className="flex items-center gap-2 text-white">
                     <Check className="w-5 h-5 text-white" />
-                    Current
+                    {t("agencyDashboard.subscribe.plans.pro.current")}
                   </span>
                 ) : (
                   getPlanCtaLabel("pro")
@@ -1562,17 +1627,25 @@ export default function AgencySubscribe() {
             <hr className="my-8 border-white/10" />
 
             <div className="text-[10px] font-black uppercase tracking-[0.15em] text-white/40 mb-4">
-              Everything in Basic, plus
+              {t("agencyDashboard.subscribe.plans.pro.everythingInBasicPlus")}
             </div>
             <div className="space-y-4 flex-grow">
               {[
-                "Job invites & applications",
-                "Direct messaging with talents",
-                "Advanced Analytics",
-                "Royalties & Payouts Dashboard",
-                "Financial Reports & Expense Tracking",
-                "Calendly integration",
-                "10 team seats",
+                t("agencyDashboard.subscribe.plans.pro.features.jobInvites"),
+                t(
+                  "agencyDashboard.subscribe.plans.pro.features.directMessaging",
+                ),
+                t(
+                  "agencyDashboard.subscribe.plans.pro.features.advancedAnalytics",
+                ),
+                t(
+                  "agencyDashboard.subscribe.plans.pro.features.royaltiesDashboard",
+                ),
+                t(
+                  "agencyDashboard.subscribe.plans.pro.features.financialReports",
+                ),
+                t("agencyDashboard.subscribe.plans.pro.features.calendly"),
+                t("agencyDashboard.subscribe.plans.pro.features.teamSeats"),
               ].map((label) => (
                 <div key={label} className="flex items-start gap-3">
                   <div className="mt-0.5 w-[18px] h-[18px] rounded-full bg-[#20C5B0] flex items-center justify-center flex-shrink-0">
@@ -1585,7 +1658,7 @@ export default function AgencySubscribe() {
               ))}
             </div>
             <div className="mt-6 text-emerald-400 font-bold text-xs uppercase tracking-wider">
-              Only 5% fee on licensing bookings
+              {t("agencyDashboard.subscribe.plans.pro.feeNote")}
             </div>
           </Card>
         </div>
@@ -1677,11 +1750,10 @@ export default function AgencySubscribe() {
 
         <div className="mt-12">
           <div className="text-center text-2xl sm:text-3xl font-black font-display">
-            Add-Ons
+            {t("agencyDashboard.subscribe.addons.title")}
           </div>
           <div className="text-center text-gray-500 mt-2 text-sm sm:text-base">
-            Already have booking software? No problem — Likelee works as a
-            standalone licensing platform. Add what you need.
+            {t("agencyDashboard.subscribe.addons.subtitle")}
           </div>
 
           <div className="mt-8 space-y-6">
@@ -1689,21 +1761,28 @@ export default function AgencySubscribe() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                   <div className="text-xl sm:text-2xl font-black font-display">
-                    IRL Booking Software
+                    {t("agencyDashboard.subscribe.addons.irlBooking.title")}
                   </div>
                   <div className="text-gray-500 mt-1 text-sm sm:text-base">
-                    Manage real-world gigs alongside your licensing income, and
-                    choose whether to add it to a plan or buy it separately.
+                    {t(
+                      "agencyDashboard.subscribe.addons.irlBooking.description",
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-4 shrink-0">
                   <div className="flex items-center gap-3 rounded-full border border-gray-200 bg-gray-50 px-4 py-2">
                     <span className="text-xs font-black uppercase tracking-[0.18em] text-gray-500">
                       {hasIrlBookingAddon
-                        ? "Active"
+                        ? t(
+                            "agencyDashboard.subscribe.addons.irlBooking.statusActive",
+                          )
                         : includeIrlBookingInPlan
-                          ? "In Plan"
-                          : "Off"}
+                          ? t(
+                              "agencyDashboard.subscribe.addons.irlBooking.statusInPlan",
+                            )
+                          : t(
+                              "agencyDashboard.subscribe.addons.irlBooking.statusOff",
+                            )}
                     </span>
                     <Switch
                       checked={hasIrlBookingAddon || includeIrlBookingInPlan}
@@ -1727,30 +1806,39 @@ export default function AgencySubscribe() {
               </div>
               <div className="mt-6 grid gap-3 text-sm text-gray-600 sm:grid-cols-2">
                 <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
-                  Unlocks IRL mode in the agency dashboard.
+                  {t("agencyDashboard.subscribe.addons.irlBooking.feature1")}
                 </div>
                 <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
-                  Enables scouting, client CRM, bookings, accounting, and
-                  Calendly integration.
+                  {t("agencyDashboard.subscribe.addons.irlBooking.feature2")}
                 </div>
                 <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
                   {hasIrlBookingAddon
-                    ? "Already active on this agency account. Plan checkout will not charge it again."
-                    : "Use the toggle to include it in the selected plan checkout."}
+                    ? t(
+                        "agencyDashboard.subscribe.addons.irlBooking.featureAlreadyActive",
+                      )
+                    : t(
+                        "agencyDashboard.subscribe.addons.irlBooking.featureToggle",
+                      )}
                 </div>
                 <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
-                  Buy it as a standalone monthly subscription if you do not want
-                  it bundled into the plan checkout.
+                  {t(
+                    "agencyDashboard.subscribe.addons.irlBooking.featureStandalone",
+                  )}
                 </div>
               </div>
               <div className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="text-sm text-gray-500">
                   <div className="font-bold">
-                    Standalone price: ${formatNumber(irlBookingCost)}/mo
+                    {t(
+                      "agencyDashboard.subscribe.addons.irlBooking.standalonePrice",
+                      { price: formatNumber(irlBookingCost) },
+                    )}
                   </div>
                   {billingInterval === "year" && (
                     <div className="text-emerald-500 text-xs font-bold mt-0.5">
-                      (Billed annually, 20% discount applied)
+                      {t(
+                        "agencyDashboard.subscribe.addons.irlBooking.billedAnnually",
+                      )}
                     </div>
                   )}
                 </div>
@@ -1772,41 +1860,44 @@ export default function AgencySubscribe() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                   <div className="text-xl sm:text-2xl font-black font-display">
-                    Likelee Studio Access
+                    {t("agencyDashboard.subscribe.addons.studio.title")}
                   </div>
                   <div className="text-gray-500 mt-1 text-sm sm:text-base">
-                    One-time activation for your agency Studio workspace with an
-                    initial wallet allocation.
+                    {t("agencyDashboard.subscribe.addons.studio.description")}
                   </div>
                 </div>
                 <div className="flex items-center gap-4 shrink-0">
                   <Badge variant="outline" className="bg-white/70">
-                    {hasStudioAddon ? "Active" : "One-time"}
+                    {hasStudioAddon
+                      ? t(
+                          "agencyDashboard.subscribe.addons.studio.statusActive",
+                        )
+                      : t(
+                          "agencyDashboard.subscribe.addons.studio.statusOneTime",
+                        )}
                   </Badge>
                 </div>
               </div>
               <div className="mt-6 grid gap-3 text-sm text-gray-600 sm:grid-cols-2">
                 <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
-                  Grants access to{" "}
-                  <span className="font-semibold">/studio</span> for this
-                  agency.
+                  {t("agencyDashboard.subscribe.addons.studio.feature1")}
                 </div>
                 <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
-                  Includes {formatNumber(STUDIO_ADDON_INITIAL_CREDITS)} initial
-                  Studio credits.
+                  {t("agencyDashboard.subscribe.addons.studio.feature2", {
+                    credits: formatNumber(STUDIO_ADDON_INITIAL_CREDITS),
+                  })}
                 </div>
                 <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
-                  Charged once. It is not a recurring monthly add-on.
+                  {t("agencyDashboard.subscribe.addons.studio.feature3")}
                 </div>
                 <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
-                  If already active, clicking subscribe redirects directly to
-                  Studio.
+                  {t("agencyDashboard.subscribe.addons.studio.feature4")}
                 </div>
               </div>
               <div className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="text-sm text-gray-500">
                   <div className="font-bold">
-                    Includes Studio Pro wallet plan
+                    {t("agencyDashboard.subscribe.addons.studio.walletPlan")}
                   </div>
                 </div>
                 <Button
@@ -1826,16 +1917,15 @@ export default function AgencySubscribe() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                   <div className="text-xl sm:text-2xl font-black font-display">
-                    Deepfake Detection & Protection
+                    {t("agencyDashboard.subscribe.addons.deepfake.title")}
                   </div>
                   <div className="text-gray-500 mt-1 text-sm sm:text-base">
-                    Track facial usage and unauthorized use of your models
-                    across the web
+                    {t("agencyDashboard.subscribe.addons.deepfake.description")}
                   </div>
                 </div>
                 <div className="flex items-center gap-4 shrink-0">
                   <Badge variant="outline" className="bg-white/70">
-                    Coming Soon
+                    {t("agencyDashboard.subscribe.addons.deepfake.comingSoon")}
                   </Badge>
                 </div>
               </div>
@@ -1845,16 +1935,19 @@ export default function AgencySubscribe() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                   <div className="text-xl sm:text-2xl font-black font-display">
-                    Additional Team Members
+                    {t("agencyDashboard.subscribe.addons.teamMembers.title")}
                   </div>
                   <div className="text-gray-500 mt-1 text-sm sm:text-base">
-                    Give your team access to the dashboard — bookers, scouts,
-                    account managers
+                    {t(
+                      "agencyDashboard.subscribe.addons.teamMembers.description",
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-4 shrink-0">
                   <Badge variant="outline" className="bg-white/70">
-                    Coming Soon
+                    {t(
+                      "agencyDashboard.subscribe.addons.teamMembers.comingSoon",
+                    )}
                   </Badge>
                 </div>
               </div>
@@ -1862,10 +1955,10 @@ export default function AgencySubscribe() {
 
             <Card className="rounded-[28px] border border-amber-200 bg-amber-50 p-6">
               <div className="text-amber-900 font-bold">
-                Deepfake Detection & Protection is an add-on.
+                {t("agencyDashboard.subscribe.addons.deepfake.note")}
               </div>
               <div className="text-amber-800 mt-1">
-                Add it when you need it.
+                {t("agencyDashboard.subscribe.addons.deepfake.noteSubtitle")}
               </div>
             </Card>
           </div>
@@ -1876,12 +1969,10 @@ export default function AgencySubscribe() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
               <div>
                 <div className="text-xl sm:text-2xl font-black font-display">
-                  Enterprise
+                  {t("agencyDashboard.subscribe.enterprise.title")}
                 </div>
                 <div className="text-gray-500 mt-1 text-sm sm:text-base">
-                  Custom storage, security, SLAs, onboarding, integrations, and
-                  bespoke billing support for agencies with more than 1,000
-                  models.
+                  {t("agencyDashboard.subscribe.enterprise.description")}
                 </div>
               </div>
               <Button
@@ -1889,7 +1980,7 @@ export default function AgencySubscribe() {
                 variant="outline"
                 onClick={onContact}
               >
-                Contact Sales
+                {t("agencyDashboard.subscribe.enterprise.contactSales")}
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
@@ -1908,16 +1999,13 @@ export default function AgencySubscribe() {
         <DialogContent className="max-w-xl rounded-[28px] border border-gray-200 bg-white p-8">
           <DialogHeader className="text-left">
             <Badge className="w-fit border border-amber-200 bg-amber-100 text-amber-700">
-              Payment confirmation
+              {t("agencyDashboard.subscribe.upgradeDialog.badge")}
             </Badge>
             <DialogTitle className="mt-3 text-2xl font-black font-display text-[#1B1C23]">
-              Confirm your paid upgrade
+              {t("agencyDashboard.subscribe.upgradeDialog.title")}
             </DialogTitle>
             <DialogDescription className="mt-2 text-sm leading-6 text-gray-600">
-              This change updates your active Stripe subscription immediately.
-              Stripe will apply prorated credit for unused time on your current
-              plan and charge your saved payment method for the upgraded plan
-              now.
+              {t("agencyDashboard.subscribe.upgradeDialog.description")}
             </DialogDescription>
           </DialogHeader>
 
@@ -1934,7 +2022,9 @@ export default function AgencySubscribe() {
               </span>
             </div>
             <div className="mt-3 flex items-center justify-between gap-4 text-sm">
-              <span className="font-bold text-gray-500">New plan</span>
+              <span className="font-bold text-gray-500">
+                {t("agencyDashboard.subscribe.upgradeDialog.newPlan")}
+              </span>
               <span className="font-black text-[#1B1C23]">
                 {pendingPlanChange
                   ? describePlan(
@@ -1945,21 +2035,31 @@ export default function AgencySubscribe() {
               </span>
             </div>
             <div className="mt-3 flex items-center justify-between gap-4 text-sm">
-              <span className="font-bold text-gray-500">Seats add-on</span>
+              <span className="font-bold text-gray-500">
+                {t("agencyDashboard.subscribe.upgradeDialog.seatsAddon")}
+              </span>
               <span className="font-black text-[#1B1C23]">
                 {pendingPlanChange
-                  ? `${formatNumber(pendingPlanChange.rosterModels)} seats in plan`
+                  ? t("agencyDashboard.subscribe.upgradeDialog.seatsInPlan", {
+                      count: formatNumber(pendingPlanChange.rosterModels),
+                    })
                   : ""}
               </span>
             </div>
             <div className="mt-3 flex items-center justify-between gap-4 text-sm">
-              <span className="font-bold text-gray-500">IRL Booking</span>
+              <span className="font-bold text-gray-500">
+                {t("agencyDashboard.subscribe.upgradeDialog.irlBooking")}
+              </span>
               <span className="font-black text-[#1B1C23]">
                 {hasIrlBookingAddon
-                  ? "Already active"
+                  ? t(
+                      "agencyDashboard.subscribe.upgradeDialog.irlAlreadyActive",
+                    )
                   : pendingPlanChange?.includeIrlBooking
-                    ? "Included in upgrade"
-                    : "Not included"}
+                    ? t("agencyDashboard.subscribe.upgradeDialog.irlIncluded")
+                    : t(
+                        "agencyDashboard.subscribe.upgradeDialog.irlNotIncluded",
+                      )}
               </span>
             </div>
           </div>
@@ -1967,12 +2067,11 @@ export default function AgencySubscribe() {
           <div className="mt-5 rounded-[24px] border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-900">
             <div className="font-black">
               {planChangeRaisesCost
-                ? "Your saved payment method will be charged immediately if you continue."
-                : "Your subscription will be updated immediately if you continue."}
+                ? t("agencyDashboard.subscribe.upgradeDialog.chargeNote")
+                : t("agencyDashboard.subscribe.upgradeDialog.updateNote")}
             </div>
             <div className="mt-2">
-              By confirming, you authorize Likelee to switch your existing
-              subscription to the selected plan and billing interval.
+              {t("agencyDashboard.subscribe.upgradeDialog.authorizationNote")}
             </div>
           </div>
 
@@ -1984,7 +2083,7 @@ export default function AgencySubscribe() {
               disabled={checkingOut}
               onClick={() => setPendingPlanChange(null)}
             >
-              Cancel
+              {t("agencyDashboard.subscribe.cta.cancel")}
             </Button>
             <Button
               type="button"
@@ -1995,7 +2094,9 @@ export default function AgencySubscribe() {
                 void onCheckout(pendingPlanChange.plan);
               }}
             >
-              {checkingOut ? "Processing payment..." : "Confirm and Pay"}
+              {checkingOut
+                ? t("agencyDashboard.subscribe.cta.processingPayment")
+                : t("agencyDashboard.subscribe.cta.confirmAndPay")}
             </Button>
           </DialogFooter>
         </DialogContent>
