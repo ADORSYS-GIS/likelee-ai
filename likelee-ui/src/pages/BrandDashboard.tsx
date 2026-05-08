@@ -799,6 +799,8 @@ export default function BrandDashboard() {
   const [showCreatorProfile, setShowCreatorProfile] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [showContractModal, setShowContractModal] = useState(false);
+  const [contractPdfBlobUrl, setContractPdfBlobUrl] = useState<string | null>(null);
+  const [contractPdfLoading, setContractPdfLoading] = useState(false);
   const [selectedCampaignContracts, setSelectedCampaignContracts] = useState<
     any[]
   >([]);
@@ -5747,17 +5749,33 @@ export default function BrandDashboard() {
                                       variant="outline"
                                       size="sm"
                                       className="border-gray-200 text-gray-600"
-                                      onClick={() => {
-                                        if (contract?.signed_document_url) {
-                                          window.open(
-                                            contract.signed_document_url,
-                                            "_blank",
-                                          );
-                                        } else {
+                                      onClick={async () => {
+                                        const cOfferId = String(contract?.offer_id || "").trim();
+                                        const cId = String(contract?.id || "").trim();
+                                        if (!cOfferId || !cId) {
                                           toast({
                                             title: "Download Unavailable",
-                                            description:
-                                              "The signed document URL is not available yet.",
+                                            description: "The signed document URL is not available yet.",
+                                            variant: "destructive",
+                                          });
+                                          return;
+                                        }
+                                        try {
+                                          const response = await base44.getRaw(
+                                            `/api/campaign-offers/${encodeURIComponent(cOfferId)}/contracts/${encodeURIComponent(cId)}/download`,
+                                          );
+                                          if (!response.ok) throw new Error("Download failed");
+                                          const blob = await response.blob();
+                                          const url = URL.createObjectURL(blob);
+                                          const a = document.createElement("a");
+                                          a.href = url;
+                                          a.download = `${contract?.title || "signed-contract"}.pdf`;
+                                          a.click();
+                                          URL.revokeObjectURL(url);
+                                        } catch {
+                                          toast({
+                                            title: "Download failed",
+                                            description: "Could not download the signed contract. Please try again.",
                                             variant: "destructive",
                                           });
                                         }
@@ -6039,25 +6057,43 @@ export default function BrandDashboard() {
                               >
                                 <Archive className="h-4 w-4" />
                               </button>
-                              {/* Download — check both signed_document_url and meta.docuseal_document_url */}
+                              {/* Download — route through backend proxy so expired DocuSeal URLs are auto-refreshed */}
                               {(() => {
-                                const docUrl =
-                                  row?.signed_document_url ||
-                                  row?.meta?.docuseal_document_url ||
-                                  row?.meta?.signed_document_url;
-                                return docUrl ? (
-                                  <a
-                                    href={String(docUrl)}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    download
+                                const rowOfferId = String(row?.offer_id || "").trim();
+                                const rowContractId = String(row?.id || "").trim();
+                                const isCompleted = String(row?.docuseal_status || "").toLowerCase() === "completed";
+                                if (!isCompleted || !rowOfferId || !rowContractId) return null;
+                                return (
+                                  <button
+                                    type="button"
                                     title="Download signed contract"
                                     aria-label="Download"
                                     className="text-blue-700 hover:text-blue-800"
+                                    onClick={async () => {
+                                      try {
+                                        const response = await base44.getRaw(
+                                          `/api/campaign-offers/${encodeURIComponent(rowOfferId)}/contracts/${encodeURIComponent(rowContractId)}/download`,
+                                        );
+                                        if (!response.ok) throw new Error("Download failed");
+                                        const blob = await response.blob();
+                                        const url = URL.createObjectURL(blob);
+                                        const a = document.createElement("a");
+                                        a.href = url;
+                                        a.download = `${row?.title || "signed-contract"}.pdf`;
+                                        a.click();
+                                        URL.revokeObjectURL(url);
+                                      } catch {
+                                        toast({
+                                          title: "Download failed",
+                                          description: "Could not download the signed contract. Please try again.",
+                                          variant: "destructive" as any,
+                                        });
+                                      }
+                                    }}
                                   >
                                     <Download className="h-4 w-4" />
-                                  </a>
-                                ) : null;
+                                  </button>
+                                );
                               })()}
                             </div>
                           </td>
@@ -7576,10 +7612,39 @@ export default function BrandDashboard() {
                 variant="outline"
                 className="flex-1 border-2 border-gray-300"
                 onClick={async () => {
-                  await loadCampaignContractsForOffer(
-                    String(campaign.offer_id || ""),
-                  );
+                  const offerId = String(campaign.offer_id || "");
+                  await loadCampaignContractsForOffer(offerId);
                   setShowContractModal(true);
+                  // Fetch PDF via backend proxy so expired DocuSeal URLs are auto-refreshed
+                  setContractPdfBlobUrl(null);
+                  setContractPdfLoading(true);
+                  try {
+                    // contracts are loaded by loadCampaignContractsForOffer — wait briefly then pick first
+                    // We need the contract id; fetch contracts directly here
+                    const contractsResp = await base44.get<{ contracts?: any[] }>(
+                      `/api/campaign-offers/${encodeURIComponent(offerId)}/contracts`,
+                    );
+                    const contracts = Array.isArray(contractsResp?.contracts)
+                      ? contractsResp.contracts
+                      : [];
+                    const firstContract = contracts[0];
+                    const contractId = String(firstContract?.id || "").trim();
+                    if (!contractId) {
+                      setContractPdfLoading(false);
+                      return;
+                    }
+                    const response = await base44.getRaw(
+                      `/api/campaign-offers/${encodeURIComponent(offerId)}/contracts/${encodeURIComponent(contractId)}/download`,
+                    );
+                    if (!response.ok) throw new Error("Download failed");
+                    const blob = await response.blob();
+                    const blobUrl = URL.createObjectURL(blob);
+                    setContractPdfBlobUrl(blobUrl);
+                  } catch {
+                    // leave blobUrl null — modal will show fallback message
+                  } finally {
+                    setContractPdfLoading(false);
+                  }
                 }}
               >
                 <FileText className="w-4 h-4 mr-2" />
@@ -11417,7 +11482,13 @@ export default function BrandDashboard() {
       </Dialog>
 
       {/* View Contract Modal */}
-      <Dialog open={showContractModal} onOpenChange={setShowContractModal}>
+      <Dialog open={showContractModal} onOpenChange={(open) => {
+        setShowContractModal(open);
+        if (!open && contractPdfBlobUrl) {
+          URL.revokeObjectURL(contractPdfBlobUrl);
+          setContractPdfBlobUrl(null);
+        }
+      }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-gray-900">
@@ -11489,24 +11560,22 @@ export default function BrandDashboard() {
                     </div>
                   </Card>
                   <Card className="p-4 bg-white border border-gray-200">
-                    {String(
-                      selectedCampaignContracts[0]?.meta
-                        ?.docuseal_document_url ||
-                        selectedCampaignContracts[0]?.file_url ||
-                        "",
-                    ).trim() ? (
+                    {contractPdfLoading ? (
+                      <div className="flex items-center justify-center h-[70vh]">
+                        <div className="flex flex-col items-center gap-3 text-gray-500">
+                          <div className="w-8 h-8 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                          <p className="text-sm">Loading contract...</p>
+                        </div>
+                      </div>
+                    ) : contractPdfBlobUrl ? (
                       <iframe
-                        src={String(
-                          selectedCampaignContracts[0]?.meta
-                            ?.docuseal_document_url ||
-                            selectedCampaignContracts[0]?.file_url,
-                        )}
+                        src={contractPdfBlobUrl}
                         className="w-full h-[70vh] border border-gray-200 rounded"
                         title="Campaign Contract Document"
                       />
                     ) : (
                       <p className="text-sm text-gray-600">
-                        Contract document URL is not available yet.
+                        Contract document is not available yet.
                       </p>
                     )}
                   </Card>
@@ -11514,7 +11583,13 @@ export default function BrandDashboard() {
                     <Button
                       variant="outline"
                       className="border-2 border-gray-300"
-                      onClick={() => setShowContractModal(false)}
+                      onClick={() => {
+                        setShowContractModal(false);
+                        if (contractPdfBlobUrl) {
+                          URL.revokeObjectURL(contractPdfBlobUrl);
+                          setContractPdfBlobUrl(null);
+                        }
+                      }}
                     >
                       {t("common.close", { defaultValue: "Close" })}
                     </Button>
