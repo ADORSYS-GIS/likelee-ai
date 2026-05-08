@@ -255,7 +255,7 @@
       },
       "analytics": {
         "title": "Analytique",
-        "comingSoonDescription": "Bientôt disponible.",
+        "comingSoonDescription": "Le tableau de bord analytique pour le mode IRL sera bientôt disponible.",
         "comingSoonButton": "Bientôt disponible",
         "exportReport": "Export Report",
         "tabs": {
@@ -266,7 +266,7 @@
         },
         "performanceMetrics": "Performance Metrics",
         "engagementRate": "Engagement Rate",
-        "comingSoon": "Demnächst verfügbar"
+        "comingSoon": "Bientôt disponible"
       },
       "digitals": {
         "title": "Suivi des digitals",
@@ -307,7 +307,10 @@
           "sentDescription": "Gesendet: {{sent}}, Fehlgeschlagen: {{failed}}"
         },
         "history": {
-          "title": "Digitals-Verlauf"
+          "title": "Historique des Digitales"
+        },
+        "upload": {
+          "uploadDigitals": "Télécharger des Digitales"
         }
       },
       "licenses": {
@@ -354,9 +357,10 @@
         "sentDescription": "Envoyés : {{sent}}, Échecs : {{failed}}"
       },
       "seats": {
-        "insufficientTitle": "Sièges insuffisants !",
+        "insufficientTitle": "Places insuffisantes!",
         "insufficientDescription": "Votre plan actuel permet {{count}} {{entity}}. Mettez à niveau pour en ajouter davantage.",
-        "viewPlans": "Voir les plans"
+        "viewPlans": "Voir les plans",
+        "insufficientMessage": "Votre plan actuel permet {{count}} {{entity}}. Mettez à niveau pour en ajouter plus."
       },
       "upload": {
         "title": "Téléverser de nouveaux digitals - {{name}}",
@@ -4125,7 +4129,22 @@
       "mediaLaterHelp": "Vous pourrez toujours ajouter plus de medias et mettre a jour les details plus tard depuis l ecran de gestion du roster.",
       "addingEntity": "Ajout de {{entityLower}}...",
       "addToRoster": "Ajouter {{entityTitle}} au roster",
-      "photosUploadFailedDesc": "Impossible de televerser les photos. {{entityTitle}} sera cree sans photos."
+      "photosUploadFailedDesc": "Impossible de televerser les photos. {{entityTitle}} sera cree sans photos.",
+      "roleCategories": {
+        "model": "Mannequin",
+        "actor": "Acteur",
+        "creator": "Créateur",
+        "voice": "Voix",
+        "athlete": "Athlète",
+        "music": "Musique"
+      },
+      "genderOptions": {
+        "female": "Féminin",
+        "male": "Masculin",
+        "nonBinary": "Non-binaire",
+        "genderFluid": "Genre fluide",
+        "preferNotToSay": "Préfère ne pas dire"
+      }
     },
     "compCard": {
       "title": "Générateur de Carte de Visite",
@@ -5621,7 +5640,7 @@
       }
     },
     "licenses": {
-      "comingSoon": "License management coming soon"
+      "comingSoon": "Gestion des licences bientôt disponible"
     },
     "campaigns": {
       "comingSoon": "Campaign tracking coming soon"
