@@ -1045,30 +1045,51 @@ export default function AddTalent() {
                 </Label>
                 <div className="grid md:grid-cols-3 gap-3">
                   {[
-                    "Female",
-                    "Male",
-                    "Non-binary",
-                    "Gender fluid",
-                    "Prefer not to say",
+                    {
+                      key: "female",
+                      label: t(
+                        "agencyDashboard.addTalent.genderOptions.female",
+                      ),
+                    },
+                    {
+                      key: "male",
+                      label: t("agencyDashboard.addTalent.genderOptions.male"),
+                    },
+                    {
+                      key: "nonBinary",
+                      label: t(
+                        "agencyDashboard.addTalent.genderOptions.nonBinary",
+                      ),
+                    },
+                    {
+                      key: "genderFluid",
+                      label: t(
+                        "agencyDashboard.addTalent.genderOptions.genderFluid",
+                      ),
+                    },
+                    {
+                      key: "preferNotToSay",
+                      label: t(
+                        "agencyDashboard.addTalent.genderOptions.preferNotToSay",
+                      ),
+                    },
                   ].map((option) => (
                     <Card
-                      key={option}
+                      key={option.key}
                       onClick={() =>
-                        setFormData({ ...formData, gender: option })
+                        setFormData({ ...formData, gender: option.label })
                       }
                       className={`p-4 cursor-pointer transition-all ${
-                        formData.gender === option
+                        formData.gender === option.label
                           ? "border-2 border-indigo-600 bg-indigo-50"
                           : "border-2 border-gray-200 hover:border-gray-300"
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-medium text-gray-900">
-                          {t(
-                            `agencyDashboard.addTalent.attributes.options.${option}`,
-                          )}
+                          {option.label}
                         </span>
-                        {formData.gender === option && (
+                        {formData.gender === option.label && (
                           <CheckCircle2 className="w-5 h-5 text-indigo-600" />
                         )}
                       </div>
@@ -1128,7 +1149,9 @@ export default function AddTalent() {
                       >
                         <div className="w-full flex items-center justify-between">
                           <span className="font-semibold text-gray-900">
-                            {category}
+                            {t(
+                              `agencyDashboard.addTalent.roleCategories.${category.toLowerCase()}`,
+                            )}
                           </span>
                           {selected && (
                             <CheckCircle2 className="w-5 h-5 text-indigo-600" />
