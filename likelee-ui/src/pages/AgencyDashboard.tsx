@@ -13739,7 +13739,7 @@ export const RosterView = ({
           <div className="flex flex-col items-center justify-center py-20 bg-gray-50">
             <Shield className="w-16 h-16 text-gray-300 mb-4" />
             <p className="text-gray-500 font-medium">
-              License management coming soon
+              {t("agencyDashboard.licenses.comingSoon")}
             </p>
           </div>
         )}

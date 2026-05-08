@@ -98,6 +98,7 @@ export default function AddTalent() {
     phone: "",
     birthdate: "",
     role_types: [],
+    engagement_rate: 0,
 
     // Physical Attributes
     gender: "",
@@ -1063,7 +1064,9 @@ export default function AddTalent() {
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-medium text-gray-900">
-                          {option}
+                          {t(
+                            `agencyDashboard.addTalent.attributes.options.${option}`,
+                          )}
                         </span>
                         {formData.gender === option && (
                           <CheckCircle2 className="w-5 h-5 text-indigo-600" />
