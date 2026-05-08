@@ -1318,12 +1318,18 @@
           "emailSignaturePlaceholder": "Best regards,\\nAgency Name\\nhttps://agency.com/\\n+1 (212) 555-0123"
         },
         "saveProfile": {
-          "saving": "Saving...",
-          "saveProfileSettings": "Save Profile Settings"
+          "saving": "Enregistrement...",
+          "saveProfileSettings": "Enregistrer les paramètres du profil",
+          "settingsSaved": "Paramètres enregistrés",
+          "profileUpdated": "Le profil de votre agence a été mis à jour avec succès."
         },
         "commissions": {
-          "title": "Default Commission Rate",
-          "subtitle": "Set the default commission rate for new talent"
+          "title": "Taux de commission par défaut",
+          "subtitle": "Définir le taux de commission par défaut pour les nouveaux talents",
+          "saveCommissionSettings": "Enregistrer les paramètres de commission",
+          "saving": "Enregistrement...",
+          "settingsSaved": "Paramètres de commission enregistrés",
+          "settingsSavedDescription": "Vos paramètres de commission ont été enregistrés."
         },
         "team": {
           "title": "Team Members",
@@ -1359,7 +1365,9 @@
             "net15": "Net 15",
             "net30": "Net 30",
             "net60": "Net 60"
-          }
+          },
+          "settingsSaved": "Paramètres de taxe et devise enregistrés",
+          "settingsSavedDescription": "Vos paramètres ont été mis à jour."
         },
         "subTabs": {
           "profile": "Profile",
@@ -1376,6 +1384,9 @@
           "subtitle": "Customize automated email messages",
           "newTemplate": "New Template",
           "save": "Save Email Templates",
+          "saving": "Enregistrement...",
+          "settingsSaved": "Modèles d'e-mail enregistrés",
+          "settingsSavedDescription": "Vos modèles d'e-mail ont été enregistrés.",
           "availableVariables": "Available Variables:",
           "editTemplate": "Edit Template",
           "templateName": "Template Name",
@@ -1497,7 +1508,19 @@
           "connectSuccess": "Integration connected successfully",
           "connectFailed": "Failed to connect integration",
           "disconnectSuccess": "Integration disconnected successfully",
-          "disconnectFailed": "Failed to disconnect integration"
+          "disconnectFailed": "Failed to disconnect integration",
+          "calendlyEventType": "Type d'événement Calendly",
+          "calendlyEventTypeDescription": "Sélectionnez le type d'événement Calendly que Likelee doit utiliser pour les invitations et rappels de réservation",
+          "calendlyEventTypeManualPaste": "Collez l'URI complet du type d'événement Calendly que Likelee doit utiliser pour les réservations. Cela fonctionne même lorsque le jeton ne peut pas lister automatiquement les types d'événements.",
+          "calendlyNoEventTypes": "Aucun type d'événement Calendly actif trouvé pour ce compte",
+          "calendlySaveTokenFirst": "Enregistrez un jeton Calendly valide pour charger les types d'événements",
+          "fieldStatus": {
+            "saving": "Enregistrement...",
+            "saved": "Enregistré",
+            "saveFailed": "Échec de l'enregistrement"
+          },
+          "saveSettings": "Enregistrer les paramètres",
+          "saving": "Enregistrement..."
         },
         "billing": {
           "title": "Billing",
@@ -1515,7 +1538,9 @@
           "sms": "SMS Notifications",
           "preferences": "Notification Preferences",
           "saveSuccess": "Preferences saved successfully",
-          "saveFailed": "Failed to save preferences"
+          "saveFailed": "Failed to save preferences",
+          "settingsSaved": "Paramètres de notification enregistrés",
+          "settingsSavedDescription": "Vos préférences de notification ont été mises à jour."
         }
       },
       "comingSoon": "Coming soon",
