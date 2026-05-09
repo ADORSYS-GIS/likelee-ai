@@ -21,6 +21,7 @@ import {
   User,
   File,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { base44 } from "@/api/base44Client";
 import {
   Sheet,
@@ -51,7 +52,10 @@ export const BookingDetailsModal = ({
   isSportsAgency?: boolean;
 }) => {
   const { toast } = useToast();
-  const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
+  const { t } = useTranslation("agency");
+  const entitySingularTitle = isSportsAgency
+    ? t("agencyDashboard.bookings.bookingDetails.athlete")
+    : t("agencyDashboard.bookings.bookingDetails.talent");
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
 
   if (!booking) return null;
@@ -83,8 +87,10 @@ export const BookingDetailsModal = ({
 
   const handleCancel = () => {
     const { dismiss } = toast({
-      title: "Are you sure you want to cancel this booking?",
-      description: "This action cannot be undone.",
+      title: t("agencyDashboard.bookings.bookingDetails.toasts.cancelTitle"),
+      description: t(
+        "agencyDashboard.bookings.bookingDetails.toasts.cancelDesc",
+      ),
       action: (
         <div className="flex gap-2">
           <ToastAction altText="Cancel" onClick={() => dismiss()}>
@@ -107,8 +113,10 @@ export const BookingDetailsModal = ({
 
   const handleComplete = () => {
     const { dismiss } = toast({
-      title: "Mark this booking as completed?",
-      description: "The status will be updated to Completed.",
+      title: t("agencyDashboard.bookings.bookingDetails.toasts.completeTitle"),
+      description: t(
+        "agencyDashboard.bookings.bookingDetails.toasts.completeDesc",
+      ),
       action: (
         <div className="flex gap-2">
           <ToastAction altText="Cancel" onClick={() => dismiss()}>
@@ -118,8 +126,12 @@ export const BookingDetailsModal = ({
             altText="OK"
             onClick={() => {
               handleActionWithToast(
-                "Booking marked as completed",
-                "The status has been successfully updated.",
+                t(
+                  "agencyDashboard.bookings.bookingDetails.toasts.completeSuccess",
+                ),
+                t(
+                  "agencyDashboard.bookings.bookingDetails.toasts.completeSuccessDesc",
+                ),
                 true,
               );
               dismiss();
@@ -134,8 +146,13 @@ export const BookingDetailsModal = ({
 
   const handleRemind = () => {
     const { dismiss } = toast({
-      title: `Send reminder notification to ${entitySingularLower}?`,
-      description: "This will send a reminder to " + booking.talentName,
+      title: t("agencyDashboard.bookings.bookingDetails.toasts.remindTitle", {
+        entity: entitySingularLower,
+      }),
+      description: t(
+        "agencyDashboard.bookings.bookingDetails.toasts.remindDesc",
+        { name: booking.talentName },
+      ),
       action: (
         <div className="flex gap-2">
           <ToastAction altText="Cancel" onClick={() => dismiss()}>
@@ -145,8 +162,13 @@ export const BookingDetailsModal = ({
             altText="OK"
             onClick={() => {
               handleActionWithToast(
-                "Reminder Sent",
-                "Notification has been sent to " + booking.talentName,
+                t(
+                  "agencyDashboard.bookings.bookingDetails.toasts.remindSuccess",
+                ),
+                t(
+                  "agencyDashboard.bookings.bookingDetails.toasts.remindSuccessDesc",
+                  { name: booking.talentName },
+                ),
                 true,
               );
               dismiss();
@@ -181,8 +203,13 @@ export const BookingDetailsModal = ({
       document.body.removeChild(a);
 
       toast({
-        title: "Download started",
-        description: `Downloading ${file.file_name}`,
+        title: t(
+          "agencyDashboard.bookings.bookingDetails.toasts.downloadStarted",
+        ),
+        description: t(
+          "agencyDashboard.bookings.bookingDetails.toasts.downloading",
+          { name: file.file_name },
+        ),
       });
     } catch (e: any) {
       console.error("Storage download failed:", e);
@@ -191,8 +218,12 @@ export const BookingDetailsModal = ({
         e.error_description ||
         (typeof e === "object" ? JSON.stringify(e) : String(e));
       toast({
-        title: "Download failed",
-        description: detail || "Could not download file",
+        title: t(
+          "agencyDashboard.bookings.bookingDetails.toasts.downloadFailed",
+        ),
+        description:
+          detail ||
+          t("agencyDashboard.bookings.bookingDetails.toasts.couldNotDownload"),
         variant: "destructive",
       });
     }
@@ -203,17 +234,17 @@ export const BookingDetailsModal = ({
       <SheetContent className="sm:max-w-xl overflow-y-auto">
         <SheetHeader className="border-b pb-4">
           <SheetTitle className="text-2xl font-black text-gray-900">
-            Booking Details
+            {t("agencyDashboard.bookings.bookingDetails.title")}
           </SheetTitle>
         </SheetHeader>
 
         <div className="space-y-6 py-4">
           <div className="flex gap-2">
             <Badge className="bg-green-100 text-green-700 border-none font-bold">
-              Confirmed
+              {t("agencyDashboard.bookings.bookingDetails.status.confirmed")}
             </Badge>
             <Badge variant="outline" className="font-bold border-gray-200">
-              Confirmed
+              {t("agencyDashboard.bookings.bookingDetails.status.confirmed")}
             </Badge>
           </div>
 
@@ -229,24 +260,29 @@ export const BookingDetailsModal = ({
           <div className="border border-gray-100 rounded-xl p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2 text-gray-600 font-bold text-sm">
-                <Building2 className="w-4 h-4" /> Client
+                <Building2 className="w-4 h-4" />{" "}
+                {t("agencyDashboard.bookings.bookingDetails.client")}
               </div>
               <Link className="w-4 h-4 text-indigo-600 cursor-pointer" />
             </div>
             <p className="text-sm text-indigo-600 font-medium cursor-pointer hover:underline mb-1">
-              Click to view client profile
+              {t("agencyDashboard.bookings.bookingDetails.clientProfile")}
             </p>
             <p className="text-lg font-black text-gray-900">
-              {booking.clientName || "Not specified"}
+              {booking.clientName ||
+                t("agencyDashboard.bookings.bookingDetails.notSpecified")}
             </p>
           </div>
 
           <div className="border border-gray-100 rounded-xl p-4">
             <div className="flex items-center gap-2 text-gray-600 font-bold text-sm mb-3">
-              <Calendar className="w-4 h-4" /> Date & Time
+              <Calendar className="w-4 h-4" />{" "}
+              {t("agencyDashboard.bookings.bookingDetails.dateTime")}
             </div>
             <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-500 font-medium">Date:</span>
+              <span className="text-gray-500 font-medium">
+                {t("agencyDashboard.bookings.bookingDetails.dateLabel")}
+              </span>
               <span className="font-bold text-gray-900">
                 {format(parseISO(booking.date), "EEEE, MMMM d, yyyy")}
               </span>
@@ -255,7 +291,8 @@ export const BookingDetailsModal = ({
 
           <div className="border border-gray-100 rounded-xl p-4">
             <div className="flex items-center gap-2 text-gray-600 font-bold text-sm mb-3">
-              <MapPin className="w-4 h-4" /> Location
+              <MapPin className="w-4 h-4" />{" "}
+              {t("agencyDashboard.bookings.bookingDetails.location")}
             </div>
             <div className="space-y-3">
               <div>
@@ -263,7 +300,8 @@ export const BookingDetailsModal = ({
                 <p className="text-xs text-gray-500">Studio B</p>
               </div>
               <div className="flex items-center gap-2 text-xs text-indigo-600 font-bold cursor-pointer hover:underline">
-                <Globe className="w-4 h-4" /> View on Google Maps
+                <Globe className="w-4 h-4" />{" "}
+                {t("agencyDashboard.bookings.bookingDetails.viewOnMap")}
               </div>
               <div className="w-full h-32 bg-gray-100 rounded-lg flex items-center justify-center border border-dashed border-gray-200">
                 <MapPin className="w-8 h-8 text-gray-300" />
@@ -273,11 +311,12 @@ export const BookingDetailsModal = ({
 
           <div className="border border-gray-100 rounded-xl p-4">
             <div className="flex items-center gap-2 text-gray-600 font-bold text-sm mb-3">
-              <DollarSign className="w-4 h-4" /> Payment
+              <DollarSign className="w-4 h-4" />{" "}
+              {t("agencyDashboard.bookings.bookingDetails.payment")}
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-500 font-medium">
-                Day Rate
+                {t("agencyDashboard.bookings.bookingDetails.dayRate")}
               </span>
               <span className="text-xl font-black text-gray-900">USD $3</span>
             </div>
@@ -285,19 +324,24 @@ export const BookingDetailsModal = ({
 
           <div className="border border-gray-100 rounded-xl p-4">
             <div className="flex items-center gap-2 text-gray-600 font-bold text-sm mb-3">
-              <FileText className="w-4 h-4" /> Usage Terms
+              <FileText className="w-4 h-4" />{" "}
+              {t("agencyDashboard.bookings.bookingDetails.usageTerms")}
             </div>
             <div className="bg-gray-50 rounded-lg p-3">
               <p className="text-sm font-bold text-gray-900">Digital</p>
               <p className="text-xs text-gray-500">
-                <span className="font-bold">Duration:</span> 1 Month
+                <span className="font-bold">
+                  {t("agencyDashboard.bookings.bookingDetails.duration")}
+                </span>{" "}
+                1 Month
               </p>
             </div>
           </div>
 
           <div className="border border-gray-100 rounded-xl p-4">
             <div className="flex items-center gap-2 text-gray-600 font-bold text-sm mb-3">
-              <Edit className="w-4 h-4" /> Special Instructions
+              <Edit className="w-4 h-4" />{" "}
+              {t("agencyDashboard.bookings.bookingDetails.specialInstructions")}
             </div>
             <div className="bg-gray-50 rounded-lg p-3">
               <p className="text-sm text-gray-700 leading-relaxed">
@@ -309,7 +353,8 @@ export const BookingDetailsModal = ({
           {booking.booking_files && booking.booking_files.length > 0 && (
             <div className="border border-gray-100 rounded-xl p-4">
               <div className="flex items-center gap-2 text-gray-600 font-bold text-sm mb-3">
-                <Link className="w-4 h-4" /> Attachments
+                <Link className="w-4 h-4" />{" "}
+                {t("agencyDashboard.bookings.bookingDetails.attachments")}
               </div>
               <div className="space-y-2">
                 {booking.booking_files.map((file: any) => (
@@ -345,54 +390,66 @@ export const BookingDetailsModal = ({
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
               onClick={() => onEdit(booking)}
             >
-              <Edit className="w-4 h-4 mr-2" /> Edit
+              <Edit className="w-4 h-4 mr-2" />{" "}
+              {t("agencyDashboard.bookings.bookingDetails.buttons.edit")}
             </Button>
             <Button
               variant="outline"
               className="font-bold text-gray-700 border-gray-200"
               onClick={() => onDuplicate(booking)}
             >
-              <Copy className="w-4 h-4 mr-2" /> Duplicate
+              <Copy className="w-4 h-4 mr-2" />{" "}
+              {t("agencyDashboard.bookings.bookingDetails.buttons.duplicate")}
             </Button>
             <Button
               variant="outline"
               className="font-bold text-green-600 border-green-200 hover:bg-green-50"
               onClick={handleComplete}
             >
-              <CheckCircle2 className="w-4 h-4 mr-2" /> Complete
+              <CheckCircle2 className="w-4 h-4 mr-2" />{" "}
+              {t("agencyDashboard.bookings.bookingDetails.buttons.complete")}
             </Button>
             <Button
               variant="outline"
               className="font-bold text-indigo-600 border-indigo-200 hover:bg-indigo-50"
               onClick={handleRemind}
             >
-              <Bell className="w-4 h-4 mr-2" /> Remind
+              <Bell className="w-4 h-4 mr-2" />{" "}
+              {t("agencyDashboard.bookings.bookingDetails.buttons.remind")}
             </Button>
             <Button
               variant="outline"
               className="font-bold text-gray-700 border-gray-200 col-span-1"
               onClick={() =>
                 handleActionWithToast(
-                  "PDF download feature coming soon!",
+                  t(
+                    "agencyDashboard.bookings.bookingDetails.toasts.pdfComingSoon",
+                  ),
                   "",
                   true,
                 )
               }
             >
-              <Download className="w-4 h-4 mr-2" /> Download PDF
+              <Download className="w-4 h-4 mr-2" />{" "}
+              {t("agencyDashboard.bookings.bookingDetails.buttons.downloadPdf")}
             </Button>
             <Button
               variant="outline"
               className="font-bold text-gray-700 border-gray-200 col-span-1"
               onClick={() =>
                 handleActionWithToast(
-                  "Invoice generation feature coming soon!",
+                  t(
+                    "agencyDashboard.bookings.bookingDetails.toasts.invoiceComingSoon",
+                  ),
                   "",
                   true,
                 )
               }
             >
-              <Receipt className="w-4 h-4 mr-2" /> Generate Invoice
+              <Receipt className="w-4 h-4 mr-2" />{" "}
+              {t(
+                "agencyDashboard.bookings.bookingDetails.buttons.generateInvoice",
+              )}
             </Button>
             <Button
               variant="outline"
@@ -401,26 +458,33 @@ export const BookingDetailsModal = ({
                 const shareUrl = `${window.location.origin}/booking/shared/${booking.id}`;
                 navigator.clipboard.writeText(shareUrl);
                 handleActionWithToast(
-                  "Booking link copied to clipboard!",
+                  t(
+                    "agencyDashboard.bookings.bookingDetails.toasts.linkCopied",
+                  ),
                   shareUrl,
                   true,
                 );
               }}
             >
-              <Share2 className="w-4 h-4 mr-2" /> Share Booking Link
+              <Share2 className="w-4 h-4 mr-2" />{" "}
+              {t("agencyDashboard.bookings.bookingDetails.buttons.shareLink")}
             </Button>
             <Button
               variant="outline"
               className="font-bold text-red-600 border-red-200 hover:bg-red-50 col-span-2"
               onClick={handleCancel}
             >
-              <Trash2 className="w-4 h-4 mr-2" /> Cancel Booking
+              <Trash2 className="w-4 h-4 mr-2" />{" "}
+              {t(
+                "agencyDashboard.bookings.bookingDetails.buttons.cancelBooking",
+              )}
             </Button>
           </div>
 
           <div className="border border-gray-100 rounded-xl p-4">
             <div className="flex items-center gap-2 text-gray-600 font-bold text-sm mb-4">
-              <TrendingUp className="w-4 h-4" /> Activity Log
+              <TrendingUp className="w-4 h-4" />{" "}
+              {t("agencyDashboard.bookings.bookingDetails.activityLog")}
             </div>
             <div className="space-y-6 relative before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-100">
               <div className="relative pl-8">
@@ -451,7 +515,8 @@ export const BookingDetailsModal = ({
           </div>
 
           <p className="text-[10px] text-center text-gray-400 pt-2 font-medium">
-            Booking ID: 6965134959dd90fe62a25ba3
+            {t("agencyDashboard.bookings.bookingDetails.bookingId")}{" "}
+            {booking.id}
           </p>
         </div>
       </SheetContent>
