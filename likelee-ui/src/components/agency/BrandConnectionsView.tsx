@@ -321,9 +321,7 @@ const BrandConnectionsView = ({
     path: string,
     options?: Record<string, unknown>,
   ) => {
-    const lng = String(i18n.language || "en").split("-")[0];
-    const defaultValue =
-      brandFallbacks[lng]?.[path] || brandFallbacks.en[path] || path;
+    const defaultValue = brandFallbacks.en[path] || path;
     return baseTranslate(`agencyDashboard.brandConnections.${path}`, {
       defaultValue,
       ...options,
