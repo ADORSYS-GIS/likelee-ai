@@ -8618,6 +8618,9 @@ async fn try_release_campaign_offer_escrow(
 
     // Independent creator offers do not use licensing_requests/licensing_payouts.
     // We transfer the creator payout directly from the platform balance using budget_snapshot.
+    // This path mirrors the agency path: transfer failures are best-effort and non-fatal —
+    // the escrow always moves to "released" after the claim, and failed transfers are
+    // retryable via POST /api/talent/campaign-offers/:offer_id/retry-transfer.
     if target_type == "creator" {
         let creator_id = offer
             .get("target_id")
@@ -8638,14 +8641,28 @@ async fn try_release_campaign_offer_escrow(
             .and_then(|v| v.as_object())
             .cloned()
             .unwrap_or_default();
-        let net_str = budget_snapshot
+
+        // Parse amount — handle both JSON string ("500") and JSON number (500) since
+        // Postgres JSONB may return either depending on how the value was stored.
+        let net_amount_cents = budget_snapshot
             .get("budget_creator_payment")
-            .and_then(|v| v.as_str())
-            .unwrap_or("0")
-            .replace(",", "");
-        let net_amount: f64 = net_str.parse().unwrap_or(0.0);
-        let net_amount_cents = (net_amount * 100.0).round() as i64;
+            .and_then(|v| {
+                if let Some(n) = v.as_f64() {
+                    // Stored as a JSON number
+                    return Some((n * 100.0).round() as i64);
+                }
+                // Stored as a JSON string — strip commas and parse
+                v.as_str()
+                    .map(|s| s.replace(",", "").trim().parse::<f64>().unwrap_or(0.0))
+                    .map(|n| (n * 100.0).round() as i64)
+            })
+            .unwrap_or(0);
+
         if net_amount_cents <= 0 {
+            tracing::warn!(
+                offer_id = %offer_id,
+                "Creator escrow release blocked: budget_creator_payment is zero or missing"
+            );
             return Ok(EscrowReleaseOutcome {
                 payment_status: payment_status.to_string(),
                 escrow_status: escrow_status.to_string(),
@@ -8653,8 +8670,29 @@ async fn try_release_campaign_offer_escrow(
             });
         }
 
+        // Resolve currency — default to USD if not set (frontend does not always send it).
+        let currency = budget_snapshot
+            .get("currency_code")
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.trim().is_empty())
+            .unwrap_or("USD")
+            .trim()
+            .to_string();
+        let currency_enum = match stripe_sdk::Currency::from_str(&currency.to_lowercase()) {
+            Ok(c) => c,
+            Err(_) => {
+                tracing::warn!(
+                    offer_id = %offer_id,
+                    currency = %currency,
+                    "Creator escrow release: unsupported currency, defaulting to USD"
+                );
+                stripe_sdk::Currency::USD
+            }
+        };
+
         // Atomically claim the escrow release (holding -> releasing) before triggering transfers.
-        // Only mark as "released" AFTER the transfer succeeds.
+        // Aligned with agency path: claim first, then attempt transfer best-effort,
+        // then always mark as "released" regardless of transfer outcome.
         let claim_resp = state
             .pg
             .from("campaign_offers")
@@ -8686,6 +8724,7 @@ async fn try_release_campaign_offer_escrow(
         let claimed_rows: Vec<serde_json::Value> =
             serde_json::from_str(&claim_text).unwrap_or_default();
         if claimed_rows.is_empty() {
+            // Another concurrent request already claimed the release
             return Ok(EscrowReleaseOutcome {
                 payment_status: payment_status.to_string(),
                 escrow_status: "releasing".to_string(),
@@ -8693,52 +8732,56 @@ async fn try_release_campaign_offer_escrow(
             });
         }
 
-        // Trigger the Stripe transfer to the creator (failures are now properly handled).
-        let currency = budget_snapshot
-            .get("currency_code")
-            .and_then(|v| v.as_str())
-            .filter(|s| !s.trim().is_empty())
-            .map(|s| s.trim().to_string())
-            .ok_or_else(|| {
-                "Escrow release blocked: missing currency_code in budget_snapshot".to_string()
-            })?;
-        let currency_enum =
-            stripe_sdk::Currency::from_str(&currency.to_lowercase()).map_err(|_| {
-                format!(
-                    "Escrow release blocked: unsupported currency '{}'",
-                    currency
-                )
-            })?;
+        // Attempt the Stripe transfer — best-effort, aligned with agency path.
+        // A failed transfer is recorded in campaign_offer_transfers and retryable
+        // by the creator via the self-service retry endpoint. It must NOT prevent
+        // the escrow from moving to "released".
         let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
-        let creator_account_id = get_creator_stripe_account(state, &creator_id)
-            .await
-            .map_err(|e| format!("Failed to get creator Stripe account: {}", e))?;
+        match get_creator_stripe_account(state, &creator_id).await {
+            Err(e) => {
+                tracing::warn!(
+                    offer_id = %offer_id,
+                    creator_id = %creator_id,
+                    error = %e,
+                    "Skipping creator transfer — Stripe account not found; retryable"
+                );
+            }
+            Ok(creator_account_id) => {
+                let metadata = std::collections::HashMap::from([
+                    ("offer_id".to_string(), offer_id.to_string()),
+                    ("creator_id".to_string(), creator_id.to_string()),
+                    ("type".to_string(), "creator_earnings".to_string()),
+                ]);
+                if let Err(e) = crate::payouts::execute_and_record_stripe_transfer(
+                    state,
+                    &client,
+                    &currency,
+                    currency_enum,
+                    "creator",
+                    &creator_id,
+                    &creator_account_id,
+                    net_amount_cents,
+                    metadata,
+                    "record_campaign_offer_transfer",
+                    "p_offer_id",
+                    offer_id,
+                )
+                .await
+                {
+                    tracing::warn!(
+                        offer_id = %offer_id,
+                        creator_id = %creator_id,
+                        error = %e,
+                        "Creator Stripe transfer failed; escrow still released, transfer is retryable"
+                    );
+                }
+            }
+        }
 
-        let metadata = std::collections::HashMap::from([
-            ("offer_id".to_string(), offer_id.to_string()),
-            ("creator_id".to_string(), creator_id.to_string()),
-            ("type".to_string(), "creator_earnings".to_string()),
-        ]);
-
-        crate::payouts::execute_and_record_stripe_transfer(
-            state,
-            &client,
-            &currency,
-            currency_enum,
-            "creator",
-            &creator_id,
-            &creator_account_id,
-            net_amount_cents,
-            metadata,
-            "record_campaign_offer_transfer",
-            "p_offer_id",
-            offer_id,
-        )
-        .await
-        .map_err(|e| format!("Stripe transfer to creator failed: {}", e))?;
-
-        // Only mark as "released" AFTER transfer succeeds
-        let _ = state
+        // Always mark as "released" after the transfer attempt — mirrors agency path.
+        // The escrow release represents the brand's approval obligation being fulfilled.
+        // Transfer failures are an operational concern resolved via the retry endpoint.
+        let update_resp = state
             .pg
             .from("campaign_offers")
             .eq("id", offer_id)
@@ -8753,20 +8796,13 @@ async fn try_release_campaign_offer_escrow(
             .execute()
             .await;
 
-        let _ = state
-            .pg
-            .from("campaign_offers")
-            .eq("id", offer_id)
-            .update(
-                json!({
-                    "escrow_status": "released",
-                    "escrow_released_at": chrono::Utc::now().to_rfc3339(),
-                    "updated_at": chrono::Utc::now().to_rfc3339(),
-                })
-                .to_string(),
-            )
-            .execute()
-            .await;
+        if let Err(e) = update_resp {
+            tracing::warn!(
+                offer_id = %offer_id,
+                error = %e,
+                "Failed to update creator offer escrow status to released, but transfer was attempted"
+            );
+        }
 
         return Ok(EscrowReleaseOutcome {
             payment_status: payment_status.to_string(),
