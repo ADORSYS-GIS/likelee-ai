@@ -1081,273 +1081,273 @@
         },
         "accounting": {
           "invoiceGenerationView": {
-            "title": "Invoice Generation",
-            "subtitle": "Create and manage client invoices",
+            "title": "Generación de facturas",
+            "subtitle": "Crear y gestionar facturas de clientes",
             "fields": {
-              "createInvoiceFrom": "Create Invoice From",
-              "selectBooking": "Select Booking to Invoice",
-              "invoiceNumber": "Invoice Number",
-              "invoiceDate": "Invoice Date",
-              "dueDate": "Due Date",
-              "billToClient": "Bill To (Client)",
-              "poNumber": "PO Number",
-              "projectReference": "Job/Project Reference",
-              "invoiceItems": "Invoice Items",
-              "description": "Description",
-              "talent": "Talent",
-              "dateOfService": "Date of Service",
-              "rateType": "Rate Type",
-              "quantityHours": "Quantity/Hours",
-              "unitPriceCents": "Unit Price (cents)",
-              "expensesOptional": "Expenses (Optional)",
-              "agencyCommissionPercent": "Agency Commission (%)",
-              "taxRatePercent": "Tax Rate (%)",
-              "taxExempt": "Tax Exempt",
-              "discount": "Discount",
-              "additionalNotesOptional": "Additional Notes (Optional)",
-              "paymentInstructions": "Payment Instructions",
-              "invoiceFooterText": "Invoice Footer Text",
-              "attachedFilesOptional": "Attached Files (Optional)"
+              "createInvoiceFrom": "Crear factura desde",
+              "selectBooking": "Seleccionar reserva para facturar",
+              "invoiceNumber": "Número de factura",
+              "invoiceDate": "Fecha de factura",
+              "dueDate": "Fecha de vencimiento",
+              "billToClient": "Facturar a (Cliente)",
+              "poNumber": "Número de pedido",
+              "projectReference": "Referencia de trabajo/proyecto",
+              "invoiceItems": "Partidas de la factura",
+              "description": "Descripción",
+              "talent": "Talento",
+              "dateOfService": "Fecha del servicio",
+              "rateType": "Tipo de tarifa",
+              "quantityHours": "Cantidad/Horas",
+              "unitPriceCents": "Precio unitario (céntimos)",
+              "expensesOptional": "Gastos (Opcional)",
+              "agencyCommissionPercent": "Comisión de agencia (%)",
+              "taxRatePercent": "Tasa fiscal (%)",
+              "taxExempt": "Exento de impuestos",
+              "discount": "Descuento",
+              "additionalNotesOptional": "Notas adicionales (Opcional)",
+              "paymentInstructions": "Instrucciones de pago",
+              "invoiceFooterText": "Pie de página de la factura",
+              "attachedFilesOptional": "Archivos adjuntos (Opcional)"
             },
             "sections": {
-              "financialSettings": "Financial Settings",
-              "invoiceSummary": "Invoice Summary"
+              "financialSettings": "Configuración financiera",
+              "invoiceSummary": "Resumen de la factura"
             },
             "placeholders": {
-              "selectBooking": "Choose a completed or confirmed booking",
-              "invoiceNumber": "Assigned automatically on save",
-              "selectClient": "Select client",
-              "selectTalent": "Select talent",
-              "expenseDescription": "Expense description"
+              "selectBooking": "Elige una reserva completada o confirmada",
+              "invoiceNumber": "Se asigna automáticamente al guardar",
+              "selectClient": "Seleccionar cliente",
+              "selectTalent": "Seleccionar talento",
+              "expenseDescription": "Descripción del gasto"
             },
             "options": {
-              "existingBooking": "Existing Booking",
-              "manualEntry": "Manual Entry",
-              "dueOnReceipt": "Due on Receipt",
-              "noTax": "0% - No Tax"
+              "existingBooking": "Reserva existente",
+              "manualEntry": "Entrada manual",
+              "dueOnReceipt": "Pagadero al recibir",
+              "noTax": "0% - Sin impuesto"
             },
             "labels": {
-              "itemNumber": "Item #{{count}}",
-              "lineTotal": "Line Total:",
-              "subtotalItems": "Subtotal ({{count}} items)",
-              "agencyCommissionSummary": "Agency Commission ({{percent}}%)",
-              "talentNetAmount": "Talent Net Amount",
-              "grandTotal": "Grand Total",
-              "attachedFilesDescription": "Attach contracts, usage agreements, or supporting documents."
+              "itemNumber": "Artículo #{{count}}",
+              "lineTotal": "Total de línea:",
+              "subtotalItems": "Subtotal ({{count}} artículos)",
+              "agencyCommissionSummary": "Comisión de agencia ({{percent}}%)",
+              "talentNetAmount": "Monto neto del talento",
+              "grandTotal": "Total general",
+              "attachedFilesDescription": "Adjunta contratos, acuerdos de uso o documentos de respaldo."
             },
             "actions": {
-              "preview": "Preview",
-              "addLineItem": "Add Line Item",
-              "addExpense": "Add Expense",
-              "uploadFile": "Upload File",
-              "saveAsDraft": "Save as Draft",
-              "markAsSent": "Mark as Sent",
-              "emailToClient": "Email to Client",
-              "downloadPdf": "Download PDF",
-              "print": "Print",
-              "duplicate": "Duplicate",
-              "markAsPaid": "Mark as Paid",
-              "void": "Void",
-              "close": "Close"
+              "preview": "Vista previa",
+              "addLineItem": "Agregar partida",
+              "addExpense": "Agregar gasto",
+              "uploadFile": "Subir archivo",
+              "saveAsDraft": "Guardar como borrador",
+              "markAsSent": "Marcar como enviada",
+              "emailToClient": "Enviar por correo al cliente",
+              "downloadPdf": "Descargar PDF",
+              "print": "Imprimir",
+              "duplicate": "Duplicar",
+              "markAsPaid": "Marcar como pagada",
+              "void": "Anular",
+              "close": "Cerrar"
             },
             "empty": {
-              "noFilesAttached": "No files attached"
+              "noFilesAttached": "No hay archivos adjuntos"
             },
             "preview": {
-              "title": "Invoice Preview",
-              "invoice": "Invoice",
-              "notAssignedYet": "(not assigned yet)",
-              "invoiceDate": "Invoice date",
-              "dueDate": "Due date",
-              "billTo": "Bill To",
-              "noClientSelected": "(no client selected)",
-              "status": "Status",
-              "lineItems": "Line Items",
-              "qty": "Qty",
-              "unit": "Unit",
+              "title": "Vista previa de la factura",
+              "invoice": "Factura",
+              "notAssignedYet": "(aún no asignado)",
+              "invoiceDate": "Fecha de factura",
+              "dueDate": "Fecha de vencimiento",
+              "billTo": "Facturar a",
+              "noClientSelected": "(ningún cliente seleccionado)",
+              "status": "Estado",
+              "lineItems": "Partidas",
+              "qty": "Cant.",
+              "unit": "Unidad",
               "total": "Total",
-              "noLineItems": "No line items",
-              "expenses": "Expenses",
-              "taxable": "Taxable",
-              "yes": "Yes",
+              "noLineItems": "Sin partidas",
+              "expenses": "Gastos",
+              "taxable": "Imponible",
+              "yes": "Sí",
               "no": "No",
-              "noExpenses": "No expenses",
-              "noneProvided": "(none provided)",
-              "footer": "Footer",
+              "noExpenses": "Sin gastos",
+              "noneProvided": "(ninguno proporcionado)",
+              "footer": "Pie de página",
               "subtotal": "Subtotal",
-              "tax": "Tax",
-              "agencyFee": "Agency fee ({{percent}}%)",
-              "talentNet": "Talent net"
+              "tax": "Impuesto",
+              "agencyFee": "Tarifa de agencia ({{percent}}%)",
+              "talentNet": "Neto talento"
             },
             "table": {
-              "amount": "Amount"
+              "amount": "Monto"
             }
           },
           "invoiceManagementView": {
-            "searchPlaceholder": "Search by invoice #, client, or talent name...",
-            "showing": "Showing",
-            "invoices": "invoices",
+            "searchPlaceholder": "Buscar por nº de factura, cliente o nombre del talento...",
+            "showing": "Mostrando",
+            "invoices": "facturas",
             "filters": {
-              "title": "Filters",
-              "allStatus": "All Status",
-              "sortBy": "Sort by...",
-              "issueDateFrom": "Issue Date From",
-              "issueDateTo": "Issue Date To",
-              "minAmount": "Min Amount",
-              "maxAmount": "Max Amount",
-              "showOverdueOnly": "Show Overdue Only",
-              "allCurrencies": "All Currencies",
-              "clearAll": "Clear All Filters"
+              "title": "Filtros",
+              "allStatus": "Todos los estados",
+              "sortBy": "Ordenar por...",
+              "issueDateFrom": "Fecha de emisión (desde)",
+              "issueDateTo": "Fecha de emisión (hasta)",
+              "minAmount": "Monto mínimo",
+              "maxAmount": "Monto máximo",
+              "showOverdueOnly": "Mostrar solo vencidas",
+              "allCurrencies": "Todas las monedas",
+              "clearAll": "Borrar todos los filtros"
             },
             "statuses": {
-              "draft": "Draft",
-              "sent": "Sent",
-              "paid": "Paid",
-              "overdue": "Overdue",
-              "void": "Void"
+              "draft": "Borrador",
+              "sent": "Enviada",
+              "paid": "Pagada",
+              "overdue": "Vencida",
+              "void": "Anulada"
             },
             "sort": {
-              "newest": "Newest First",
-              "oldest": "Oldest First",
-              "dueSoonest": "Due Date (Soonest)",
-              "dueLatest": "Due Date (Latest)",
-              "amountHigh": "Amount (High to Low)",
-              "amountLow": "Amount (Low to High)",
-              "clientAz": "Client (A-Z)",
-              "clientZa": "Client (Z-A)",
-              "invoiceAsc": "Invoice # (Asc)",
-              "invoiceDesc": "Invoice # (Desc)"
+              "newest": "Más reciente primero",
+              "oldest": "Más antiguo primero",
+              "dueSoonest": "Fecha de vencimiento (próxima)",
+              "dueLatest": "Fecha de vencimiento (lejana)",
+              "amountHigh": "Monto (mayor a menor)",
+              "amountLow": "Monto (menor a mayor)",
+              "clientAz": "Cliente (A-Z)",
+              "clientZa": "Cliente (Z-A)",
+              "invoiceAsc": "Nº factura (asc.)",
+              "invoiceDesc": "Nº factura (desc.)"
             },
             "table": {
-              "invoiceNumber": "Invoice #",
-              "clientName": "Client Name",
-              "issueDate": "Issue Date",
-              "dueDate": "Due Date",
-              "amount": "Amount",
-              "status": "Status",
-              "actions": "Actions"
+              "invoiceNumber": "Factura #",
+              "clientName": "Nombre del cliente",
+              "issueDate": "Fecha de emisión",
+              "dueDate": "Fecha de vencimiento",
+              "amount": "Monto",
+              "status": "Estado",
+              "actions": "Acciones"
             },
             "actions": {
-              "paymentHistory": "Payment History",
-              "print": "Print",
-              "close": "Close"
+              "paymentHistory": "Historial de pagos",
+              "print": "Imprimir",
+              "close": "Cerrar"
             },
             "paymentHistory": {
-              "title": "Payment History",
-              "invoiceTotal": "Invoice Total",
-              "totalPaid": "Total Paid",
-              "remainingBalance": "Remaining Balance",
-              "paymentTransactions": "Payment Transactions",
-              "noPaymentsRecorded": "No payments recorded",
-              "noPaymentsRecordedDescription": "This invoice has not been marked as paid.",
-              "paymentNumber": "Payment #{{count}}",
-              "invoiceMarkedPaid": "Invoice marked as paid",
-              "exportHistory": "Export History"
+              "title": "Historial de pagos",
+              "invoiceTotal": "Total de la factura",
+              "totalPaid": "Total pagado",
+              "remainingBalance": "Saldo restante",
+              "paymentTransactions": "Transacciones de pago",
+              "noPaymentsRecorded": "No hay pagos registrados",
+              "noPaymentsRecordedDescription": "Esta factura aún no ha sido marcada como pagada.",
+              "paymentNumber": "Pago #{{count}}",
+              "invoiceMarkedPaid": "Factura marcada como pagada",
+              "exportHistory": "Exportar historial"
             }
           },
           "expenseTrackingView": {
-            "searchPlaceholder": "Search expenses...",
-            "totalExpenses": "Total Expenses",
-            "loading": "Loading...",
+            "searchPlaceholder": "Buscar gastos...",
+            "totalExpenses": "Total de gastos",
+            "loading": "Cargando...",
             "filters": {
-              "allCategories": "All Categories"
+              "allCategories": "Todas las categorías"
             },
             "categories": {
-              "travel": "Travel",
-              "equipment": "Equipment",
+              "travel": "Viaje",
+              "equipment": "Equipo",
               "marketing": "Marketing",
-              "other": "Other"
+              "other": "Otro"
             },
             "statuses": {
-              "approved": "Approved",
-              "pending": "Pending",
-              "rejected": "Rejected"
+              "approved": "Aprobado",
+              "pending": "Pendiente",
+              "rejected": "Rechazado"
             },
             "actions": {
-              "addExpense": "Add Expense",
-              "cancel": "Cancel"
+              "addExpense": "Agregar gasto",
+              "cancel": "Cancelar"
             },
             "modal": {
-              "title": "Add Expense",
-              "subtitle": "Create a new operating expense for your agency.",
+              "title": "Agregar gasto",
+              "subtitle": "Crea un nuevo gasto operativo para tu agencia.",
               "fields": {
-                "name": "Name",
-                "category": "Category",
-                "date": "Date",
-                "amountUsd": "Amount (USD)",
-                "status": "Status",
-                "submitterOptional": "Submitter (optional)"
+                "name": "Nombre",
+                "category": "Categoría",
+                "date": "Fecha",
+                "amountUsd": "Monto (USD)",
+                "status": "Estado",
+                "submitterOptional": "Enviado por (opcional)"
               },
               "placeholders": {
-                "name": "e.g. Camera rental",
-                "submitter": "e.g. Emma"
+                "name": "ej. Alquiler de cámara",
+                "submitter": "ej. Emma"
               }
             },
             "toasts": {
-              "expenseAdded": "Expense added",
-              "failedToAddExpense": "Failed to add expense",
-              "failedToLoadExpenses": "Failed to load expenses"
+              "expenseAdded": "Gasto agregado",
+              "failedToAddExpense": "Error al agregar el gasto",
+              "failedToLoadExpenses": "Error al cargar los gastos"
             }
           },
           "talentStatementsView": {
-            "title": "{{entitySingular}} Earnings Statements",
-            "subtitle": "View and manage {{entitySingularLower}} payment statements",
-            "searchPlaceholder": "Search by {{entitySingularLower}} name...",
-            "empty": "No talent statements yet.",
+            "title": "Estados de ganancias de {{entitySingular}}",
+            "subtitle": "Ver y gestionar estados de pago de {{entitySingularLower}}",
+            "searchPlaceholder": "Buscar por nombre de {{entitySingularLower}}...",
+            "empty": "Aún no hay estados de talento.",
             "actions": {
-              "exportAll": "Export All",
-              "viewStatement": "View Statement",
-              "emailStatement": "Email Statement",
-              "downloadPdf": "Download PDF",
-              "print": "Print"
+              "exportAll": "Exportar todo",
+              "viewStatement": "Ver estado",
+              "emailStatement": "Enviar estado por correo",
+              "downloadPdf": "Descargar PDF",
+              "print": "Imprimir"
             },
             "filters": {
-              "sortBy": "Sort by...",
-              "hasUnpaidEarnings": "Has Unpaid Earnings",
-              "selectPeriod": "Select period",
-              "allTime": "All Time",
-              "thisMonth": "This Month",
-              "lastMonth": "Last Month",
-              "thisQuarter": "This Quarter",
-              "thisYear": "This Year",
-              "customRange": "Custom Range",
-              "amountHigh": "Amount Owed (High to Low)",
-              "amountLow": "Amount Owed (Low to High)",
-              "totalPaidHigh": "Total Paid (High to Low)",
-              "nameAz": "Name (A-Z)",
-              "nameZa": "Name (Z-A)"
+              "sortBy": "Ordenar por...",
+              "hasUnpaidEarnings": "Tiene ganancias sin pagar",
+              "selectPeriod": "Seleccionar período",
+              "allTime": "Todo el tiempo",
+              "thisMonth": "Este mes",
+              "lastMonth": "El mes pasado",
+              "thisQuarter": "Este trimestre",
+              "thisYear": "Este año",
+              "customRange": "Rango personalizado",
+              "amountHigh": "Monto adeudado (mayor a menor)",
+              "amountLow": "Monto adeudado (menor a mayor)",
+              "totalPaidHigh": "Total pagado (mayor a menor)",
+              "nameAz": "Nombre (A-Z)",
+              "nameZa": "Nombre (Z-A)"
             },
             "labels": {
-              "totalOwed": "Total Owed",
-              "unpaidJobs": "{{count}} unpaid jobs",
-              "totalPaidYtd": "Total Paid (YTD)",
-              "paidJobs": "{{count}} paid jobs",
-              "lifetimeEarnings": "Lifetime Earnings",
-              "avgPerMonth": "Avg: $0/mo",
-              "lastPayment": "Last Payment",
-              "noPayments": "No payments",
-              "earningsDetail": "Earnings Detail",
-              "totalGrossAmount": "Total Gross Amount",
-              "totalAgencyCommission": "Total Agency Commission (20%)",
-              "totalJobs": "{{count}} total jobs",
-              "hasUnpaid": "Has unpaid",
-              "noUnpaid": "No unpaid",
-              "hasPaid": "Has paid",
-              "noPaid": "No paid"
+              "totalOwed": "Total adeudado",
+              "unpaidJobs": "{{count}} trabajos sin pagar",
+              "totalPaidYtd": "Total pagado (año en curso)",
+              "paidJobs": "{{count}} trabajos pagados",
+              "lifetimeEarnings": "Ganancias totales",
+              "avgPerMonth": "Prom.: $0/mes",
+              "lastPayment": "Último pago",
+              "noPayments": "Sin pagos",
+              "earningsDetail": "Detalle de ganancias",
+              "totalGrossAmount": "Monto bruto total",
+              "totalAgencyCommission": "Comisión total de agencia (20%)",
+              "totalJobs": "{{count}} trabajos en total",
+              "hasUnpaid": "Tiene sin pagar",
+              "noUnpaid": "Sin impagados",
+              "hasPaid": "Tiene pagados",
+              "noPaid": "Sin pagados"
             },
             "table": {
-              "jobDate": "Job Date",
-              "client": "Client",
-              "description": "Description",
-              "gross": "Gross",
-              "commission": "Commission",
-              "net": "Net",
-              "status": "Status",
-              "invoice": "Invoice"
+              "jobDate": "Fecha del trabajo",
+              "client": "Cliente",
+              "description": "Descripción",
+              "gross": "Bruto",
+              "commission": "Comisión",
+              "net": "Neto",
+              "status": "Estado",
+              "invoice": "Factura"
             },
             "statuses": {
-              "paid": "Paid",
-              "unpaid": "Unpaid"
+              "paid": "Pagado",
+              "unpaid": "Sin pagar"
             }
           }
         }
@@ -2000,7 +2000,7 @@
           "cancel": "Cancelar",
           "createTrip": "Crear viaje",
           "updateTrip": "Actualizar viaje",
-          "saving": "Wird gespeichert..."
+          "saving": "Guardando..."
         }
       },
       "pipeline": {
@@ -2129,39 +2129,39 @@
         "placeholder": "Buscar por nombre, rol, biografía o habilidades..."
       },
       "submissions": {
-        "title": "Website-Einreichungen",
-        "subtitle": "Talentbewerbungen überprüfen",
-        "pendingReview": "18 ausstehend zur Prüfung",
-        "bulkActions": "Massenaktionen",
-        "emptyTitle": "Keine neuen Einreichungen",
-        "emptyDescription": "Bewerbungen von Ihrer Website erscheinen hier."
+        "title": "Envíos del sitio web",
+        "subtitle": "Revisar solicitudes de talento",
+        "pendingReview": "18 pendientes de revisión",
+        "bulkActions": "Acciones masivas",
+        "emptyTitle": "No hay nuevos envíos",
+        "emptyDescription": "Las solicitudes de tu sitio web aparecerán aquí."
       },
       "openCalls": {
-        "title": "Offene Ausschreibungen & Events",
-        "subtitle": "Organisieren Sie offene Ausschreibungen und virtuelle Castings, um neue Talente zu finden",
-        "loading": "Events werden geladen...",
-        "emptyTitle": "Keine Events geplant",
-        "emptyDescription": "Erstellen Sie Ihre erste offene Ausschreibung oder Ihr erstes Scouting-Event",
-        "createFirstEvent": "Erstes Event erstellen",
-        "active": "Aktiv",
-        "noDescription": "Keine Beschreibung vorhanden.",
-        "delete": "Löschen",
-        "editDetails": "Details bearbeiten"
+        "title": "Convocatorias abiertas y eventos",
+        "subtitle": "Organiza convocatorias abiertas y castings virtuales para encontrar nuevo talento",
+        "loading": "Cargando eventos...",
+        "emptyTitle": "No hay eventos planificados",
+        "emptyDescription": "Crea tu primera convocatoria abierta o evento de scouting",
+        "createFirstEvent": "Crear primer evento",
+        "active": "Activo",
+        "noDescription": "Sin descripción disponible.",
+        "delete": "Eliminar",
+        "editDetails": "Editar detalles"
       },
       "analytics": {
-        "failedToLoad": "Analysedaten konnten nicht geladen werden.",
-        "totalProspects": "GESAMTE INTERESSENTEN",
-        "allTime": "Gesamtzeit",
-        "conversionRate": "KONVERSIONSRATE",
-        "prospectsToSigned": "Interessenten → Signiert",
-        "avgTimeToSign": "DURCHSCHN. ZEIT BIS SIGNATUR",
-        "fromDiscovery": "Ab Entdeckung"
+        "failedToLoad": "No se pudieron cargar los datos analíticos.",
+        "totalProspects": "TOTAL DE PROSPECTOS",
+        "allTime": "Todo el tiempo",
+        "conversionRate": "TASA DE CONVERSIÓN",
+        "prospectsToSigned": "Prospectos → Firmados",
+        "avgTimeToSign": "TIEMPO MEDIO HASTA LA FIRMA",
+        "fromDiscovery": "Desde el descubrimiento"
       },
       "toasts": {
-        "eventDeleted": "Event gelöscht",
-        "eventDeletedDescription": "\"{{name}}\" wurde erfolgreich entfernt.",
-        "deleteFailed": "Löschen fehlgeschlagen",
-        "deleteFailedDescription": "Beim Löschen des Events ist ein Fehler aufgetreten."
+        "eventDeleted": "Evento eliminado",
+        "eventDeletedDescription": "\"{{name}}\" ha sido eliminado correctamente.",
+        "deleteFailed": "Error al eliminar",
+        "deleteFailedDescription": "Se produjo un error al eliminar el evento."
       }
     },
     "bookings": {
@@ -2412,36 +2412,91 @@
           }
         },
         "campaignModal": {
-          "titleCreate": "Neue Kampagne erstellen",
-          "titleEdit": "Kampagne bearbeiten",
+          "titleCreate": "Crear nueva campaña",
+          "titleEdit": "Editar campaña",
           "fields": {
-            "name": "Kampagnenname *",
-            "status": "Status",
-            "duration": "Dauer (Tage)",
-            "startDate": "Startdatum"
+            "name": "Nombre de la campaña *",
+            "status": "Estado",
+            "duration": "Duración (días)",
+            "startDate": "Fecha de inicio"
           },
           "placeholders": {
-            "name": "z. B. Summer Shoot 2024",
-            "startDate": "tt.mm.jjjj"
+            "name": "p. ej. Sesión de verano 2024",
+            "startDate": "mm/dd/aaaa"
           },
           "statuses": {
-            "created": "Erstellt",
-            "ongoing": "Laufend",
-            "completed": "Abgeschlossen"
+            "created": "Creada",
+            "ongoing": "En curso",
+            "completed": "Completada"
           },
           "actions": {
-            "cancel": "Abbrechen",
-            "saving": "Wird gespeichert...",
-            "save": "Kampagne speichern"
+            "cancel": "Cancelar",
+            "saving": "Guardando...",
+            "save": "Guardar campaña"
           },
           "errors": {
-            "missingName": "Bitte geben Sie den Kampagnennamen ein"
+            "missingName": "Por favor ingresa el nombre de la campaña"
           },
           "toasts": {
-            "created": "Kampagne erstellt",
-            "updated": "Kampagne aktualisiert",
-            "error": "Fehler beim Speichern der Kampagne"
+            "created": "Campaña creada",
+            "updated": "Campaña actualizada",
+            "error": "Error al guardar la campaña"
           }
+        }
+      },
+      "bookingDetails": {
+        "title": "Detalles de la reserva",
+        "status": {
+          "confirmed": "Confirmado",
+          "pending": "Pendiente"
+        },
+        "talent": "Talento",
+        "athlete": "Atleta",
+        "client": "Cliente",
+        "clientProfile": "Haga clic para ver el perfil del cliente",
+        "notSpecified": "No especificado",
+        "dateTime": "Fecha y hora",
+        "dateLabel": "Fecha:",
+        "location": "Ubicación",
+        "viewOnMap": "Ver en Google Maps",
+        "payment": "Pago",
+        "dayRate": "Tarifa diaria",
+        "usageTerms": "Términos de uso",
+        "duration": "Duración:",
+        "specialInstructions": "Instrucciones especiales",
+        "attachments": "Archivos adjuntos",
+        "buttons": {
+          "edit": "Editar",
+          "duplicate": "Duplicar",
+          "complete": "Completar",
+          "remind": "Recordar",
+          "downloadPdf": "Descargar PDF",
+          "generateInvoice": "Generar factura",
+          "shareLink": "Compartir enlace",
+          "cancelBooking": "Cancelar reserva",
+          "cancel": "Cancelar",
+          "ok": "Aceptar"
+        },
+        "activityLog": "Registro de actividad",
+        "bookingId": "ID de reserva:",
+        "toasts": {
+          "cancelTitle": "¿Seguro que quieres cancelar esta reserva?",
+          "cancelDesc": "Esta acción no se puede deshacer.",
+          "completeTitle": "¿Marcar esta reserva como completada?",
+          "completeDesc": "El estado se actualizará a Completado.",
+          "completeSuccess": "Reserva marcada como completada",
+          "completeSuccessDesc": "El estado se ha actualizado correctamente.",
+          "remindTitle": "¿Enviar recordatorio a {{entity}}?",
+          "remindDesc": "Esto enviará un recordatorio a {{name}}",
+          "remindSuccess": "Recordatorio enviado",
+          "remindSuccessDesc": "Se ha enviado la notificación a {{name}}",
+          "downloadStarted": "Descarga iniciada",
+          "downloading": "Descargando {{name}}",
+          "downloadFailed": "Descarga fallida",
+          "couldNotDownload": "No se pudo descargar el archivo",
+          "pdfComingSoon": "¡Descarga de PDF próximamente disponible!",
+          "invoiceComingSoon": "¡Generación de facturas próximamente disponible!",
+          "linkCopied": "¡Enlace de reserva copiado!"
         }
       },
       "newBooking": {
