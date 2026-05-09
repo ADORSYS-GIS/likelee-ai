@@ -2081,6 +2081,7 @@ export default function BrandCampaignDashboard({
                   campaignBrief.budget_creator_payment || "0",
                 budget_submission_deadline:
                   campaignBrief.budget_submission_deadline || null,
+                currency_code: "USD",
               },
               message: campaignForm.custom_terms || null,
             },
