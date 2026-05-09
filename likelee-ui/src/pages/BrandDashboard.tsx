@@ -36,6 +36,8 @@ import {
   StudioGenerationRow,
 } from "@/api/studio";
 import { useAuth } from "@/auth/AuthProvider";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
 import {
   BRAND_STUDIO_ADDON_PRICE,
   BrandPlanTier,
@@ -163,6 +165,7 @@ import { TrialCountdownBanner } from "@/components/brand/TrialCountdownBanner";
 import { useTeamAccess } from "@/features/team/useTeamAccess";
 import { TeamManagementCard } from "@/features/team/TeamManagementCard";
 import { BrandSettingsBilling } from "@/components/brand-dashboard/settings/BrandSettingsBilling";
+import { UnpaidDeliverableModal } from "@/components/brand/UnpaidDeliverableModal";
 import { currencyFormatter } from "@/lib/utils";
 import {
   LineChart,
@@ -312,10 +315,11 @@ const getBrandInitials = (name: string) => {
 
 export default function BrandDashboard() {
   const { t } = useTranslation();
-  const { profile, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
+  const queryClient = useQueryClient();
   const [activeSection, setActiveSection] = useState("home");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showCampaignSubtabs, setShowCampaignSubtabs] = useState(true);
@@ -337,57 +341,22 @@ export default function BrandDashboard() {
   const activeSectionRef = useRef(activeSection);
   const campaignHubTabRef = useRef(campaignHubTab);
   const pendingSectionOverrideRef = useRef<string | null>(null);
-  const [brandJobs, setBrandJobs] = useState<any[]>([]);
-  const [loadingBrandJobs, setLoadingBrandJobs] = useState(false);
+  const offersEnrichmentInProgressRef = useRef(false);
   const [jobSearch, setJobSearch] = useState("");
   const [jobStatusFilter, setJobStatusFilter] = useState("all");
   const [jobCallTypeFilter, setJobCallTypeFilter] = useState("all");
-  const hasLoadedOffersRef = useRef(false);
-  const hasLoadedBillingDataRef = useRef(false);
-  const hasLoadedBrandAnalyticsRef = useRef(false);
   const deliverableReviewBusyRef = useRef<Set<string>>(new Set());
-  const [activityEvents, setActivityEvents] = useState<any[]>([]);
-  const [loadingActivityEvents, setLoadingActivityEvents] = useState(false);
   const [escrowReleasedModal, setEscrowReleasedModal] = useState<{
     open: boolean;
     offerId?: string;
     amount?: number;
     currency?: string;
   }>({ open: false });
+  const [showUnpaidModal, setShowUnpaidModal] = useState(false);
+  const [unpaidOfferId, setUnpaidOfferId] = useState("");
 
   const billingSuccess = searchParams.get("billing_success") === "1";
   const billingSuccessProcessedRef = useRef(false);
-
-  useEffect(() => {
-    let mounted = true;
-    const loadPackages = async () => {
-      try {
-        setLoadingInboxPackages(true);
-        const response = await base44.get<{ packages?: any[] }>(
-          "/api/brand/inbox/packages",
-        );
-        if (!mounted) return;
-        const pkgs = Array.isArray(response?.packages) ? response.packages : [];
-        setInboxPackages(pkgs);
-        setInboxPendingCount(
-          pkgs.filter((p: any) => String(p?.status || "") === "sent").length,
-        );
-      } catch (e) {
-        if (!mounted) return;
-        setInboxPackages([]);
-        setInboxPendingCount(0);
-      } finally {
-        if (!mounted) return;
-        setLoadingInboxPackages(false);
-      }
-    };
-    loadPackages();
-    const timer = setInterval(loadPackages, 15000);
-    return () => {
-      mounted = false;
-      clearInterval(timer);
-    };
-  }, []);
 
   useEffect(() => {
     campaignHubTabRef.current = campaignHubTab;
@@ -415,68 +384,93 @@ export default function BrandDashboard() {
     void refreshAfterBilling();
   }, [billingSuccess, refreshProfile, searchParams, setSearchParams]);
 
-  const [campaignMetrics, setCampaignMetrics] = useState<{
-    active_projects_count: number;
-    pending_approvals_count: number;
-    action_needed: boolean;
-    avg_turnaround_hours: number;
-    loading: boolean;
-  }>({
-    active_projects_count: 0,
-    pending_approvals_count: 0,
-    action_needed: false,
-    avg_turnaround_hours: 0,
-    loading: true,
+  // Campaign metrics query - shows on dashboard home, polled frequently
+  const campaignMetricsQuery = useQuery({
+    queryKey: ["brand-campaign-metrics", user?.id],
+    queryFn: async () => {
+      const res = await base44.get<{
+        active_projects_count?: number;
+        pending_approvals_count?: number;
+        action_needed?: boolean;
+        avg_turnaround_hours?: number;
+      }>("/api/brand/campaigns/metrics", {});
+      return {
+        active_projects_count: Number(res?.active_projects_count || 0),
+        pending_approvals_count: Number(res?.pending_approvals_count || 0),
+        action_needed: Boolean(res?.action_needed),
+        avg_turnaround_hours: Number(res?.avg_turnaround_hours || 0),
+      };
+    },
+    staleTime: 10 * 1000, // 10 seconds - metrics change frequently
+    refetchInterval: 15 * 1000, // Poll every 15 seconds
+    enabled: !!user?.id,
+    refetchOnWindowFocus: true, // Refresh on window focus for real-time feel
   });
 
-  const [brandAnalytics, setBrandAnalytics] = useState<{
-    total_projects_ytd: number;
-    talent_performance: any[];
-    loading: boolean;
-  }>({
-    total_projects_ytd: 0,
-    talent_performance: [],
-    loading: true,
+  const campaignMetrics = {
+    ...campaignMetricsQuery.data,
+    loading: campaignMetricsQuery.isLoading,
+  };
+
+  // Brand analytics query - YTD stats and talent performance
+  const brandAnalyticsQuery = useQuery({
+    queryKey: ["brand-analytics", user?.id],
+    queryFn: async () => {
+      const res = await base44.get<{
+        total_projects_ytd?: number;
+        talent_performance?: any[];
+      }>("/api/brand/analytics", {});
+      return {
+        total_projects_ytd: Number(res?.total_projects_ytd || 0),
+        talent_performance: Array.isArray(res?.talent_performance)
+          ? res.talent_performance
+          : [],
+      };
+    },
+    staleTime: 60 * 1000, // 1 minute - analytics change moderately
+    enabled: !!user?.id,
+    refetchOnWindowFocus: false,
   });
 
-  const [brandBillingStatus, setBrandBillingStatus] = useState<{
-    plan_tier: string;
-    subscription_status: string;
-    trial_active: boolean;
-    trial_ends_at?: string;
-  } | null>(null);
+  const brandAnalytics = {
+    ...brandAnalyticsQuery.data,
+    loading: brandAnalyticsQuery.isLoading,
+  };
 
-  const [brandSpendData, setBrandSpendData] = useState<{
-    monthly_spend: Array<{ month: string; spend: number }>;
-    ytd_spend: number;
-    monthly_avg: number;
-    current_month_spend: number;
-    previous_month_spend: number;
-    current_month_growth_percentage: number;
-    projected_eoy: number;
-  } | null>(null);
+  // Activity events query - recent activity feed
+  const activityEventsQuery = useQuery({
+    queryKey: ["brand-activity-events", user?.id],
+    queryFn: async () => {
+      const res = await base44.get<{ events?: any[] }>(
+        "/api/brand/activity-events",
+        { params: { limit: 10 } },
+      );
+      return Array.isArray(res?.events) ? res.events : [];
+    },
+    staleTime: 20 * 1000, // 20 seconds
+    refetchInterval: 30 * 1000, // Poll every 30 seconds
+    enabled: !!user?.id,
+    refetchOnWindowFocus: false,
+  });
 
-  const [brandInvoices, setBrandInvoices] = useState<
-    Array<{
-      id: string;
-      number?: string;
-      amount: number;
-      currency: string;
-      status: string;
-      created_at?: string;
-      invoice_url?: string;
-    }>
-  >([]);
+  const activityEvents = activityEventsQuery.data ?? [];
+  const loadingActivityEvents = activityEventsQuery.isLoading;
 
-  const [loadingBillingData, setLoadingBillingData] = useState(false);
-  const [billingYtdSpend, setBillingYtdSpend] = useState(0);
-  const [billingCurrentMonthSpend, setBillingCurrentMonthSpend] = useState(0);
-  const [billingProjectedEoy, setBillingProjectedEoy] = useState(0);
-  const [billingMonthlyAvg, setBillingMonthlyAvg] = useState(0);
-  const [escrowSummary, setEscrowSummary] = useState<{
-    breakdown: string;
-    projectCount: number;
-  }>({ breakdown: "$0", projectCount: 0 });
+  // Brand jobs query - posted jobs
+  const brandJobsQuery = useQuery({
+    queryKey: ["brand-jobs", user?.id],
+    queryFn: async () => {
+      const res = await base44.get<{ jobs?: any[] }>("/api/jobs/my");
+      return Array.isArray(res?.jobs) ? res.jobs : [];
+    },
+    staleTime: 60 * 1000, // 1 minute - jobs change moderately
+    enabled: !!user?.id,
+    refetchOnWindowFocus: false,
+  });
+
+  const brandJobs = brandJobsQuery.data ?? [];
+  const loadingBrandJobs = brandJobsQuery.isLoading;
+
   const [budgetLimit, setBudgetLimit] = useState<number | null>(null);
   const [budgetAlertEnabled, setBudgetAlertEnabled] = useState(false);
   const [savingBudgetSettings, setSavingBudgetSettings] = useState(false);
@@ -668,10 +662,12 @@ export default function BrandDashboard() {
       setSelectedJobForApplications((prev) =>
         prev && prev.id === job.id ? { ...prev, brand_assets: updated } : prev,
       );
-      setBrandJobs((prev) =>
-        prev.map((item) =>
-          item.id === job.id ? { ...item, brand_assets: updated } : item,
-        ),
+      queryClient.setQueryData(
+        ["brand-jobs", user?.id],
+        (old: any[] | undefined) =>
+          (old || []).map((item) =>
+            item.id === job.id ? { ...item, brand_assets: updated } : item,
+          ),
       );
     } catch {
       // ignore resolve failures
@@ -806,6 +802,10 @@ export default function BrandDashboard() {
   const [showCreatorProfile, setShowCreatorProfile] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [showContractModal, setShowContractModal] = useState(false);
+  const [contractPdfBlobUrl, setContractPdfBlobUrl] = useState<string | null>(
+    null,
+  );
+  const [contractPdfLoading, setContractPdfLoading] = useState(false);
   const [selectedCampaignContracts, setSelectedCampaignContracts] = useState<
     any[]
   >([]);
@@ -833,6 +833,222 @@ export default function BrandDashboard() {
   const [isSavingNotificationPrefs, setIsSavingNotificationPrefs] =
     useState(false);
   const { toast } = useToast();
+
+  // Brand profile query with IndexedDB caching - prevents refetch on navigation
+  const brandProfileQuery = useIndexedDbQuery({
+    queryKey: ["brand-profile", user?.id],
+    queryFn: async () => {
+      const profile = await getBrandProfile();
+      return profile as any;
+    },
+    maxAge: 5 * 60 * 1000, // 5 minutes - profile rarely changes
+    syncInterval: 5 * 60 * 1000,
+    staleWhileRevalidate: true,
+    enabled: !!user?.id,
+    refetchOnWindowFocus: false,
+  });
+
+  // Sync brand state from cached profile query
+  useEffect(() => {
+    const profileData = brandProfileQuery.data;
+    if (!profileData) return;
+
+    setBrand((prev: any) => ({
+      ...(prev ?? {}),
+      name:
+        profileData?.company_name || profileData?.name || prev?.name || "Brand",
+      industry: profileData?.industry || prev?.industry,
+      website: profileData?.website || prev?.website,
+      contact_email: profileData?.email || prev?.contact_email,
+      logo: profileData?.logo_url || "",
+    }));
+
+    if (
+      profileData?.notification_prefs &&
+      typeof profileData.notification_prefs === "object"
+    ) {
+      const prefs = profileData.notification_prefs as Record<string, boolean>;
+      setNotificationPrefs({
+        newProjectAlerts: prefs.newProjectAlerts ?? true,
+        deliverableSubmissions: prefs.deliverableSubmissions ?? true,
+        approvalReminders: prefs.approvalReminders ?? true,
+        licenseExpirationAlerts: prefs.licenseExpirationAlerts ?? true,
+      });
+    }
+  }, [brandProfileQuery.data]);
+
+  // Inbox packages query with React Query caching - prevents refetch on navigation
+  const inboxPackagesQuery = useQuery({
+    queryKey: ["brand-inbox-packages", user?.id],
+    queryFn: async () => {
+      const response = await base44.get<{ packages?: any[] }>(
+        "/api/brand/inbox/packages",
+      );
+      return Array.isArray(response?.packages) ? response.packages : [];
+    },
+    staleTime: 30 * 1000, // 30 seconds - packages change frequently
+    refetchInterval: 15 * 1000, // Poll every 15 seconds
+    enabled: !!user?.id,
+    refetchOnWindowFocus: false,
+  });
+
+  // Sync inbox packages state from query
+  const inboxPackages = inboxPackagesQuery.data ?? [];
+  const inboxPendingCount = useMemo(
+    () =>
+      inboxPackages.filter((p: any) => String(p?.status || "") === "sent")
+        .length,
+    [inboxPackages],
+  );
+  const loadingInboxPackages = inboxPackagesQuery.isLoading;
+
+  // Brand offers/deliverables query with background enrichment
+  // Pattern: Return base offers immediately for fast UI, enrich in background
+  // Benefits: No blocking, instant load, progressive enhancement
+  // - Base offers load in ~200-500ms
+  // - Deliverables/contracts enrich progressively in background
+  // - UI updates reactively as data arrives
+  const brandOffersQuery = useQuery({
+    queryKey: ["brand-campaign-offers", user?.id],
+    queryFn: async () => {
+      const response = await base44.get<{ offers?: any[] }>(
+        "/api/campaign-offers/my",
+        { params: { limit: 120 } },
+      );
+      const offers = Array.isArray(response?.offers) ? response.offers : [];
+
+      // Fire background enrichment without blocking
+      if (!offersEnrichmentInProgressRef.current && offers.length > 0) {
+        offersEnrichmentInProgressRef.current = true;
+
+        // Enrich offers asynchronously in background
+        Promise.all(
+          offers.map(async (offer: any) => {
+            const offerId = String(offer?.id || "").trim();
+            if (!offerId) return offer;
+            try {
+              const [delResp, contractsResp] = await Promise.all([
+                listOfferDeliverables(offerId),
+                base44
+                  .get<{
+                    contracts?: any[];
+                  }>(`/api/campaign-offers/${offerId}/contracts`)
+                  .catch(() => ({ contracts: [] })),
+              ]);
+              const deliverables = Array.isArray(delResp?.deliverables)
+                ? delResp.deliverables
+                : [];
+              const contracts = Array.isArray(contractsResp?.contracts)
+                ? contractsResp.contracts
+                : [];
+              return {
+                ...offer,
+                deliverables,
+                contracts,
+              };
+            } catch {
+              return offer;
+            }
+          }),
+        )
+          .then((enriched) => {
+            // Update cache with enriched data
+            queryClient.setQueryData(
+              ["brand-campaign-offers", user?.id],
+              enriched,
+            );
+            offersEnrichmentInProgressRef.current = false;
+          })
+          .catch(() => {
+            offersEnrichmentInProgressRef.current = false;
+          });
+      }
+
+      // Return base offers immediately - enrichment happens in background
+      return offers;
+    },
+    staleTime: 60 * 1000, // 1 minute - offers change moderately
+    enabled: !!user?.id,
+    refetchOnWindowFocus: false,
+  });
+
+  const brandOfferItems = brandOffersQuery.data ?? [];
+  const loadingBrandOfferItems = brandOffersQuery.isLoading;
+
+  // Brand billing data query with escrow - cached and shared across sections
+  // Includes: billing status, spend analytics, invoices, escrow summary
+  const brandBillingDataQuery = useQuery({
+    queryKey: ["brand-billing-data", user?.id],
+    queryFn: async () => {
+      const [statusRes, spendRes, invoicesRes, escrowRes] = await Promise.all([
+        getBrandBillingStatus().catch(() => null),
+        getBrandSpendAnalytics().catch(() => null),
+        listBrandInvoices().catch(() => null),
+        getBrandEscrowSummary().catch(() => null),
+      ]);
+
+      return {
+        status: statusRes,
+        spend: spendRes,
+        invoices: invoicesRes?.invoices || [],
+        escrow: escrowRes,
+      };
+    },
+    staleTime: 60 * 1000, // 1 minute - billing data changes moderately
+    enabled: !!user?.id,
+    refetchOnWindowFocus: false,
+  });
+
+  // Derive billing state from query
+  const brandBillingStatus = brandBillingDataQuery.data?.status ?? null;
+  const brandSpendData = brandBillingDataQuery.data?.spend ?? null;
+  const brandInvoices = brandBillingDataQuery.data?.invoices ?? [];
+  const escrowData = brandBillingDataQuery.data?.escrow ?? null;
+  const loadingBillingData = brandBillingDataQuery.isLoading;
+
+  // Compute escrow summary from cached data
+  const escrowSummary = useMemo(() => {
+    if (!escrowData) return { breakdown: "$0", projectCount: 0 };
+
+    const entries = Object.entries(escrowData.currencies || {});
+    let breakdown: string;
+
+    if (entries.length === 0) {
+      breakdown = "$0";
+    } else if (entries.length === 1) {
+      const curr = entries[0][0];
+      const total = Number(entries[0][1]);
+      breakdown = new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: curr,
+        notation: "compact",
+        maximumFractionDigits: 1,
+      }).format(total);
+    } else {
+      breakdown = entries
+        .map(([curr, total]) =>
+          new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: curr,
+            notation: "compact",
+            maximumFractionDigits: 1,
+          }).format(Number(total)),
+        )
+        .join(", ");
+    }
+
+    return {
+      breakdown,
+      projectCount: escrowData.project_count || 0,
+    };
+  }, [escrowData]);
+
+  // Derived billing metrics from cached data
+  const billingYtdSpend = brandSpendData?.ytd_spend || 0;
+  const billingCurrentMonthSpend = brandSpendData?.current_month_spend || 0;
+  const billingProjectedEoy = brandSpendData?.projected_eoy || 0;
+  const billingMonthlyAvg = brandSpendData?.monthly_avg || 0;
+
   const brandPlanTier = normalizeBrandPlanTier(profile?.plan_tier);
   const brandSummaryTheme = brandPlanSummaryTheme(brandPlanTier);
   const brandPlanLabel = formatBrandPlanLabel(brandPlanTier);
@@ -884,8 +1100,6 @@ export default function BrandDashboard() {
   const canManageBilling = hasPermission("manage_billing");
   const canViewInbox = canViewPayOffers;
 
-  const [inboxPackages, setInboxPackages] = useState<any[]>([]);
-  const [inboxPendingCount, setInboxPendingCount] = useState(0);
   const [confirmingDonePkg, setConfirmingDonePkg] = useState<any>(null);
   const [finalizedPackageInfo, setFinalizedPackageInfo] = useState<{
     title: string;
@@ -899,11 +1113,8 @@ export default function BrandDashboard() {
     loadingConfirmingDonePkgPublicData,
     setLoadingConfirmingDonePkgPublicData,
   ] = useState(false);
-  const [loadingInboxPackages, setLoadingInboxPackages] = useState(false);
   const [expandedInboxPackageId, setExpandedInboxPackageId] =
     useState<string>("");
-  const [brandOfferItems, setBrandOfferItems] = useState<any[]>([]);
-  const [loadingBrandOfferItems, setLoadingBrandOfferItems] = useState(false);
 
   // Memoized offer map for O(1) lookups instead of O(n) find() calls
   const offerMap = useMemo(() => {
@@ -1037,321 +1248,10 @@ export default function BrandDashboard() {
   }, [location.search]);
 
   useEffect(() => {
-    let mounted = true;
-    const loadMetrics = async () => {
-      try {
-        setCampaignMetrics((prev) => ({ ...prev, loading: true }));
-        const res = await base44.get<{
-          active_projects_count?: number;
-          pending_approvals_count?: number;
-          action_needed?: boolean;
-          avg_turnaround_hours?: number;
-        }>("/api/brand/campaigns/metrics", {});
-        if (!mounted) return;
-        setCampaignMetrics((prev) => ({
-          ...prev,
-          active_projects_count: Number(res?.active_projects_count || 0),
-          pending_approvals_count: Number(res?.pending_approvals_count || 0),
-          action_needed: Boolean(res?.action_needed),
-          avg_turnaround_hours: Number(res?.avg_turnaround_hours || 0),
-          loading: false,
-        }));
-      } catch {
-        if (!mounted) return;
-        setCampaignMetrics((prev) => ({
-          ...prev,
-          active_projects_count: 0,
-          pending_approvals_count: 0,
-          action_needed: false,
-          avg_turnaround_hours: 0,
-          loading: false,
-        }));
-      }
-    };
-
-    loadMetrics();
-    const onFocus = () => {
-      loadMetrics();
-    };
-    if (typeof window !== "undefined") {
-      window.addEventListener("focus", onFocus);
-    }
-    const timer = setInterval(() => {
-      if (mounted) {
-        void loadMetrics();
-      }
-    }, 15000);
-    return () => {
-      mounted = false;
-      if (typeof window !== "undefined") {
-        window.removeEventListener("focus", onFocus);
-      }
-      clearInterval(timer);
-    };
-  }, []);
-
-  useEffect(() => {
-    let mounted = true;
-    if (hasLoadedBrandAnalyticsRef.current) {
-      return () => {
-        mounted = false;
-      };
-    }
-    const loadAnalytics = async () => {
-      try {
-        setBrandAnalytics((prev) => ({ ...prev, loading: true }));
-        const res = await base44.get<{
-          total_projects_ytd?: number;
-          talent_performance?: any[];
-        }>("/api/brand/analytics", {});
-        if (!mounted) return;
-        setBrandAnalytics({
-          total_projects_ytd: Number(res?.total_projects_ytd || 0),
-          talent_performance: Array.isArray(res?.talent_performance)
-            ? res.talent_performance
-            : [],
-          loading: false,
-        });
-        hasLoadedBrandAnalyticsRef.current = true;
-      } catch {
-        if (!mounted) return;
-        setBrandAnalytics({
-          total_projects_ytd: 0,
-          talent_performance: [],
-          loading: false,
-        });
-        hasLoadedBrandAnalyticsRef.current = true;
-      }
-    };
-    loadAnalytics();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (
-      activeSection !== "home" &&
-      activeSection !== "billing" &&
-      activeSection !== "analytics" &&
-      activeSection !== "usage-rights"
-    )
-      return;
-    if (hasLoadedBillingDataRef.current) return;
-    let mounted = true;
-
-    const loadBillingData = async () => {
-      hasLoadedBillingDataRef.current = true;
-      setLoadingBillingData(true);
-      try {
-        const [statusRes, spendRes, invoicesRes, escrowRes] = await Promise.all(
-          [
-            getBrandBillingStatus(),
-            getBrandSpendAnalytics(),
-            listBrandInvoices(),
-            getBrandEscrowSummary().catch(() => null),
-          ],
-        );
-        if (!mounted) return;
-        if (statusRes) {
-          setBrandBillingStatus({
-            plan_tier: statusRes.plan_tier || "free",
-            subscription_status: statusRes.subscription_status || "inactive",
-            trial_active: statusRes.trial_active || false,
-            trial_ends_at: statusRes.trial_ends_at,
-          });
-        }
-        if (spendRes) {
-          setBrandSpendData({
-            monthly_spend: Array.isArray(spendRes.monthly_spend)
-              ? spendRes.monthly_spend
-              : [],
-            ytd_spend: spendRes.ytd_spend || 0,
-            monthly_avg: spendRes.monthly_avg || 0,
-            current_month_spend: spendRes.current_month_spend || 0,
-            previous_month_spend: spendRes.previous_month_spend || 0,
-            current_month_growth_percentage:
-              spendRes.current_month_growth_percentage || 0,
-            projected_eoy: spendRes.projected_eoy || 0,
-          });
-          setBillingYtdSpend(spendRes.ytd_spend || 0);
-          setBillingCurrentMonthSpend(spendRes.current_month_spend || 0);
-          setBillingProjectedEoy(spendRes.projected_eoy || 0);
-          setBillingMonthlyAvg(spendRes.monthly_avg || 0);
-        }
-        if (invoicesRes) {
-          setBrandInvoices(
-            Array.isArray(invoicesRes.invoices) ? invoicesRes.invoices : [],
-          );
-        }
-        if (escrowRes) {
-          const entries = Object.entries(escrowRes.currencies || {});
-          let breakdown: string;
-          if (entries.length === 0) {
-            breakdown = "$0";
-          } else if (entries.length === 1) {
-            const curr = entries[0][0];
-            const total = Number(entries[0][1]);
-            breakdown = new Intl.NumberFormat("en-US", {
-              style: "currency",
-              currency: curr,
-              notation: "compact",
-              maximumFractionDigits: 1,
-            }).format(total);
-          } else {
-            breakdown = entries
-              .map(([curr, total]) =>
-                new Intl.NumberFormat("en-US", {
-                  style: "currency",
-                  currency: curr,
-                  notation: "compact",
-                  maximumFractionDigits: 1,
-                }).format(Number(total)),
-              )
-              .join(", ");
-          }
-          setEscrowSummary({
-            breakdown,
-            projectCount: escrowRes.project_count || 0,
-          });
-        }
-      } catch (e) {
-        if (!mounted) return;
-      } finally {
-        if (mounted) setLoadingBillingData(false);
-      }
-    };
-
-    loadBillingData();
-    return () => {
-      mounted = false;
-    };
-  }, [activeSection]);
-
-  useEffect(() => {
     const pkgId = String(searchParams.get("package_id") || "").trim();
     if (!pkgId) return;
     setExpandedInboxPackageId(pkgId);
   }, [searchParams]);
-
-  useEffect(() => {
-    let mounted = true;
-    const loadActivityEvents = async () => {
-      try {
-        setLoadingActivityEvents(true);
-        const res = await base44.get<{ events?: any[] }>(
-          "/api/brand/activity-events",
-          { params: { limit: 10 } },
-        );
-        if (!mounted) return;
-        setActivityEvents(Array.isArray(res?.events) ? res.events : []);
-      } catch {
-        if (!mounted) return;
-        setActivityEvents([]);
-      } finally {
-        if (mounted) setLoadingActivityEvents(false);
-      }
-    };
-    loadActivityEvents();
-    const timer = setInterval(() => {
-      if (mounted) {
-        void loadActivityEvents();
-      }
-    }, 30000);
-    return () => {
-      mounted = false;
-      clearInterval(timer);
-    };
-  }, []);
-
-  useEffect(() => {
-    let mounted = true;
-    const loadBrandProfile = async () => {
-      try {
-        const profile = await getBrandProfile();
-        if (!mounted || !profile) return;
-        setBrand((prev) => ({
-          ...(prev ?? {}),
-          name: profile?.company_name || profile?.name || prev?.name || "Brand",
-          industry: profile?.industry || prev?.industry,
-          website: profile?.website || prev?.website,
-          contact_email: profile?.email || prev?.contact_email,
-          logo: profile?.logo_url || "",
-        }));
-        if (
-          profile?.notification_prefs &&
-          typeof profile.notification_prefs === "object"
-        ) {
-          const prefs = profile.notification_prefs as Record<string, boolean>;
-          setNotificationPrefs({
-            newProjectAlerts: prefs.newProjectAlerts ?? true,
-            deliverableSubmissions: prefs.deliverableSubmissions ?? true,
-            approvalReminders: prefs.approvalReminders ?? true,
-            licenseExpirationAlerts: prefs.licenseExpirationAlerts ?? true,
-          });
-        }
-      } catch {
-        // Keep mock fallback on failure.
-      }
-    };
-    loadBrandProfile();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let mounted = true;
-    const loadPackages = async () => {
-      try {
-        setLoadingInboxPackages(true);
-        const response = await base44.get<{ packages?: any[] }>(
-          "/api/brand/inbox/packages",
-        );
-        if (!mounted) return;
-        const pkgs = Array.isArray(response?.packages) ? response.packages : [];
-        setInboxPackages(pkgs);
-        setInboxPendingCount(
-          pkgs.filter((p: any) => String(p?.status || "") === "sent").length,
-        );
-      } catch (e) {
-        if (!mounted) return;
-        setInboxPackages([]);
-        setInboxPendingCount(0);
-      } finally {
-        if (!mounted) return;
-        setLoadingInboxPackages(false);
-      }
-    };
-    loadPackages();
-    const timer = setInterval(loadPackages, 15000);
-    return () => {
-      mounted = false;
-      clearInterval(timer);
-    };
-  }, []);
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        if (!mounted) return;
-        setLoadingBrandJobs(true);
-        const res = await base44.get<{ jobs?: any[] }>("/api/jobs/my");
-        if (!mounted) return;
-        setBrandJobs(Array.isArray(res?.jobs) ? res.jobs : []);
-      } catch (e) {
-        if (!mounted) return;
-        setBrandJobs([]);
-      } finally {
-        if (!mounted) return;
-        setLoadingBrandJobs(false);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   const updateJobStatus = async (jobId: string, status: string) => {
     try {
@@ -1368,8 +1268,10 @@ export default function BrandDashboard() {
       });
       const updated = res?.job;
       if (updated?.id) {
-        setBrandJobs((prev) =>
-          prev.map((job) => (job.id === updated.id ? updated : job)),
+        queryClient.setQueryData(
+          ["brand-jobs", user?.id],
+          (old: any[] | undefined) =>
+            (old || []).map((job) => (job.id === updated.id ? updated : job)),
         );
         toast({
           title: "Job updated",
@@ -1392,32 +1294,6 @@ export default function BrandDashboard() {
     }
     navigate(createPageUrl("PostJob"));
   };
-
-  useEffect(() => {
-    if (!authToken) return;
-    let mounted = true;
-    const loadInboxCount = async () => {
-      try {
-        const response = await base44.get<{ packages?: any[] }>(
-          "/api/brand/inbox/packages",
-        );
-        if (!mounted) return;
-        const pkgs = Array.isArray(response?.packages) ? response.packages : [];
-        setInboxPendingCount(
-          pkgs.filter((p: any) => String(p?.status || "") === "sent").length,
-        );
-      } catch {
-        if (!mounted) return;
-        setInboxPendingCount(0);
-      }
-    };
-    loadInboxCount();
-    const timer = setInterval(loadInboxCount, 30000);
-    return () => {
-      mounted = false;
-      clearInterval(timer);
-    };
-  }, [authToken]);
 
   const isRefreshableDocuSealContract = (contract: any) => {
     if (!contract) return false;
@@ -1521,94 +1397,6 @@ export default function BrandDashboard() {
   }, [activeSection, brandOfferItems]);
 
   useEffect(() => {
-    if (
-      activeSection !== "home" &&
-      activeSection !== "billing" &&
-      activeSection !== "campaign-offers" &&
-      activeSection !== "campaigns-contract-hub" &&
-      activeSection !== "campaigns-deliverables" &&
-      activeSection !== "usage"
-    ) {
-      return;
-    }
-    let mounted = true;
-    const loadMyOffers = async () => {
-      if (hasLoadedOffersRef.current) return;
-      try {
-        setLoadingBrandOfferItems(true);
-        const response = await base44.get<{ offers?: any[] }>(
-          "/api/campaign-offers/my",
-          { params: { limit: 120 } },
-        );
-        if (!mounted) return;
-        const offers = Array.isArray(response?.offers) ? response.offers : [];
-        setBrandOfferItems(offers);
-        hasLoadedOffersRef.current = true;
-        setLoadingBrandOfferItems(false);
-
-        void (async () => {
-          if (!mounted) return;
-          const enriched = await Promise.all(
-            offers.map(async (offer: any) => {
-              const offerId = String(offer?.id || "").trim();
-              if (!offerId) return offer;
-              try {
-                const [delResp, contractsResp] = await Promise.all([
-                  listOfferDeliverables(offerId),
-                  base44
-                    .get<{
-                      contracts?: any[];
-                    }>(`/api/campaign-offers/${offerId}/contracts`)
-                    .catch(() => ({ contracts: [] })),
-                ]);
-                if (!mounted) return offer;
-                const deliverables = Array.isArray(delResp?.deliverables)
-                  ? delResp.deliverables
-                  : [];
-                const contracts = Array.isArray(contractsResp?.contracts)
-                  ? contractsResp.contracts
-                  : [];
-                return {
-                  ...offer,
-                  offer_deliverables: deliverables,
-                  offer_contracts: contracts,
-                };
-              } catch {
-                return offer;
-              }
-            }),
-          );
-          if (!mounted) return;
-          setBrandOfferItems(enriched);
-        })();
-      } catch {
-        if (!mounted) return;
-        setBrandOfferItems([]);
-      } finally {
-        if (!mounted) return;
-        setLoadingBrandOfferItems(false);
-      }
-    };
-    loadMyOffers();
-
-    // Auto-refresh expanded offer details every 5 seconds
-    const hubRefreshTimer = setInterval(() => {
-      if (
-        mounted &&
-        selectedOfferHubId &&
-        activeSection === "campaigns-contract-hub"
-      ) {
-        loadOfferHubDetails(selectedOfferHubId, { silent: true });
-      }
-    }, 5000);
-
-    return () => {
-      mounted = false;
-      clearInterval(hubRefreshTimer);
-    };
-  }, [activeSection, selectedOfferHubId]);
-
-  useEffect(() => {
     if (activeSection !== "licensing-requests" && activeSection !== "usage")
       return;
     let mounted = true;
@@ -1618,15 +1406,6 @@ export default function BrandDashboard() {
           setLoadingBrandLicensingRequests(true);
         }
         const resp = await getBrandLicensingRequests();
-        console.log(
-          "getBrandLicensingRequests raw response:",
-          JSON.stringify(resp, null, 2),
-        );
-        console.log("🔍 Brand user profile:", profile);
-        console.log(
-          "🔍 Fetching licensing requests for brand_id:",
-          profile?.id,
-        );
         if (!mounted) return;
         const rows = Array.isArray(resp) ? resp : resp?.requests || [];
         setBrandLicensingRequests(Array.isArray(rows) ? rows : []);
@@ -1655,52 +1434,26 @@ export default function BrandDashboard() {
     };
   }, [activeSection, brandLicensingRequests.length]);
 
+  // Load budget settings only when entering billing section
+  // Billing status/spend/invoices/escrow are now cached via brandBillingDataQuery
   useEffect(() => {
     if (activeSection !== "billing") return;
     let mounted = true;
 
-    const loadBillingData = async () => {
-      setLoadingBillingData(true);
+    const loadBudgetSettings = async () => {
       try {
-        const [status, spend, invoices, budgetSettings] = await Promise.all([
-          getBrandBillingStatus().catch(() => null),
-          getBrandSpendAnalytics().catch(() => null),
-          listBrandInvoices().catch(() => null),
-          getBrandBudgetSettings().catch(() => null),
-        ]);
+        const budgetSettings = await getBrandBudgetSettings().catch(() => null);
         if (!mounted) return;
-        if (status) setBrandBillingStatus(status);
-        if (spend?.monthly_spend) {
-          setBrandSpendData({
-            monthly_spend: Array.isArray(spend.monthly_spend)
-              ? spend.monthly_spend
-              : [],
-            ytd_spend: spend.ytd_spend || 0,
-            monthly_avg: spend.monthly_avg || 0,
-            current_month_spend: spend.current_month_spend || 0,
-            previous_month_spend: spend.previous_month_spend || 0,
-            current_month_growth_percentage:
-              spend.current_month_growth_percentage || 0,
-            projected_eoy: spend.projected_eoy || 0,
-          });
-          setBillingYtdSpend(spend.ytd_spend || 0);
-          setBillingCurrentMonthSpend(spend.current_month_spend || 0);
-          setBillingProjectedEoy(spend.projected_eoy || 0);
-          setBillingMonthlyAvg(spend.monthly_avg || 0);
-        }
-        if (invoices?.invoices) setBrandInvoices(invoices.invoices);
         if (budgetSettings) {
           setBudgetLimit(budgetSettings.monthly_budget_limit);
           setBudgetAlertEnabled(budgetSettings.budget_alert_enabled);
         }
       } catch {
         if (!mounted) return;
-      } finally {
-        if (mounted) setLoadingBillingData(false);
       }
     };
 
-    loadBillingData();
+    loadBudgetSettings();
     return () => {
       mounted = false;
     };
@@ -5382,12 +5135,8 @@ export default function BrandDashboard() {
       return;
     }
     if (!isPaid) {
-      toast({
-        title: "Payment required",
-        description:
-          "Payment has not been received for this offer. Please complete payment to download deliverables.",
-        variant: "destructive" as any,
-      });
+      setUnpaidOfferId(offerId);
+      setShowUnpaidModal(true);
       return;
     }
     try {
@@ -5490,12 +5239,8 @@ export default function BrandDashboard() {
         .trim()
         .toLowerCase() === "paid";
     if (!isPaid) {
-      toast({
-        title: "Payment required",
-        description:
-          "You can’t approve or review deliverables until payment for this offer is completed.",
-        variant: "destructive" as any,
-      });
+      setUnpaidOfferId(offerId);
+      setShowUnpaidModal(true);
       deliverableReviewBusyRef.current.delete(deliverableId);
       return;
     }
@@ -5534,7 +5279,11 @@ export default function BrandDashboard() {
             amount: off?.budget,
             currency: off?.currency_code || "USD",
           });
-        } else if (String(escrow?.payment_status || "") !== "paid") {
+        } else if (
+          String(escrow?.payment_status || "")
+            .trim()
+            .toLowerCase() !== "paid"
+        ) {
           toast({
             title: "Approved, but payment not received",
             description:
@@ -5732,60 +5481,103 @@ export default function BrandDashboard() {
                 >
                   {/* Payment Pending Banner */}
                   {isFullySigned && offer?.payment_status !== "paid" && (
-                    <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-                      <span className="text-amber-700 text-xs font-semibold">
+                    <div className="flex flex-col gap-3 bg-amber-50 border border-amber-200 rounded-md p-4">
+                      <span className="text-amber-800 text-sm font-semibold">
                         ⏳ Contract signed. Payment required before deliverables
-                        can start.
+                        can be downloaded.
                       </span>
-                      {canManagePayOffers ? (
-                        <Button
-                          size="sm"
-                          className="ml-auto bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-md px-3 py-1"
-                          disabled={payingOfferId === offerId}
-                          onClick={async () => {
-                            setPayingOfferId(offerId);
-                            try {
-                              const data: any = await base44.post(
-                                `/api/brand/campaign-offers/${offerId}/checkout`,
-                                {},
-                              );
-                              if (data?.url) {
-                                window.location.href = data.url;
-                              } else {
+                      <div className="bg-white border border-amber-200 rounded-lg p-3">
+                        <div className="flex justify-between items-center text-sm py-1">
+                          <span className="text-gray-600">Creator Payment</span>
+                          <span className="font-medium">
+                            $
+                            {Number(
+                              offer?.budget_snapshot?.budget_creator_payment ||
+                                0,
+                            ).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm py-1">
+                          <span className="text-gray-600">
+                            Likelee Platform Fee (
+                            {brandPlanTier === "pro" ? 3 : 5}%)
+                          </span>
+                          <span className="font-medium">
+                            $
+                            {(
+                              Number(
+                                offer?.budget_snapshot
+                                  ?.budget_creator_payment || 0,
+                              ) * (brandPlanTier === "pro" ? 0.03 : 0.05)
+                            ).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm py-2 mt-1 border-t border-gray-100 font-bold text-gray-900">
+                          <span>Total Due</span>
+                          <span>
+                            $
+                            {(
+                              Number(
+                                offer?.budget_snapshot
+                                  ?.budget_creator_payment || 0,
+                              ) * (brandPlanTier === "pro" ? 1.03 : 1.05)
+                            ).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex justify-end mt-1">
+                        {canManagePayOffers ? (
+                          <Button
+                            size="sm"
+                            className="bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-md px-4 py-2"
+                            disabled={payingOfferId === offerId}
+                            onClick={async () => {
+                              setPayingOfferId(offerId);
+                              try {
+                                const data: any = await base44.post(
+                                  `/api/brand/campaign-offers/${offerId}/checkout`,
+                                  {},
+                                );
+                                if (data?.url) {
+                                  window.location.href = data.url;
+                                } else {
+                                  toast({
+                                    title: "Payment Error",
+                                    description:
+                                      data?.message ||
+                                      "Could not start checkout.",
+                                    variant: "destructive",
+                                  });
+                                }
+                              } catch (e: any) {
+                                const msg = String(e?.message || "");
                                 toast({
-                                  title: "Payment Error",
-                                  description:
-                                    data?.message ||
-                                    "Could not start checkout.",
-                                  variant: "destructive",
+                                  title: msg.includes("no_talents_assigned")
+                                    ? "Talent assignment required"
+                                    : "Payment Error",
+                                  description: msg.includes(
+                                    "no_talents_assigned",
+                                  )
+                                    ? "The agency must assign at least 1 talent to this offer before you can pay. Please contact the agency and try again."
+                                    : msg || "Could not start checkout.",
+                                  variant: "destructive" as any,
                                 });
+                              } finally {
+                                setPayingOfferId(null);
                               }
-                            } catch (e: any) {
-                              const msg = String(e?.message || "");
-                              toast({
-                                title: msg.includes("no_talents_assigned")
-                                  ? "Talent assignment required"
-                                  : "Payment Error",
-                                description: msg.includes("no_talents_assigned")
-                                  ? "The agency must assign at least 1 talent to this offer before you can pay. Please contact the agency and try again."
-                                  : msg || "Could not start checkout.",
-                                variant: "destructive" as any,
-                              });
-                            } finally {
-                              setPayingOfferId(null);
-                            }
-                          }}
-                        >
-                          {payingOfferId === offerId
-                            ? "Redirecting…"
-                            : "💳 Pay Offer"}
-                        </Button>
-                      ) : (
-                        <span className="ml-auto text-xs text-amber-600 italic">
-                          View only - payment requires admin or project manager
-                          role
-                        </span>
-                      )}
+                            }}
+                          >
+                            {payingOfferId === offerId
+                              ? "Redirecting…"
+                              : "💳 Pay Offer"}
+                          </Button>
+                        ) : (
+                          <span className="text-xs text-amber-600 italic">
+                            View only - payment requires admin or project
+                            manager role
+                          </span>
+                        )}
+                      </div>
                     </div>
                   )}
                   {isFullySigned && offer?.payment_status === "paid" && (
@@ -5954,17 +5746,40 @@ export default function BrandDashboard() {
                                       variant="outline"
                                       size="sm"
                                       className="border-gray-200 text-gray-600"
-                                      onClick={() => {
-                                        if (contract?.signed_document_url) {
-                                          window.open(
-                                            contract.signed_document_url,
-                                            "_blank",
-                                          );
-                                        } else {
+                                      onClick={async () => {
+                                        const cOfferId = String(
+                                          contract?.offer_id || "",
+                                        ).trim();
+                                        const cId = String(
+                                          contract?.id || "",
+                                        ).trim();
+                                        if (!cOfferId || !cId) {
                                           toast({
                                             title: "Download Unavailable",
                                             description:
                                               "The signed document URL is not available yet.",
+                                            variant: "destructive",
+                                          });
+                                          return;
+                                        }
+                                        try {
+                                          const response = await base44.getRaw(
+                                            `/api/campaign-offers/${encodeURIComponent(cOfferId)}/contracts/${encodeURIComponent(cId)}/download`,
+                                          );
+                                          if (!response.ok)
+                                            throw new Error("Download failed");
+                                          const blob = await response.blob();
+                                          const url = URL.createObjectURL(blob);
+                                          const a = document.createElement("a");
+                                          a.href = url;
+                                          a.download = `${contract?.title || "signed-contract"}.pdf`;
+                                          a.click();
+                                          URL.revokeObjectURL(url);
+                                        } catch {
+                                          toast({
+                                            title: "Download failed",
+                                            description:
+                                              "Could not download the signed contract. Please try again.",
                                             variant: "destructive",
                                           });
                                         }
@@ -6246,25 +6061,57 @@ export default function BrandDashboard() {
                               >
                                 <Archive className="h-4 w-4" />
                               </button>
-                              {/* Download — check both signed_document_url and meta.docuseal_document_url */}
+                              {/* Download — route through backend proxy so expired DocuSeal URLs are auto-refreshed */}
                               {(() => {
-                                const docUrl =
-                                  row?.signed_document_url ||
-                                  row?.meta?.docuseal_document_url ||
-                                  row?.meta?.signed_document_url;
-                                return docUrl ? (
-                                  <a
-                                    href={String(docUrl)}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    download
+                                const rowOfferId = String(
+                                  row?.offer_id || "",
+                                ).trim();
+                                const rowContractId = String(
+                                  row?.id || "",
+                                ).trim();
+                                const isCompleted =
+                                  String(
+                                    row?.docuseal_status || "",
+                                  ).toLowerCase() === "completed";
+                                if (
+                                  !isCompleted ||
+                                  !rowOfferId ||
+                                  !rowContractId
+                                )
+                                  return null;
+                                return (
+                                  <button
+                                    type="button"
                                     title="Download signed contract"
                                     aria-label="Download"
                                     className="text-blue-700 hover:text-blue-800"
+                                    onClick={async () => {
+                                      try {
+                                        const response = await base44.getRaw(
+                                          `/api/campaign-offers/${encodeURIComponent(rowOfferId)}/contracts/${encodeURIComponent(rowContractId)}/download`,
+                                        );
+                                        if (!response.ok)
+                                          throw new Error("Download failed");
+                                        const blob = await response.blob();
+                                        const url = URL.createObjectURL(blob);
+                                        const a = document.createElement("a");
+                                        a.href = url;
+                                        a.download = `${row?.title || "signed-contract"}.pdf`;
+                                        a.click();
+                                        URL.revokeObjectURL(url);
+                                      } catch {
+                                        toast({
+                                          title: "Download failed",
+                                          description:
+                                            "Could not download the signed contract. Please try again.",
+                                          variant: "destructive" as any,
+                                        });
+                                      }
+                                    }}
                                   >
                                     <Download className="h-4 w-4" />
-                                  </a>
-                                ) : null;
+                                  </button>
+                                );
                               })()}
                             </div>
                           </td>
@@ -7783,10 +7630,41 @@ export default function BrandDashboard() {
                 variant="outline"
                 className="flex-1 border-2 border-gray-300"
                 onClick={async () => {
-                  await loadCampaignContractsForOffer(
-                    String(campaign.offer_id || ""),
-                  );
+                  const offerId = String(campaign.offer_id || "");
+                  await loadCampaignContractsForOffer(offerId);
                   setShowContractModal(true);
+                  // Fetch PDF via backend proxy so expired DocuSeal URLs are auto-refreshed
+                  setContractPdfBlobUrl(null);
+                  setContractPdfLoading(true);
+                  try {
+                    // contracts are loaded by loadCampaignContractsForOffer — wait briefly then pick first
+                    // We need the contract id; fetch contracts directly here
+                    const contractsResp = await base44.get<{
+                      contracts?: any[];
+                    }>(
+                      `/api/campaign-offers/${encodeURIComponent(offerId)}/contracts`,
+                    );
+                    const contracts = Array.isArray(contractsResp?.contracts)
+                      ? contractsResp.contracts
+                      : [];
+                    const firstContract = contracts[0];
+                    const contractId = String(firstContract?.id || "").trim();
+                    if (!contractId) {
+                      setContractPdfLoading(false);
+                      return;
+                    }
+                    const response = await base44.getRaw(
+                      `/api/campaign-offers/${encodeURIComponent(offerId)}/contracts/${encodeURIComponent(contractId)}/download`,
+                    );
+                    if (!response.ok) throw new Error("Download failed");
+                    const blob = await response.blob();
+                    const blobUrl = URL.createObjectURL(blob);
+                    setContractPdfBlobUrl(blobUrl);
+                  } catch {
+                    // leave blobUrl null — modal will show fallback message
+                  } finally {
+                    setContractPdfLoading(false);
+                  }
                 }}
               >
                 <FileText className="w-4 h-4 mr-2" />
@@ -11624,7 +11502,16 @@ export default function BrandDashboard() {
       </Dialog>
 
       {/* View Contract Modal */}
-      <Dialog open={showContractModal} onOpenChange={setShowContractModal}>
+      <Dialog
+        open={showContractModal}
+        onOpenChange={(open) => {
+          setShowContractModal(open);
+          if (!open && contractPdfBlobUrl) {
+            URL.revokeObjectURL(contractPdfBlobUrl);
+            setContractPdfBlobUrl(null);
+          }
+        }}
+      >
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-gray-900">
@@ -11696,24 +11583,22 @@ export default function BrandDashboard() {
                     </div>
                   </Card>
                   <Card className="p-4 bg-white border border-gray-200">
-                    {String(
-                      selectedCampaignContracts[0]?.meta
-                        ?.docuseal_document_url ||
-                        selectedCampaignContracts[0]?.file_url ||
-                        "",
-                    ).trim() ? (
+                    {contractPdfLoading ? (
+                      <div className="flex items-center justify-center h-[70vh]">
+                        <div className="flex flex-col items-center gap-3 text-gray-500">
+                          <div className="w-8 h-8 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                          <p className="text-sm">Loading contract...</p>
+                        </div>
+                      </div>
+                    ) : contractPdfBlobUrl ? (
                       <iframe
-                        src={String(
-                          selectedCampaignContracts[0]?.meta
-                            ?.docuseal_document_url ||
-                            selectedCampaignContracts[0]?.file_url,
-                        )}
+                        src={contractPdfBlobUrl}
                         className="w-full h-[70vh] border border-gray-200 rounded"
                         title="Campaign Contract Document"
                       />
                     ) : (
                       <p className="text-sm text-gray-600">
-                        Contract document URL is not available yet.
+                        Contract document is not available yet.
                       </p>
                     )}
                   </Card>
@@ -11721,7 +11606,13 @@ export default function BrandDashboard() {
                     <Button
                       variant="outline"
                       className="border-2 border-gray-300"
-                      onClick={() => setShowContractModal(false)}
+                      onClick={() => {
+                        setShowContractModal(false);
+                        if (contractPdfBlobUrl) {
+                          URL.revokeObjectURL(contractPdfBlobUrl);
+                          setContractPdfBlobUrl(null);
+                        }
+                      }}
                     >
                       {t("common.close", { defaultValue: "Close" })}
                     </Button>
@@ -14828,6 +14719,12 @@ export default function BrandDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <UnpaidDeliverableModal
+        open={showUnpaidModal}
+        onOpenChange={setShowUnpaidModal}
+        offerId={unpaidOfferId}
+      />
     </div>
   );
 }

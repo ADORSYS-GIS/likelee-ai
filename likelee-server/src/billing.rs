@@ -4178,8 +4178,7 @@ pub async fn create_campaign_offer_checkout(
         billing_error(StatusCode::NOT_FOUND, "offer_not_found", "Offer not found.")
     })?;
 
-    let offer_status = offer.get("status").and_then(|v| v.as_str()).unwrap_or("");
-    if offer_status != "contract_fully_signed" {
+    if !crate::brand_campaigns::offer_status_is_signed(&json!(offer)) {
         return Err(billing_error(
             StatusCode::BAD_REQUEST,
             "contract_must_be_fully_signed",

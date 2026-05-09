@@ -159,15 +159,29 @@ likelee-ui/
 
 ---
 
-## Campaign Offer Transfer Retry System
+## Campaign Offer Transfer & Escrow System
 
 ### Overview
 
-When a brand approves a deliverable, escrow is released and Stripe transfers are attempted per recipient (agency + assigned talents). Transfers can fail silently if a recipient's Stripe account is not fully onboarded. The retry system allows agencies to recover from these failures without any manual platform intervention.
+When a brand approves a deliverable, escrow is released and Stripe transfers are attempted per recipient (agency + assigned talents). Transfers can fail if a recipient's Stripe account is not fully onboarded. The system is designed to be resilient — individual transfer failures never block the escrow release or other recipients' transfers. Failed transfers are retryable from the agency Deliverables tab.
 
-### Key Principle
+### Key Principles
 
 **Escrow release is always permanent after brand approval.** It represents the brand's obligation being fulfilled. Transfer failures are an operational concern — funds remain on the platform's Stripe balance until a retry succeeds.
+
+**Transfers are best-effort and independent.** A failed agency transfer does not block talent transfers, and a failed talent transfer does not block others. Every recipient is attempted regardless of what happens to others.
+
+**Approving 1 deliverable triggers escrow release.** The threshold is `approved_count >= 1` — the first brand-approved deliverable unlocks the escrow and initiates all transfers.
+
+### Escrow State Machine
+
+```
+holding    → releasing  (atomic claim on first approval)
+releasing  → released   (after all transfers attempted — always, even if some fail)
+released   → released   (permanent — idempotent)
+```
+
+**Recovery from stuck `releasing`:** If a previous release attempt was interrupted before our fix (offer stuck in `releasing` with failed transfers), the next deliverable approval detects the failed transfer rows and automatically retries the full release. This only applies to pre-existing stuck offers — for all new offers, `escrow_status` is always set to `"released"` immediately after the first approval regardless of transfer outcomes, and failed transfers are recovered via the manual retry button in the agency Deliverables tab.
 
 ### Transfer Status Flow
 
@@ -186,12 +200,33 @@ The retry endpoint enforces two hard guards:
 1. `escrow_status` must be `"released"` — prevents premature transfers
 2. Only rows with `status = "failed"` are processed — never re-transfers succeeded rows
 
-### New API Endpoints
+### Contract Send Gate (Stripe Readiness)
+
+Before sending a DocuSeal contract, the agency UI checks Stripe readiness for all parties via `GET /api/agency/campaign-offers/:offer_id/stripe-readiness`. Two-tier result:
+
+| Gate | Condition | Action |
+|------|-----------|--------|
+| Hard block | Agency OR any talent has no Stripe account connected | Contract cannot be sent |
+| Soft warning | All connected but some `transfers_enabled = false` | Can send with warning; retry transfers after onboarding |
+
+**Why the brand is never exposed to Stripe issues:** The brand's obligation ends when they pay and approve. Whether the agency or talent can receive a Stripe transfer is an internal operational matter between the platform and the payee — surfacing it to the brand would be confusing and damaging to trust. The readiness gate enforces this at the contract send step: by the time a brand is approving deliverables, all parties are guaranteed to have at least a connected Stripe account. The only remaining edge case (`transfers_enabled = false`) was explicitly shown to the agency before they sent the contract, and is resolved independently via the retry button — no brand involvement needed.
+
+### API Endpoints
+
+#### Agency Offer Endpoints
 
 | Method | Path | Permission Required |
 |--------|------|---------------------|
+| `GET` | `/api/agency/campaign-offers/:offer_id/stripe-readiness` | `manage_billing` |
 | `GET` | `/api/agency/campaign-offers/:offer_id/transfer-status` | `manage_billing` |
 | `POST` | `/api/agency/campaign-offers/:offer_id/retry-transfers` | `manage_billing` |
+
+#### Independent Creator Offer Endpoints
+
+| Method | Path | Auth |
+|--------|------|------|
+| `GET` | `/api/talent/campaign-offers/transfer-status` | Creator session |
+| `POST` | `/api/talent/campaign-offers/:offer_id/retry-transfer` | Creator session (owns offer) |
 
 ### DB Changes (migration `2026-04-22_campaign_offer_transfer_retry.sql`)
 
@@ -208,11 +243,32 @@ New RPCs:
 
 ### Frontend
 
+#### Agency Deliverables View
+
 The **Payout Status** panel in `AgencyDeliverablesView` renders automatically when `offer.escrow_status === "released"` and the offer card is expanded. It shows:
 - Per-recipient row: name, type, amount, Stripe health, transfer status badge
 - Human-readable failure reasons mapped from Stripe error codes
 - **Refresh** button to re-poll
 - **Retry failed** button (only when at least one transfer has `status: failed`)
+
+The **Stripe Readiness Gate** in `BrandConnectionsView` fires when the agency clicks "Send" on a contract. It calls `/stripe-readiness` and shows a polished modal with per-party status before allowing the DocuSeal submission to be created.
+
+#### Creator Dashboard
+
+The **Payout Status** panel in `CreatorDashboard` shows all independent creator offers (`target_type === "creator"`) where escrow has been released. Features:
+
+- **Automatic display** when creator has any independent offers with `escrow_status = "released"`
+- **Visual status indicators:**
+  - ✅ **"Paid"** (green) — `transfer_status = "created"` — funds in Stripe account
+  - ⚠️ **"Failed"** (amber) — `transfer_status = "failed"` — shows **"Claim payment"** button
+  - 🔄 **"Retrying"** (blue) — `transfer_status = "pending_retry"` — retry in progress
+  - 🕐 **"Pending"** (gray) — other states
+- **Self-service retry:** "Claim payment" button calls `POST /api/talent/campaign-offers/:offer_id/retry-transfer`
+- **Stripe readiness gate:** Before submitting deliverables, checks if Stripe account is connected:
+  - **Hard block** if not connected → forces creator to Payouts settings
+  - **Soft warning** if `transfers_enabled = false` → warns but allows submission
+
+**Key difference from agency flow:** Independent creators can only retry their own offers. Agency talent splits are handled by the agency, not self-service.
 
 ### Stripe Error Code Mapping (Frontend)
 
@@ -223,3 +279,181 @@ The **Payout Status** panel in `AgencyDeliverablesView` renders automatically wh
 | `payouts_not_allowed` | Payouts not allowed on this Stripe account |
 | `balance_insufficient` | Platform balance insufficient — contact support |
 | No Stripe account | No Stripe account connected. Ask them to complete Stripe onboarding |
+
+---
+
+## Independent Creator Offer Payment Flow
+
+### Overview
+
+Independent creator offers (`target_type = "creator"`) follow a simplified payment flow compared to agency offers. When a brand approves a deliverable, the full offer amount is transferred directly to the creator's Stripe account. No talent splits, no agency intermediary.
+
+### Stripe Readiness Gates
+
+**Two prevention points** ensure creators can receive payment before they submit work:
+
+#### 1. Deliverable Submission Gate (Backend)
+
+When a creator submits a deliverable (final or draft), the backend checks:
+
+```rust
+// In submit_offer_deliverable() and submit_draft_deliverables()
+if is_creator_like(&user.role) && target_type == "creator" {
+    let stripe_account = get_creator_stripe_account(&state, &creator_id).await;
+    if stripe_account.is_empty() {
+        return Err(402 PAYMENT_REQUIRED, "stripe_account_required: Connect your Stripe account...");
+    }
+}
+```
+
+**Result:** Creator cannot submit deliverables until Stripe is connected.
+
+#### 2. Deliverable Submission Gate (Frontend)
+
+Before opening the deliverable submission modal, `CreatorDashboard` checks `payoutAccountStatus`:
+
+```typescript
+if (!payoutAccountStatus?.connected) {
+  // Hard block: show modal forcing user to Payouts
+  setStripeGateModalConfig({
+    severity: "block",
+    title: "Connect Stripe to submit deliverables",
+    description: "You need to connect your Stripe account before submitting deliverables...",
+    actions: [{ label: "Go to Payouts", onClick: () => setShowPayoutSettings(true) }]
+  });
+  return;
+}
+
+if (payoutAccountStatus?.connected && !payoutAccountStatus?.transfers_enabled) {
+  // Soft warning: warn but allow submission
+  setStripeGateModalConfig({
+    severity: "warning",
+    title: "Stripe transfers not fully enabled",
+    description: "Complete your Stripe onboarding to ensure you get paid on time. You can still submit now.",
+    actions: [
+      { label: "Submit anyway", onClick: () => openDeliverableModal() },
+      { label: "Go to Payouts", onClick: () => setShowPayoutSettings(true) }
+    ]
+  });
+  return;
+}
+```
+
+**Result:** Creator is warned/blocked before wasting time on deliverables they can't get paid for.
+
+### Self-Service Transfer Retry
+
+When a transfer fails (e.g., `transfers_enabled` was false at approval time), creators can retry from their dashboard.
+
+#### Retry Endpoint: `POST /api/talent/campaign-offers/:offer_id/retry-transfer`
+
+**Guards:**
+1. User must be a creator
+2. Offer must belong to this creator (`target_type = "creator"`, `target_id = creator_id`)
+3. Escrow must be `"released"` (brand already approved)
+4. A failed transfer row must exist (`status = "failed"`)
+
+**Flow:**
+1. Verify offer ownership and escrow status
+2. Find failed transfer row for this creator
+3. Get creator's **current** Stripe account (may have been fixed since failure)
+4. Mark transfer as `"pending_retry"` via RPC
+5. Execute Stripe transfer via `execute_and_record_stripe_transfer()`
+6. Return success/failure to frontend
+
+**Key insight:** Uses the **current** Stripe account, so creators can fix their setup then retry.
+
+#### Frontend Retry Flow
+
+In `CreatorDashboard`, the **Payout Status** panel shows failed transfers with a "Claim payment" button:
+
+```typescript
+const retryCreatorTransfer = async (offerId: string) => {
+  try {
+    const resp = await base44.post(`/api/talent/campaign-offers/${offerId}/retry-transfer`);
+    if (resp?.status === "ok") {
+      // Show success modal
+      setStripeGateModalConfig({
+        severity: "info",
+        title: "Transfer succeeded",
+        description: "Funds are on their way to your Stripe account.",
+        actions: [{ label: "Done", onClick: () => setStripeGateModalOpen(false) }]
+      });
+      await refreshCreatorTransfers();
+    }
+  } catch (err) {
+    // Show error modal with "Go to Payouts" action
+  }
+};
+```
+
+**One retry at a time:** `retryingTransferOfferId` state prevents concurrent retries.
+
+### Transfer Status Display
+
+The `campaign_offer_transfers` table includes a `target_type` field to distinguish:
+- **`"creator"`** = independent offer (creator can self-service retry)
+- **`"agency"`** = talent split from agency offer (agency handles retry)
+
+Frontend filters by `target_type === "creator"` to show only independent offers in the creator's Payout Status panel.
+
+### Data Flow Summary
+
+**Prevention Flow (Deliverable Submission):**
+```
+Creator clicks "Submit Deliverable"
+  → Frontend checks payoutAccountStatus
+    → If !connected: Block with modal
+    → If !transfers_enabled: Warn but allow
+  → Backend checks Stripe account on submission
+    → If empty: Return 402 PAYMENT_REQUIRED
+  → Deliverable submitted successfully
+```
+
+**Recovery Flow (Failed Transfer Retry):**
+```
+Creator sees "Failed" transfer in Payout Status panel
+  → Clicks "Claim payment" button
+  → Frontend calls POST /api/talent/campaign-offers/:offer_id/retry-transfer
+    → Backend verifies:
+      - Offer belongs to creator
+      - Escrow is released
+      - Failed transfer exists
+    → Fetches current Stripe account
+    → Marks transfer as pending_retry
+    → Executes Stripe transfer
+      → Success: Returns transfer_id
+      → Failure: Returns error message
+  → Frontend shows modal with result
+    → Success: "Funds are on their way"
+    → Failure: "Go to Payouts to fix Stripe setup"
+```
+
+### Key Design Decisions
+
+1. **Only for independent creator offers** — Agency talent splits are handled by the agency, not self-service
+2. **Escrow must be released** — Can't retry if brand hasn't approved yet
+3. **Uses current Stripe account** — Allows creators to fix their Stripe setup then retry
+4. **Idempotent retry** — If no failed transfer exists, returns `nothing_to_retry: true`
+5. **One retry at a time** — `retryingTransferOfferId` state prevents concurrent retries
+6. **Reuses existing transfer infrastructure** — Calls `execute_and_record_stripe_transfer()` and `record_campaign_offer_transfer` RPC
+
+### Files Involved
+
+**Backend:**
+- `likelee-server/src/brand_campaigns.rs`:
+  - `submit_offer_deliverable()` — Stripe readiness gate
+  - `submit_draft_deliverables()` — Stripe readiness gate
+  - `get_creator_transfer_status()` — Fetch creator's transfer status
+  - `retry_creator_transfer()` — Self-service retry endpoint
+
+**Frontend:**
+- `likelee-ui/src/pages/CreatorDashboard.tsx`:
+  - Payout Status panel rendering
+  - Stripe readiness gate modal
+  - `retryCreatorTransfer()` function
+  - `fetchCreatorTransfers()` polling
+
+**Database:**
+- `supabase/migrations/2026-04-22_campaign_offer_transfer_retry.sql` — Transfer retry columns and RPCs
+- `campaign_offer_transfers.target_type` — Distinguishes independent vs agency offers
