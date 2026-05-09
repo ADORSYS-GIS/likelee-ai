@@ -32,7 +32,13 @@ const ALLOWED_ADVISORY_IDS = new Set([
   "GHSA-w5hq-g745-h8pq", // Missing buffer bounds check in v3/v5/v6
 ]);
 
-const ALLOWED_MODULES = new Set(["lodash", "axios", "uuid", "@babel/plugin-transform-modules-systemjs", "fast-uri"]);
+const ALLOWED_MODULES = new Set([
+  "lodash",
+  "axios",
+  "uuid",
+  "@babel/plugin-transform-modules-systemjs",
+  "fast-uri",
+]);
 const ALLOWED_TRANSITIVE = new Set([
   "@aws-amplify/analytics",
   "@aws-amplify/api",
