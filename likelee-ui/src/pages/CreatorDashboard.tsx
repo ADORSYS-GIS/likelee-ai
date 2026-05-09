@@ -11183,26 +11183,26 @@ export default function CreatorDashboard() {
 
         {/* Info banner — only shown when Stripe is not yet connected */}
         {!payoutAccountStatus?.connected && (
-        <div className="bg-blue-50 border border-blue-200 text-blue-900 rounded-lg p-4 flex gap-3">
-          <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p>
-              <span className="font-semibold">
-                {t("creatorDashboard.earnings.readyTitle")}
-              </span>{" "}
-              {t("creatorDashboard.earnings.readyMessage")}
-            </p>
-            {payoutAccountStatus?.bank_last4 && (
-              <div className="mt-2 flex items-center gap-2 text-sm text-blue-800 font-medium">
-                <CreditCard className="w-4 h-4" />
-                <span>
-                  Connected bank account ending in{" "}
-                  <strong>{payoutAccountStatus.bank_last4}</strong>
-                </span>
-              </div>
-            )}
+          <div className="bg-blue-50 border border-blue-200 text-blue-900 rounded-lg p-4 flex gap-3">
+            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p>
+                <span className="font-semibold">
+                  {t("creatorDashboard.earnings.readyTitle")}
+                </span>{" "}
+                {t("creatorDashboard.earnings.readyMessage")}
+              </p>
+              {payoutAccountStatus?.bank_last4 && (
+                <div className="mt-2 flex items-center gap-2 text-sm text-blue-800 font-medium">
+                  <CreditCard className="w-4 h-4" />
+                  <span>
+                    Connected bank account ending in{" "}
+                    <strong>{payoutAccountStatus.bank_last4}</strong>
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
         )}
 
         {/* Key metrics */}
