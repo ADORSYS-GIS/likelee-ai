@@ -155,6 +155,9 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
+    supportedLngs: ["en", "es", "de", "fr"],
+    nonExplicitSupportedLngs: true,
+    load: "languageOnly",
     fallbackLng: "en",
     defaultNS: "translation",
     ns: [
@@ -167,6 +170,9 @@ i18n
       "creatorTerms",
       "brandAgencyTerms",
     ],
+    detection: {
+      caches: ["localStorage"],
+    },
     interpolation: {
       escapeValue: false,
     },

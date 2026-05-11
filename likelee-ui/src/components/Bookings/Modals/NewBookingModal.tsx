@@ -50,6 +50,7 @@ import {
 } from "@/api/functions";
 import { CampaignModal } from "./CampaignModal";
 import { buildCalendlyBookingUrl } from "@/utils/bookDemo";
+import { useTranslation } from "react-i18next";
 
 const CALENDLY_WIDGET_SCRIPT_ID = "calendly-widget-script";
 const CALENDLY_WIDGET_STYLESHEET_ID = "calendly-widget-stylesheet";
@@ -70,7 +71,10 @@ export const NewBookingModal = ({
   isSportsAgency?: boolean;
 }) => {
   const { toast } = useToast();
-  const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
+  const { t } = useTranslation("agency");
+  const entitySingularTitle = isSportsAgency
+    ? t("agencyDashboard.bookings.newBooking.athlete")
+    : t("agencyDashboard.bookings.newBooking.talent");
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
 
   const getBookingCreateErrorMessage = (err: any) => {
@@ -82,7 +86,7 @@ export const NewBookingModal = ({
       err?.code ||
       err?.error?.code;
     if (String(code || "").trim() === "PGRST204") {
-      return "There was an issue processing your booking. Please verify your details and try again.";
+      return t("agencyDashboard.bookings.newBooking.errors.processingIssue");
     }
 
     const raw =
@@ -90,12 +94,12 @@ export const NewBookingModal = ({
       (typeof err === "string" ? err : err?.message) ||
       "";
     if (/Error parsing multipart\/form-data request/i.test(String(raw))) {
-      return "We couldn't read the booking form upload. Please try again. If it keeps failing, remove attachments and retry.";
+      return t("agencyDashboard.bookings.newBooking.errors.uploadIssue");
     }
 
     const parsed = parseBackendError(err);
     if (parsed && /\bPGRST204\b/i.test(parsed)) {
-      return "There was an issue processing your booking. Please verify your details and try again.";
+      return t("agencyDashboard.bookings.newBooking.errors.processingIssue");
     }
     return parsed;
   };
@@ -859,28 +863,50 @@ export const NewBookingModal = ({
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">
-              {mode === "edit" ? "Edit Booking" : "New Booking"}
+              {mode === "edit"
+                ? t("agencyDashboard.bookings.newBooking.titleEdit")
+                : t("agencyDashboard.bookings.newBooking.titleNew")}
             </DialogTitle>
             <p className="text-sm text-gray-500">
               {mode === "edit"
-                ? "Update details for this booking"
-                : `Schedule a booking for your ${entitySingularLower}`}
+                ? t("agencyDashboard.bookings.newBooking.updateDetails")
+                : t("agencyDashboard.bookings.newBooking.subtitle")}
             </p>
           </DialogHeader>
           <div className="space-y-6 py-4">
             <div className="space-y-2">
-              <Label>Booking Type *</Label>
+              <Label>
+                {t("agencyDashboard.bookings.newBooking.bookingType")} *
+              </Label>
               <div className="flex gap-2">
                 <Select value={bookingType} onValueChange={setBookingType}>
                   <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select type" />
+                    <SelectValue
+                      placeholder={t(
+                        "agencyDashboard.bookings.newBooking.selectBookingType",
+                      )}
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="casting">Casting</SelectItem>
-                    <SelectItem value="option">Option</SelectItem>
-                    <SelectItem value="confirmed">Confirmed</SelectItem>
-                    <SelectItem value="test-shoot">Test shoot</SelectItem>
-                    <SelectItem value="fitting">Fitting</SelectItem>
+                    <SelectItem value="casting">
+                      {t("agencyDashboard.bookings.newBooking.casting")}
+                    </SelectItem>
+                    <SelectItem value="option">
+                      {t(
+                        "agencyDashboard.bookings.newBooking.pendingUnconfirmed",
+                      )}
+                    </SelectItem>
+                    <SelectItem value="confirmed">
+                      {t(
+                        "agencyDashboard.bookings.newBooking.confirmedBooking",
+                      )}
+                    </SelectItem>
+                    <SelectItem value="test-shoot">
+                      {t("agencyDashboard.bookings.newBooking.testShoot")}
+                    </SelectItem>
+                    <SelectItem value="fitting">
+                      {t("agencyDashboard.bookings.newBooking.fitting")}
+                    </SelectItem>
                     <SelectItem value="rehearsal">Rehearsal</SelectItem>
                   </SelectContent>
                 </Select>
@@ -890,7 +916,7 @@ export const NewBookingModal = ({
                   onClick={() => setPreviewOpen(true)}
                   disabled={!canSubmit}
                 >
-                  Preview
+                  {t("agencyDashboard.bookings.newBooking.buttons.preview")}
                 </Button>
                 {uploadSuccess && (
                   <span className="flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1">
@@ -931,13 +957,16 @@ export const NewBookingModal = ({
                     className="rounded border-gray-300"
                   />
                   <label htmlFor="multi" className="text-sm text-gray-600">
-                    {`Book multiple ${entitySingularLower}`}
+                    {t("agencyDashboard.bookings.newBooking.multiSelect")}
                   </label>
                 </div>
               </div>
               <div className="relative">
                 <Input
-                  placeholder={`Search ${entitySingularLower} by name...`}
+                  placeholder={t(
+                    "agencyDashboard.bookings.newBooking.searchTalent",
+                    { entity: entitySingularTitle },
+                  )}
                   value={talentSearch}
                   onChange={(e) => setTalentSearch(e.target.value)}
                 />

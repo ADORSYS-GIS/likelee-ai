@@ -92,7 +92,9 @@
         "active": "Activo",
         "expiringSoon30d": "Vence pronto (30d)",
         "review": "Revisar",
-        "totalThisMonth": "Total este mes"
+        "totalThisMonth": "Total este mes",
+        "noneExpiring": "Ninguna vence",
+        "noPending": "Nada pendiente"
       },
       "recentActivity": {
         "rosterAdded": "{{name}} añadido al roster",
@@ -120,17 +122,25 @@
     "roster": {
       "entities": {
         "talent": "talento",
-        "talents": "talentos",
-        "talentTitle": "Talento",
-        "talentsTitle": "Talentos",
+        "talentPlural": "talentos",
         "athlete": "atleta",
-        "athletes": "atletas",
+        "athletePlural": "atletas",
+        "talentTitle": "Talent",
+        "talentsTitle": "Talentos",
         "athleteTitle": "Atleta",
-        "athletesTitle": "Atletas"
+        "athletesTitle": "Atletas",
+        "talents": "talentos",
+        "athletes": "atletas"
+      },
+      "statuses": {
+        "active": "Activo",
+        "inactive": "Inactivo",
+        "pending": "Pendiente"
       },
       "header": {
         "verifiedAgency": "Agencia verificada",
         "upgradePlan": "Mejorar plan",
+        "upgradePlanAction": "Mejorar plan",
         "editProfile": "Editar perfil",
         "viewMarketplace": "Ver marketplace",
         "stripe": {
@@ -165,14 +175,16 @@
         "activeCampaigns": "Campañas activas",
         "acrossAllEntities": "en todos los {{entityPlural}}",
         "expiringLicenses": "Licencias por vencer",
-        "requireRenewal": "requieren renovación"
+        "requireRenewal": "requieren renovación",
+        "previous30d": "Últimos 30 días"
       },
       "tabs": {
         "roster": "Roster",
         "digitalsTracking": "Seguimiento de digitals",
         "campaigns": "Campañas",
         "licenses": "Licencias",
-        "analytics": "Analítica"
+        "analytics": "Analítica",
+        "analyticsPro": "Analytics Pro"
       },
       "actions": {
         "exportCsv": "Exportar CSV",
@@ -206,7 +218,8 @@
         "actor": "Actor",
         "creator": "Creador",
         "voice": "Voz",
-        "athlete": "Atleta"
+        "athlete": "Atleta",
+        "music": "Música"
       },
       "table": {
         "status": "Estado",
@@ -218,12 +231,19 @@
         "topBrand": "Marca principal",
         "licenseExpiry": "Vencimiento de licencia",
         "revenue30d": "Ingresos 30D",
-        "revenue": "Ingresos"
+        "revenue": "Ingresos",
+        "talentDetails": "Detalles del talento",
+        "licensing": "Licencias",
+        "confirmed": "Confirmado"
       },
       "aiUsage": {
         "video": "Video",
         "image": "Imagen",
-        "voice": "Voz"
+        "voice": "Voz",
+        "actor": "Actor",
+        "music": "Música",
+        "athlete": "Atleta",
+        "vice": "Vice"
       },
       "states": {
         "loading": "Cargando...",
@@ -232,12 +252,23 @@
         "empty": "—",
         "sending": "Enviando...",
         "refreshing": "Actualizando",
-        "uploading": "Subiendo..."
+        "uploading": "Subiendo...",
+        "unknown": "Unknown"
       },
       "analytics": {
         "title": "Analítica",
-        "comingSoonDescription": "Próximamente.",
-        "comingSoonButton": "Próximamente"
+        "comingSoonDescription": "El panel de análisis para el modo IRL estará disponible pronto.",
+        "comingSoonButton": "Próximamente",
+        "exportReport": "Export Report",
+        "tabs": {
+          "overview": "Overview",
+          "rosterInsights": "Roster Insights",
+          "clientsCampaigns": "Clients & Campaigns",
+          "compliance": "Compliance"
+        },
+        "performanceMetrics": "Performance Metrics",
+        "engagementRate": "Engagement Rate",
+        "comingSoon": "Próximamente"
       },
       "digitals": {
         "title": "Seguimiento de digitals",
@@ -252,15 +283,41 @@
         "daysOld90Plus": "90+ días",
         "totalEntities": "{{entityPlural}} totales",
         "inRoster": "En el roster",
-        "lastUpdated": "Última actualización:",
-        "never": "Nunca",
+        "lastUpdated": "Last updated:",
+        "never": "Never",
         "daysAgo": "hace {{count}} día",
         "daysAgo_other": "hace {{count}} días",
-        "photos": "{{count}} foto",
+        "photos": "photos",
         "photos_other": "{{count}} fotos",
-        "viewHistory": "Ver historial",
+        "viewHistory": "View History",
         "sendReminder": "Enviar recordatorio",
-        "uploadNew": "Subir nuevo"
+        "uploadNew": "Subir nuevo",
+        "reminder": {
+          "subject": "Erinnerung zur Aktualisierung der Digitals",
+          "body": "Hallo {name},\n\nbitte lade deine neuesten Digitals hoch (schlichte Fotos, ohne Make-up), damit dein Profil aktuell bleibt.\n\nVielen Dank,\nLikelee",
+          "dialogTitle": "Digitals-Erinnerung senden",
+          "dialogDescription": "Sendet eine E-Mail an das ausgewählte {{entity}}. Erfordert eine SMTP-Konfiguration auf dem Server.",
+          "subjectLabel": "Betreff",
+          "messageLabel": "Nachricht",
+          "personalizeHint": "{name} zur Personalisierung verwenden.",
+          "noEmailsTitle": "Keine E-Mail-Adressen gefunden",
+          "noEmailsDescription": "Keines der ausgewählten {{entityPlural}} hat eine hinterlegte E-Mail-Adresse.",
+          "failedRecipient": "Senden an {{email}} fehlgeschlagen",
+          "emailNotSent": "E-Mail nicht gesendet",
+          "emailSendingFailed": "E-Mail-Versand fehlgeschlagen",
+          "sentTitle": "Erinnerungen gesendet",
+          "sentDescription": "Gesendet: {{sent}}, Fehlgeschlagen: {{failed}}"
+        },
+        "history": {
+          "title": "Historial de Digitales"
+        },
+        "upload": {
+          "uploadDigitals": "Subir Digitales"
+        },
+        "view": "Ver",
+        "uploadPhoto": "Subir foto",
+        "previousUpdates": "Actualizaciones anteriores",
+        "loadingHistory": "Cargando historial..."
       },
       "licenses": {
         "comingSoon": "La gestión de licencias llegará pronto"
@@ -306,9 +363,10 @@
         "sentDescription": "Enviados: {{sent}}, Fallidos: {{failed}}"
       },
       "seats": {
-        "insufficientTitle": "¡Plazas insuficientes!",
+        "insufficientTitle": "¡Asientos insuficientes!",
         "insufficientDescription": "Tu plan actual permite {{count}} {{entity}}. Mejora tu plan para añadir más.",
-        "viewPlans": "Ver planes"
+        "viewPlans": "Ver planes",
+        "insufficientMessage": "Su plan actual permite {{count}} {{entity}}. Actualice para agregar más."
       },
       "upload": {
         "title": "Subir nuevos digitals - {{name}}",
@@ -330,6 +388,1287 @@
         "loading": "Cargando historial...",
         "previousUpdates": "Actualizaciones anteriores",
         "unknown": "Desconocido"
+      },
+      "advancedFilters": {
+        "title": "Advanced Filters",
+        "sections": {
+          "physical": "Physical Attributes",
+          "appearance": "Appearance",
+          "specialFeatures": "Special Features"
+        },
+        "fields": {
+          "gender": "Gender",
+          "heightRange": "Height Range",
+          "ageRange": "Age Range",
+          "hairColor": "Hair Color",
+          "eyeColor": "Eye Color",
+          "ethnicity": "Ethnicity",
+          "tattoos": "Tattoos",
+          "piercings": "Piercings"
+        },
+        "placeholders": {
+          "allGenders": "All Genders",
+          "allHairColors": "All Hair Colors",
+          "allEyeColors": "All Eye Colors",
+          "allEthnicities": "All Ethnicities",
+          "minCm": "Min (cm)",
+          "maxCm": "Max (cm)",
+          "min": "Min",
+          "max": "Max",
+          "any": "Any"
+        },
+        "options": {
+          "male": "Male",
+          "female": "Female",
+          "nonBinary": "Non-binary",
+          "genderFluid": "Gender fluid",
+          "preferNotToSay": "Prefer not to say",
+          "black": "Black",
+          "brown": "Brown",
+          "blonde": "Blonde",
+          "red": "Red",
+          "gray": "Gray",
+          "other": "Other",
+          "blue": "Blue",
+          "green": "Green",
+          "hazel": "Hazel",
+          "white": "White",
+          "asian": "Asian",
+          "hispanic": "Hispanic",
+          "middleEastern": "Middle Eastern",
+          "mixed": "Mixed",
+          "hasTattoos": "Has Tattoos",
+          "noTattoos": "No Tattoos",
+          "hasPiercings": "Has Piercings",
+          "noPiercings": "No Piercings"
+        },
+        "actions": {
+          "reset": "Reset Advanced Filters"
+        }
+      },
+      "clientsCampaigns": {
+        "title": "Clients & Campaigns",
+        "noData": "No clients or campaigns data available.",
+        "totalClients": "Total Clients",
+        "activeClients": "Active Clients",
+        "campaignPerformance": "Campaign Performance",
+        "clientSatisfaction": "Client Satisfaction"
+      },
+      "compliance": {
+        "title": "Compliance",
+        "verificationRate": "Verification Rate",
+        "activeConsents": "Active Consents",
+        "expiringSoon": "Expiring Soon",
+        "assignedTalent": "Assigned Talent",
+        "renewLicense": "Renew License",
+        "noData": "No compliance data available.",
+        "complianceScore": "Compliance Score",
+        "documentsRequired": "Documents Required",
+        "verificationsComplete": "Verifications Complete"
+      },
+      "labels": {
+        "growthPercent": "+{{value}}% growth",
+        "vsLastPeriod": "+{{value}}% vs last period",
+        "monthlyPerformanceTrends": "Monthly Performance Trends",
+        "earnings": "Earnings ($)",
+        "earningsLower": "earnings",
+        "licenses": "Licenses",
+        "campaigns": "Campaigns",
+        "aiUsages": "AI Usages",
+        "complete": "Complete",
+        "missing": "Missing",
+        "expiring": "Expiring",
+        "projected": "projected",
+        "inactive": "inactive",
+        "active": "active",
+        "talent": "Talent",
+        "talentPerformanceMetrics": "Talent Performance Metrics",
+        "engagement": "engagement",
+        "mostActive": "Most Active ({{metric}})",
+        "clientAcquisition": "Client Acquisition",
+        "newClients": "New clients in the last 30 days",
+        "repeatClientRate": "Repeat Client Rate",
+        "action": "Action",
+        "ofTotal": "{{value}}% of total",
+        "percentOfTotal": "{{value}}% of total",
+        "topClientsPerformance": "Top Clients Performance",
+        "geographicDistribution": "Geographic Distribution",
+        "complianceSummary": "Compliance Summary",
+        "consentStatusDistribution": "Consent Status Distribution",
+        "comingSoon": "Coming Soon",
+        "licenseExpiryPipeline": "License Expiry Pipeline",
+        "expiredOn": "Expired on {{date}}",
+        "nextDays": "Next {{count}} days",
+        "next10Days": "Next 10 days",
+        "verified": "{{count}} of {{total}} verified",
+        "verifiedOfTotal": "{{count}} of {{total}} verified",
+        "completeOfTotal": "{{count}} of {{total}} complete",
+        "licensesLower": "licenses",
+        "campaignsLower": "campaigns",
+        "30dEarnings": "30D Earnings",
+        "totalBookings": "Total Bookings",
+        "conversionRate": "Conversion Rate",
+        "averageBookingValue": "Average Booking Value",
+        "topBookedTalent": "Top Booked Talent",
+        "bookingsByType": "Bookings by Type",
+        "revenueBySource": "Revenue by Source",
+        "performanceTrends": "Performance Trends"
+      },
+      "months": {
+        "jan": "Jan",
+        "feb": "Feb",
+        "mar": "Mar",
+        "apr": "Apr",
+        "may": "May",
+        "jun": "Jun",
+        "jul": "Jul",
+        "aug": "Aug",
+        "sep": "Sep",
+        "oct": "Oct",
+        "nov": "Nov",
+        "dec": "Dec"
+      },
+      "irlComingSoonDescription": "Analytics Dashboard for IRL Mode is coming soon.",
+      "loading": "Loading analytics...",
+      "error": "Failed to load analytics data",
+      "toastError": "Analytics Error",
+      "placeholder": {
+        "title": "Under Development",
+        "description": "This section is currently under development. Check back soon for updates."
+      },
+      "toasts": {
+        "refreshed": "Refreshed",
+        "refreshedDescription": "License expiry pipeline updated successfully. Found {{count}} expired licenses.",
+        "refreshFailed": "Refresh failed",
+        "refreshFailedDescription": "Failed to update license expiry pipeline.",
+        "reportExported": "Report exported",
+        "popupBlocked": "Popup blocked",
+        "popupBlockedDescription": "Allow popups for this site and try again.",
+        "pdfExportReady": "PDF export ready",
+        "pdfExportReadyDescription": "Use 'Save as PDF' in the print dialog.",
+        "refreshExpired": "Refresh expired licenses"
+      },
+      "createPackage": {
+        "title": "Create a New Talent Package",
+        "editTitle": "Edit {{entity}} Package",
+        "subtitle": "Build a beautiful portfolio package to showcase your {{entity}} to clients",
+        "fromTemplatePrefix": "Creating new package from",
+        "fromTemplateSuffix": "template",
+        "steps": {
+          "basic": "Basic Info",
+          "basicInfo": "Basic Info",
+          "talent": "Select Talents",
+          "selectTalents": "Select Talents",
+          "custom": "Customize",
+          "customize": "Customize",
+          "consent": "Consents",
+          "consents": "Consents",
+          "send": "Send",
+          "review": "Review"
+        },
+        "basicInfo": {
+          "title": "Basic Info",
+          "titleLabel": "Package Title",
+          "titlePlaceholder": "Enter package title",
+          "descriptionLabel": "Description",
+          "descriptionPlaceholder": "Describe your package",
+          "coverImage": "Cover Image",
+          "uploadCover": "Upload Cover",
+          "uploadUnavailable": "Upload unavailable",
+          "uploadUnavailableDesc": "Please sign in again and retry the upload.",
+          "invalidFile": "Invalid file",
+          "invalidFileDesc": "Please choose an image file.",
+          "coverUploaded": "Cover image uploaded",
+          "coverUploadFailed": "Cover upload failed",
+          "packageName": "Package Name",
+          "packageDescription": "Package Description"
+        },
+        "selectTalents": {
+          "title": "Select Talents",
+          "searchPlaceholder": "Search talents...",
+          "noTalentsSelected": "No talents selected",
+          "selectedTalents": "Selected Talents",
+          "addTalent": "Add Talent",
+          "selectAtLeastOne": "Select at least one talent",
+          "talentList": "Talent List",
+          "availableTalents": "Available Talents"
+        },
+        "customize": {
+          "title": "Customize",
+          "brandingApplied": "Branding applied",
+          "primaryColor": "Primary Color",
+          "secondaryColor": "Secondary Color",
+          "customMessage": "Custom Message",
+          "customMessagePlaceholder": "Add a personal message",
+          "allowComments": "Allow Comments",
+          "allowFavorites": "Allow Favorites",
+          "allowCallbacks": "Allow Callbacks",
+          "theme": "Theme",
+          "layout": "Layout",
+          "branding": "Branding"
+        },
+        "consents": {
+          "title": "Consents",
+          "consentItems": "Consent Items",
+          "addConsent": "Add Consent",
+          "removeConsent": "Remove Consent",
+          "consentText": "Consent Text",
+          "consentRequired": "Consent Required",
+          "defaultConsents": [
+            "Use each selected asset only for the approved campaign objective and channels.",
+            "Do not alter the athlete's/talent's likeness in misleading, harmful, or defamatory ways.",
+            "Do not sublicense, resell, transfer, or share raw files with third parties.",
+            "Do not use the assets for political, adult, tobacco, gambling, or illegal content.",
+            "Stop all usage immediately after package or license expiry unless renewed in writing."
+          ]
+        },
+        "send": {
+          "title": "Send Package",
+          "sendToBrand": "Send to Brand",
+          "selectBrand": "Select Brand",
+          "clientName": "Client Name",
+          "clientEmail": "Client Email",
+          "passwordProtected": "Password Protected",
+          "password": "Password",
+          "expiryDate": "Expiry Date",
+          "send": "Send Package",
+          "sending": "Sending...",
+          "success": "Package sent successfully",
+          "failed": "Failed to send package",
+          "invalidEmail": "Please enter a valid email address for delivery",
+          "notLinkedToOffer": "This package is not linked to an offer",
+          "selectBrandRequired": "Please select a connected brand",
+          "selectConnectedBrand": "Please select a connected brand",
+          "clientNameRequired": "Client Contact name is required",
+          "deliveryEmailRequired": "Delivery Email is required",
+          "recipientEmail": "Recipient Email",
+          "message": "Message",
+          "messagePlaceholder": "Add a message to the recipient",
+          "expiresOn": "Expires On",
+          "neverExpires": "Never Expires"
+        },
+        "validation": {
+          "required": "Required",
+          "titleRequired": "Title is required",
+          "empty": "Empty",
+          "selectTalent": "Please select at least one talent",
+          "selectAthlete": "Please select at least one athlete",
+          "addConsent": "Add at least one consent point before continuing",
+          "invalidEmail": "Invalid email address",
+          "fieldRequired": "This field is required"
+        },
+        "upload": {
+          "invalidFile": "Invalid file",
+          "invalidFileDesc": "Please select an image file",
+          "imageUploaded": "Image uploaded",
+          "uploadFailed": "Upload failed",
+          "uploading": "Uploading...",
+          "selectFile": "Select File"
+        },
+        "common": {
+          "next": "Next",
+          "previous": "Previous",
+          "back": "Back",
+          "cancel": "Cancel",
+          "save": "Save",
+          "delete": "Delete",
+          "loading": "Loading...",
+          "submit": "Submit",
+          "continue": "Continue",
+          "finish": "Finish",
+          "close": "Close"
+        }
+      },
+      "deliverables": {
+        "title": "Deliverables",
+        "subtitle": "Assign talents, request assets, and review deliverables for brand offers.",
+        "collapseAll": "Collapse All",
+        "expandAll": "Expand All",
+        "noBrandOffers": "No brand offers available.",
+        "addTalent": "Add Talent",
+        "assigned": "Assigned",
+        "sectionTitle": "Deliverables",
+        "submitToBrand": "Submit to Brand",
+        "creatorUploads": "Creator uploads",
+        "agencyUploads": "Agency uploads",
+        "noneYet": "None yet.",
+        "unassignTalentButton": "Unassign talent",
+        "paymentPendingBanner": "Brand payment is still pending. You can upload and submit deliverables now, but you'll need to confirm the unpaid status before submitting.",
+        "assignmentsLockedTitle": "Assignments locked",
+        "assignmentsLockedDescription": "You can change assigned talents before the contract is sent. This offer is already sent, so assignments can't be changed.",
+        "offerStates": {
+          "contractFullySigned": "Contract Fully Signed",
+          "contractSent": "Contract Sent",
+          "sent": "Sent",
+          "accepted": "Accepted",
+          "signed": "Signed",
+          "notSigned": "Not signed",
+          "paid": "Paid",
+          "awaitingPayment": "Awaiting Payment"
+        },
+        "actions": {
+          "hide": "Hide",
+          "open": "Open",
+          "viewDetails": "View Details",
+          "approve": "Approve",
+          "reject": "Reject",
+          "download": "Download",
+          "upload": "Upload"
+        },
+        "states": {
+          "loadingAssignments": "Loading assignments...",
+          "noTalentsAssigned": "No talents assigned yet."
+        },
+        "payoutStatus": {
+          "title": "Payout Status",
+          "allTransferred": "all transferred",
+          "actionRequired": "action required",
+          "refresh": "Refresh",
+          "retryFailed": "Retry failed",
+          "loading": "Loading payout status...",
+          "clickRefresh": "Click refresh to load payout status.",
+          "agency": "agency",
+          "talent": "talent",
+          "noStripeAccount": "No Stripe account",
+          "transfersNotEnabled": "Transfers not enabled",
+          "stripeReady": "Stripe ready",
+          "retry": "retry",
+          "retries": "retries",
+          "fixStripeAccount": "Fix your Stripe account",
+          "askTalentStripe": "Ask this talent to complete their Stripe onboarding in their portal.",
+          "messageTalent": "Message talent"
+        },
+        "noDeliverables": "No deliverables found",
+        "loading": "Loading deliverables...",
+        "upload": "Upload",
+        "uploadDeliverable": "Upload Deliverable",
+        "view": "View",
+        "download": "Download",
+        "delete": "Delete",
+        "approve": "Approve",
+        "reject": "Reject",
+        "requestRevision": "Request Revision",
+        "submit": "Submit",
+        "submitAll": "Submit All",
+        "status": {
+          "draft": "Draft",
+          "brandReview": "Sent to Brand",
+          "brandApproved": "Brand Approved",
+          "new": "New",
+          "pending": "Pending",
+          "submitted": "Submitted",
+          "approved": "Approved",
+          "rejected": "Rejected",
+          "revisionRequested": "Revision Requested",
+          "inReview": "In Review",
+          "completed": "Completed"
+        },
+        "uploadSuccess": "Deliverable uploaded successfully",
+        "uploadFailed": "Failed to upload deliverable",
+        "deleteSuccess": "Deliverable deleted successfully",
+        "deleteFailed": "Failed to delete deliverable",
+        "approveSuccess": "Deliverable approved successfully",
+        "approveFailed": "Failed to approve deliverable",
+        "rejectSuccess": "Deliverable rejected successfully",
+        "rejectFailed": "Failed to reject deliverable",
+        "submitSuccess": "Deliverable submitted successfully",
+        "submitFailed": "Failed to submit deliverable",
+        "requestAsset": "Request Asset",
+        "confirmDelete": "This will permanently remove the deliverable. Continue?",
+        "assignTalent": {
+          "title": "Assign Talent",
+          "subtitle": "Select one or more talents from your roster to assign to this offer.",
+          "confirmDialogTitle": "Confirm talent assignment?",
+          "filterPlaceholder": "Filter by name or email...",
+          "loadingTalents": "Loading talents…",
+          "fetchingRoster": "Fetching your agency roster.",
+          "talentFallback": "Talent",
+          "confirmSelection": "Confirm Selection",
+          "assigned": "assigned",
+          "inviteRequired": "invite required",
+          "changeBeforeContract": "You can change assigned talents any time before the contract is sent. Once you send the contract, assignments are locked.",
+          "contractSent": "This offer's contract has already been sent. Talent assignments are locked.",
+          "confirmAssignment": "Confirm assignment"
+        },
+        "unassignTalent": {
+          "title": "Unassign talent?",
+          "description": "Remove {talentName} from this offer. You can change assigned talents before the contract is sent. After you send the contract, assignments are locked.",
+          "cancel": "Cancel",
+          "unassigning": "Unassigning...",
+          "unassign": "Unassign"
+        },
+        "requestAssetModal": {
+          "title": "Request Asset",
+          "subtitle": "Send a clear brief and optional PDF to guide the talent.",
+          "titleLabel": "Title",
+          "titlePlaceholder": "Short title (e.g., Product shots for May)",
+          "detailsLabel": "Details",
+          "detailsPlaceholder": "Describe exactly what you need, delivery format, and deadline.",
+          "briefPdfLabel": "Brief PDF (optional)",
+          "chooseFile": "Choose File",
+          "noFileSelected": "No file selected",
+          "sendRequest": "Send Request",
+          "selectedTalent": "Selected talent",
+          "cancel": "Cancel",
+          "sending": "Sending..."
+        },
+        "uploadDeliverableModal": {
+          "title": "Upload Deliverable",
+          "subtitle": "Add a caption and upload one or more files.",
+          "captionPlaceholder": "Caption",
+          "captionLabel": "Caption",
+          "chooseFiles": "Choose Files",
+          "noFilesSelected": "No files selected",
+          "filesSelected": "{count} file(s) selected",
+          "upload": "Upload",
+          "cancel": "Cancel",
+          "uploading": "Uploading..."
+        },
+        "viewOnly": {
+          "title": "View Only Mode",
+          "description": "Your role allows viewing deliverables but not approving or managing them."
+        },
+        "noCaption": "No caption",
+        "feedbackLabels": {
+          "yourFeedback": "Your Feedback:",
+          "brandFeedback": "Brand Feedback:"
+        },
+        "permissions": {
+          "cannotApprove": "Your role cannot approve deliverables",
+          "cannotRevise": "Your role cannot revise deliverables",
+          "cannotReject": "Your role cannot reject deliverables"
+        },
+        "notSignedDialog": {
+          "title": "Offer not signed yet",
+          "description": "The offer must be fully signed before you can submit deliverables. Once signed, you can submit even if payment is still pending (with confirmation).",
+          "ok": "OK"
+        },
+        "unpaidSubmitDialog": {
+          "title": "Submit deliverables before payment?",
+          "description": "The brand has not paid for this offer yet. You can still submit deliverables now, but payment is required before escrow release.",
+          "confirm": "Submit anyway"
+        },
+        "submittedToBrand": "Submitted to brand",
+        "reviewModal": {
+          "approveTitle": "Approve Deliverable",
+          "rejectTitle": "Reject Deliverable",
+          "requestChangesTitle": "Request Changes",
+          "approveDescription": "Mark this deliverable as approved after brand sign-off.",
+          "rejectDescription": "Reject this deliverable and notify the creator.",
+          "requestChangesDescription": "Request revisions from the creator.",
+          "optionalNoteLabel": "Optional note for the creator.",
+          "feedbackLabel": "Feedback for creator",
+          "optionalNotePlaceholder": "Optional note for the creator.",
+          "feedbackPlaceholder": "What exactly should be changed?",
+          "approveAction": "Approve",
+          "rejectAction": "Reject",
+          "sendFeedbackAction": "Send Feedback",
+          "cancel": "Cancel"
+        },
+        "deleteDialog": {
+          "title": "Delete Deliverable"
+        },
+        "toasts": {
+          "assignmentsLocked": "Assignments locked",
+          "contractAlreadySigned": "Contract is already signed and you can't change assigned talents.",
+          "cantChangeAfterSent": "You can't change assigned talents after the contract is sent.",
+          "talentUnassigned": "Talent unassigned",
+          "talentRemoved": "Talent was removed from this offer.",
+          "unassignFailed": "Unassign failed",
+          "pleaseTryAgain": "Please try again.",
+          "nothingToRetry": "Nothing to retry",
+          "allTransfersSuccessful": "All transfers are already successful.",
+          "notYetAvailable": "Not yet available",
+          "retryAfterApproval": "Transfers can only be retried after the brand approves the deliverables.",
+          "retryFailed": "Retry failed",
+          "talentAssigned": "Talent assigned",
+          "assignmentFailed": "Assignment failed",
+          "offerInProgress": "This offer is already in progress, so talent assignments can't be changed anymore.",
+          "deliverablesUploaded": "Deliverables uploaded",
+          "uploadFailed": "Upload failed",
+          "permissionRequired": "Permission required",
+          "cannotSubmitDeliverables": "Your role cannot submit deliverables for approval.",
+          "submittedToBrand": "Submitted to brand",
+          "submitFailed": "Submit failed",
+          "cannotReviewDeliverables": "Your role cannot review deliverables.",
+          "reviewSubmitted": "Review submitted",
+          "reviewFailed": "Review failed",
+          "deliverableDeleted": "Deliverable deleted",
+          "deleteFailed": "Delete failed"
+        },
+        "statusLabels": {
+          "draft": "Draft",
+          "sentToBrand": "Sent to Brand",
+          "brandApproved": "Brand Approved",
+          "new": "New",
+          "contractSigned": "Contract Signed",
+          "contractSent": "Contract Sent",
+          "sent": "Sent",
+          "accepted": "Accepted",
+          "open": "Open"
+        },
+        "deliverableCard": {
+          "feedback": "Feedback",
+          "noCaption": "No caption",
+          "yourFeedback": "Your Feedback:",
+          "brandFeedback": "Brand Feedback:",
+          "approve": "Approve",
+          "revise": "Revise",
+          "reject": "Reject",
+          "deliverable": "Deliverable"
+        },
+        "offerCard": {
+          "offer": "Offer",
+          "brand": "Brand",
+          "hide": "Hide",
+          "open": "Open",
+          "assignTalent": "Assign Talent",
+          "addTalent": "Add Talent",
+          "signed": "Signed",
+          "notSigned": "Not signed",
+          "paid": "Paid",
+          "awaitingPayment": "Awaiting Payment"
+        },
+        "inviteRequiredDialog": {
+          "title": "Onboarding not completed",
+          "description": "{talentName} hasn't accepted their portal invite yet. They need to complete onboarding before they can be assigned to a contract.",
+          "goToRoster": "Go to Roster & Invite",
+          "cancel": "Cancel"
+        },
+        "retryTransferDialog": {
+          "title": "Transfer Retry Results",
+          "successCount": "{succeeded} of {total} transfers succeeded",
+          "transferred": "transferred",
+          "noAccount": "no account",
+          "failed": "failed",
+          "stripeNotSetup": "Stripe account not fully set up — transfers not enabled.",
+          "transfersNotAllowed": "Transfers not allowed on this Stripe account.",
+          "noStripeConnected": "No Stripe account connected.",
+          "noStripeYet": "No Stripe account connected yet.",
+          "agencyStripeGuidance": "Your Stripe account needs attention. Complete your Stripe onboarding to receive transfers.",
+          "creatorStripeGuidance": "One or more talents need to complete their Stripe onboarding before funds can be sent to them.",
+          "messageTalentButton": "Message {name}",
+          "fixStripeButton": "Fix your Stripe account",
+          "close": "Close"
+        },
+        "gallery": {
+          "cannotPreview": "This file cannot be previewed. Use download to open it."
+        },
+        "loadingOffers": "Loading offers..."
+      },
+      "brandConnections": {
+        "title": "Brand Connections",
+        "connectedBrands": "Connected Brands",
+        "requests": "Requests",
+        "brandOffers": "Brand Offers",
+        "deliverables": "Deliverables",
+        "packageFeedback": "Package Feedback",
+        "loadingBrands": "Loading connected brands...",
+        "loadBrandsFailed": "Failed to load connected brands.",
+        "noBrands": "No connected brands yet.",
+        "ui": {
+          "verifyingAccess": "Verifying access…",
+          "accessRestricted": "Access restricted",
+          "permissionRequired": "Permission required",
+          "permissionDescription": "You don’t have the required permissions to view Brand Connections. Please contact your admin if you believe this is a mistake.",
+          "viewOnlyTitle": "View-only mode",
+          "viewOnlyDescription": "Your role allows viewing, but not managing brand connections.",
+          "subtitle": "Manage connected brands, requests, offers, contracts, and deliverables.",
+          "connected": "Connected",
+          "since": "Since {{date}}",
+          "loadingRequests": "Loading requests…",
+          "failedToLoadRequests": "Failed to load requests.",
+          "noPendingRequests": "No pending requests.",
+          "brandFallback": "Brand",
+          "pending": "Pending",
+          "requestedOn": "Requested on {{date}}",
+          "loadingOffers": "Loading offers…",
+          "noOffers": "No offers found.",
+          "offerNotFound": "Offer not found.",
+          "backToList": "Back to list",
+          "noEmailProvided": "No email provided",
+          "disconnectFromBrand": "Disconnect from brand",
+          "noDisconnectPermission": "You don’t have permission to disconnect brands.",
+          "working": "Working…",
+          "accept": "Accept",
+          "noAcceptRequestPermission": "You don’t have permission to accept requests.",
+          "decline": "Decline",
+          "noDeclineRequestPermission": "You don’t have permission to decline requests.",
+          "acceptOffer": "Accept Offer",
+          "noAcceptOfferPermission": "Your role cannot accept offers",
+          "noDeclineOfferPermission": "Your role cannot decline offers",
+          "buildSendPackage": "Build & Send Talent Package",
+          "assignedTalent": "Assigned Talent",
+          "sendMessage": "Send Message"
+        },
+        "toasts": {
+          "requestAccepted": "Request accepted",
+          "requestDeclined": "Request declined",
+          "requestApproved": "The brand has been notified.",
+          "requestDeclinedDesc": "The brand has been notified.",
+          "actionFailed": "Action failed",
+          "pleaseTryAgain": "Please try again.",
+          "pleaseTryAgainShort": "Please try again.",
+          "assignmentsLocked": "Assignments locked",
+          "assignmentsLockedDesc": "Assignments are locked after the contract is sent.",
+          "contractAlreadySigned": "This contract has already been signed.",
+          "cantUnassignAfterSent": "You can’t change assigned talents after the contract is sent.",
+          "talentUnassigned": "Talent unassigned",
+          "talentRemovedFromOffer": "Talent was removed from this offer.",
+          "assignmentFailed": "Assignment failed",
+          "disconnected": "Disconnected",
+          "disconnectedDesc": "Brand disconnected successfully.",
+          "disconnectFailed": "Failed to disconnect brand"
+        },
+        "tabs": {
+          "connections": "Connections",
+          "noRequests": "No pending requests",
+          "accept": "Accept",
+          "reject": "Reject",
+          "acceptSuccess": "Request accepted successfully",
+          "acceptFailed": "Failed to accept request",
+          "rejectSuccess": "Request rejected successfully",
+          "rejectFailed": "Failed to reject request"
+        },
+        "offers": {
+          "title": "Offers",
+          "noOffers": "No offers found",
+          "viewOffer": "View Offer",
+          "respond": "Respond",
+          "decline": "Decline",
+          "respondSuccess": "Response sent successfully",
+          "respondFailed": "Failed to send response"
+        },
+        "contractHub": {
+          "title": "Contract Hub",
+          "managementTag": "Agency Management",
+          "noActiveOffers": "No active campaign offers to manage contracts for.",
+          "campaignOffers": "Campaign Offers",
+          "campaignOffer": "Campaign offer",
+          "brandLabel": "Brand",
+          "unknownBrand": "Unknown",
+          "selectOfferTitle": "Select an offer",
+          "selectOfferDescription": "Choose an offer from the sidebar to manage its contracts.",
+          "noContracts": "No contracts found",
+          "viewContract": "View Contract",
+          "download": "Download",
+          "sign": "Sign",
+          "submissions": "Submissions",
+          "newContract": "New contract",
+          "assignTalentBeforeContract": "Assign talent before creating a contract.",
+          "connectStripeBeforeSending": "Connect Stripe before sending contracts.",
+          "setupPayouts": "Set up payouts",
+          "noContractsForOffer": "No contracts for this offer yet.",
+          "createFirstContract": "Create first contract",
+          "uploadingPdf": "Uploading PDF…",
+          "creatingTemplate": "Creating template…",
+          "uploadContractPdf": "Upload contract PDF",
+          "uploadPdfDescription": "Upload a PDF to create a reusable contract template for this offer.",
+          "assignTalentFirst": "Assign talent first",
+          "assignTalentFirstDescription": "Assign at least one talent to this offer before creating a contract.",
+          "assignTalent": "Assign Talent"
+        },
+        "feedback": {
+          "title": "Package Feedback",
+          "loading": "Loading package feedback...",
+          "empty": "No package feedback yet.",
+          "viewActivity": "View Activity",
+          "noFeedback": "No feedback available",
+          "viewFeedback": "View Feedback"
+        },
+        "dialogs": {
+          "goToRosterInvite": "Go to Roster & Invite"
+        },
+        "accounting": {
+          "invoiceGenerationView": {
+            "title": "Generación de facturas",
+            "subtitle": "Crear y gestionar facturas de clientes",
+            "fields": {
+              "createInvoiceFrom": "Crear factura desde",
+              "selectBooking": "Seleccionar reserva para facturar",
+              "invoiceNumber": "Número de factura",
+              "invoiceDate": "Fecha de factura",
+              "dueDate": "Fecha de vencimiento",
+              "billToClient": "Facturar a (Cliente)",
+              "poNumber": "Número de pedido",
+              "projectReference": "Referencia de trabajo/proyecto",
+              "invoiceItems": "Partidas de la factura",
+              "description": "Descripción",
+              "talent": "Talento",
+              "dateOfService": "Fecha del servicio",
+              "rateType": "Tipo de tarifa",
+              "quantityHours": "Cantidad/Horas",
+              "unitPriceCents": "Precio unitario (céntimos)",
+              "expensesOptional": "Gastos (Opcional)",
+              "agencyCommissionPercent": "Comisión de agencia (%)",
+              "taxRatePercent": "Tasa fiscal (%)",
+              "taxExempt": "Exento de impuestos",
+              "discount": "Descuento",
+              "additionalNotesOptional": "Notas adicionales (Opcional)",
+              "paymentInstructions": "Instrucciones de pago",
+              "invoiceFooterText": "Pie de página de la factura",
+              "attachedFilesOptional": "Archivos adjuntos (Opcional)"
+            },
+            "sections": {
+              "financialSettings": "Configuración financiera",
+              "invoiceSummary": "Resumen de la factura"
+            },
+            "placeholders": {
+              "selectBooking": "Elige una reserva completada o confirmada",
+              "invoiceNumber": "Se asigna automáticamente al guardar",
+              "selectClient": "Seleccionar cliente",
+              "selectTalent": "Seleccionar talento",
+              "expenseDescription": "Descripción del gasto"
+            },
+            "options": {
+              "existingBooking": "Reserva existente",
+              "manualEntry": "Entrada manual",
+              "dueOnReceipt": "Pagadero al recibir",
+              "noTax": "0% - Sin impuesto"
+            },
+            "labels": {
+              "itemNumber": "Artículo #{{count}}",
+              "lineTotal": "Total de línea:",
+              "subtotalItems": "Subtotal ({{count}} artículos)",
+              "agencyCommissionSummary": "Comisión de agencia ({{percent}}%)",
+              "talentNetAmount": "Monto neto del talento",
+              "grandTotal": "Total general",
+              "attachedFilesDescription": "Adjunta contratos, acuerdos de uso o documentos de respaldo."
+            },
+            "actions": {
+              "preview": "Vista previa",
+              "addLineItem": "Agregar partida",
+              "addExpense": "Agregar gasto",
+              "uploadFile": "Subir archivo",
+              "saveAsDraft": "Guardar como borrador",
+              "markAsSent": "Marcar como enviada",
+              "emailToClient": "Enviar por correo al cliente",
+              "downloadPdf": "Descargar PDF",
+              "print": "Imprimir",
+              "duplicate": "Duplicar",
+              "markAsPaid": "Marcar como pagada",
+              "void": "Anular",
+              "close": "Cerrar"
+            },
+            "empty": {
+              "noFilesAttached": "No hay archivos adjuntos"
+            },
+            "preview": {
+              "title": "Vista previa de la factura",
+              "invoice": "Factura",
+              "notAssignedYet": "(aún no asignado)",
+              "invoiceDate": "Fecha de factura",
+              "dueDate": "Fecha de vencimiento",
+              "billTo": "Facturar a",
+              "noClientSelected": "(ningún cliente seleccionado)",
+              "status": "Estado",
+              "lineItems": "Partidas",
+              "qty": "Cant.",
+              "unit": "Unidad",
+              "total": "Total",
+              "noLineItems": "Sin partidas",
+              "expenses": "Gastos",
+              "taxable": "Imponible",
+              "yes": "Sí",
+              "no": "No",
+              "noExpenses": "Sin gastos",
+              "noneProvided": "(ninguno proporcionado)",
+              "footer": "Pie de página",
+              "subtotal": "Subtotal",
+              "tax": "Impuesto",
+              "agencyFee": "Tarifa de agencia ({{percent}}%)",
+              "talentNet": "Neto talento"
+            },
+            "table": {
+              "amount": "Monto"
+            }
+          },
+          "invoiceManagementView": {
+            "searchPlaceholder": "Buscar por nº de factura, cliente o nombre del talento...",
+            "showing": "Mostrando",
+            "invoices": "facturas",
+            "filters": {
+              "title": "Filtros",
+              "allStatus": "Todos los estados",
+              "sortBy": "Ordenar por...",
+              "issueDateFrom": "Fecha de emisión (desde)",
+              "issueDateTo": "Fecha de emisión (hasta)",
+              "minAmount": "Monto mínimo",
+              "maxAmount": "Monto máximo",
+              "showOverdueOnly": "Mostrar solo vencidas",
+              "allCurrencies": "Todas las monedas",
+              "clearAll": "Borrar todos los filtros"
+            },
+            "statuses": {
+              "draft": "Borrador",
+              "sent": "Enviada",
+              "paid": "Pagada",
+              "overdue": "Vencida",
+              "void": "Anulada"
+            },
+            "sort": {
+              "newest": "Más reciente primero",
+              "oldest": "Más antiguo primero",
+              "dueSoonest": "Fecha de vencimiento (próxima)",
+              "dueLatest": "Fecha de vencimiento (lejana)",
+              "amountHigh": "Monto (mayor a menor)",
+              "amountLow": "Monto (menor a mayor)",
+              "clientAz": "Cliente (A-Z)",
+              "clientZa": "Cliente (Z-A)",
+              "invoiceAsc": "Nº factura (asc.)",
+              "invoiceDesc": "Nº factura (desc.)"
+            },
+            "table": {
+              "invoiceNumber": "Factura #",
+              "clientName": "Nombre del cliente",
+              "issueDate": "Fecha de emisión",
+              "dueDate": "Fecha de vencimiento",
+              "amount": "Monto",
+              "status": "Estado",
+              "actions": "Acciones"
+            },
+            "actions": {
+              "paymentHistory": "Historial de pagos",
+              "print": "Imprimir",
+              "close": "Cerrar"
+            },
+            "paymentHistory": {
+              "title": "Historial de pagos",
+              "invoiceTotal": "Total de la factura",
+              "totalPaid": "Total pagado",
+              "remainingBalance": "Saldo restante",
+              "paymentTransactions": "Transacciones de pago",
+              "noPaymentsRecorded": "No hay pagos registrados",
+              "noPaymentsRecordedDescription": "Esta factura aún no ha sido marcada como pagada.",
+              "paymentNumber": "Pago #{{count}}",
+              "invoiceMarkedPaid": "Factura marcada como pagada",
+              "exportHistory": "Exportar historial"
+            }
+          },
+          "expenseTrackingView": {
+            "searchPlaceholder": "Buscar gastos...",
+            "totalExpenses": "Total de gastos",
+            "loading": "Cargando...",
+            "filters": {
+              "allCategories": "Todas las categorías"
+            },
+            "categories": {
+              "travel": "Viaje",
+              "equipment": "Equipo",
+              "marketing": "Marketing",
+              "other": "Otro"
+            },
+            "statuses": {
+              "approved": "Aprobado",
+              "pending": "Pendiente",
+              "rejected": "Rechazado"
+            },
+            "actions": {
+              "addExpense": "Agregar gasto",
+              "cancel": "Cancelar"
+            },
+            "modal": {
+              "title": "Agregar gasto",
+              "subtitle": "Crea un nuevo gasto operativo para tu agencia.",
+              "fields": {
+                "name": "Nombre",
+                "category": "Categoría",
+                "date": "Fecha",
+                "amountUsd": "Monto (USD)",
+                "status": "Estado",
+                "submitterOptional": "Enviado por (opcional)"
+              },
+              "placeholders": {
+                "name": "ej. Alquiler de cámara",
+                "submitter": "ej. Emma"
+              }
+            },
+            "toasts": {
+              "expenseAdded": "Gasto agregado",
+              "failedToAddExpense": "Error al agregar el gasto",
+              "failedToLoadExpenses": "Error al cargar los gastos"
+            }
+          },
+          "talentStatementsView": {
+            "title": "Estados de ganancias de {{entitySingular}}",
+            "subtitle": "Ver y gestionar estados de pago de {{entitySingularLower}}",
+            "searchPlaceholder": "Buscar por nombre de {{entitySingularLower}}...",
+            "empty": "Aún no hay estados de talento.",
+            "actions": {
+              "exportAll": "Exportar todo",
+              "viewStatement": "Ver estado",
+              "emailStatement": "Enviar estado por correo",
+              "downloadPdf": "Descargar PDF",
+              "print": "Imprimir"
+            },
+            "filters": {
+              "sortBy": "Ordenar por...",
+              "hasUnpaidEarnings": "Tiene ganancias sin pagar",
+              "selectPeriod": "Seleccionar período",
+              "allTime": "Todo el tiempo",
+              "thisMonth": "Este mes",
+              "lastMonth": "El mes pasado",
+              "thisQuarter": "Este trimestre",
+              "thisYear": "Este año",
+              "customRange": "Rango personalizado",
+              "amountHigh": "Monto adeudado (mayor a menor)",
+              "amountLow": "Monto adeudado (menor a mayor)",
+              "totalPaidHigh": "Total pagado (mayor a menor)",
+              "nameAz": "Nombre (A-Z)",
+              "nameZa": "Nombre (Z-A)"
+            },
+            "labels": {
+              "totalOwed": "Total adeudado",
+              "unpaidJobs": "{{count}} trabajos sin pagar",
+              "totalPaidYtd": "Total pagado (año en curso)",
+              "paidJobs": "{{count}} trabajos pagados",
+              "lifetimeEarnings": "Ganancias totales",
+              "avgPerMonth": "Prom.: $0/mes",
+              "lastPayment": "Último pago",
+              "noPayments": "Sin pagos",
+              "earningsDetail": "Detalle de ganancias",
+              "totalGrossAmount": "Monto bruto total",
+              "totalAgencyCommission": "Comisión total de agencia (20%)",
+              "totalJobs": "{{count}} trabajos en total",
+              "hasUnpaid": "Tiene sin pagar",
+              "noUnpaid": "Sin impagados",
+              "hasPaid": "Tiene pagados",
+              "noPaid": "Sin pagados"
+            },
+            "table": {
+              "jobDate": "Fecha del trabajo",
+              "client": "Cliente",
+              "description": "Descripción",
+              "gross": "Bruto",
+              "commission": "Comisión",
+              "net": "Neto",
+              "status": "Estado",
+              "invoice": "Factura"
+            },
+            "statuses": {
+              "paid": "Pagado",
+              "unpaid": "Sin pagar"
+            }
+          }
+        }
+      },
+      "settings": {
+        "title": "Settings",
+        "tabs": {
+          "profile": "Profile",
+          "team": "Team",
+          "integrations": "Integrations",
+          "billing": "Billing",
+          "notifications": "Notifications"
+        },
+        "profile": {
+          "title": "Agency Profile",
+          "subtitle": "Configure your agency profile and preferences",
+          "save": "Save Changes",
+          "cancel": "Cancel",
+          "uploadLogo": "Upload Logo",
+          "agencyName": "Agency Name",
+          "agencyEmail": "Agency Email",
+          "agencyPhone": "Agency Phone",
+          "agencyAddress": "Agency Address",
+          "agencyWebsite": "Agency Website",
+          "description": "Description",
+          "saveSuccess": "Profile saved successfully",
+          "saveFailed": "Failed to save profile",
+          "currentPlan": "Current Plan"
+        },
+        "agencyInformation": {
+          "title": "Agency Information",
+          "verified": "Verified",
+          "agencyName": "Agency Name",
+          "legalEntityName": "Legal Entity Name",
+          "address": "Address",
+          "city": "City",
+          "stateProvince": "State/Province",
+          "zipPostalCode": "ZIP/Postal Code",
+          "country": "Country",
+          "timeZone": "Time Zone",
+          "phone": "Phone",
+          "email": "Email",
+          "website": "Website",
+          "taxIdEin": "Tax ID / EIN",
+          "selectCountry": "Select country",
+          "selectTimezone": "Select timezone",
+          "countries": {
+            "us": "United States",
+            "uk": "United Kingdom",
+            "ca": "Canada",
+            "de": "Germany"
+          },
+          "timezones": {
+            "est": "Eastern Time (EST)",
+            "cst": "Central Time (CST)",
+            "pst": "Pacific Time (PST)"
+          }
+        },
+        "branding": {
+          "title": "Branding",
+          "agencyLogo": "Agency Logo",
+          "uploadNewLogo": "Upload New Logo",
+          "uploading": "Uploading...",
+          "emailSignature": "Email Signature",
+          "emailSignaturePlaceholder": "Best regards,\\nAgency Name\\nhttps://agency.com/\\n+1 (212) 555-0123"
+        },
+        "saveProfile": {
+          "saving": "Guardando...",
+          "saveProfileSettings": "Guardar configuración del perfil",
+          "settingsSaved": "Configuración guardada",
+          "profileUpdated": "El perfil de tu agencia se ha actualizado correctamente."
+        },
+        "commissions": {
+          "title": "Tasa de comisión predeterminada",
+          "subtitle": "Establecer la tasa de comisión predeterminada para nuevos talentos",
+          "saveCommissionSettings": "Guardar configuración de comisiones",
+          "saving": "Guardando...",
+          "settingsSaved": "Configuración de comisiones guardada",
+          "settingsSavedDescription": "Tu configuración de comisiones se ha guardado."
+        },
+        "team": {
+          "title": "Team Members",
+          "invite": "Invite Member",
+          "remove": "Remove Member",
+          "editPermissions": "Edit Permissions",
+          "roles": {
+            "admin": "Admin",
+            "manager": "Manager",
+            "member": "Member"
+          },
+          "inviteSuccess": "Member invited successfully",
+          "inviteFailed": "Failed to invite member",
+          "removeSuccess": "Member removed successfully",
+          "removeFailed": "Failed to remove member"
+        },
+        "taxAndCurrency": {
+          "title": "Tax & Currency Settings",
+          "defaultCurrency": "Default Currency",
+          "selectCurrency": "Select currency",
+          "currencies": {
+            "usd": "USD - US Dollar",
+            "eur": "EUR - Euro",
+            "gbp": "GBP - British Pound"
+          },
+          "dateFormat": "Date Format",
+          "selectFormat": "Select format",
+          "invoiceSettings": "Invoice Settings",
+          "defaultPaymentTerms": "Default Payment Terms",
+          "selectTerms": "Select terms",
+          "paymentTerms": {
+            "due": "Due on Receipt",
+            "net15": "Net 15",
+            "net30": "Net 30",
+            "net60": "Net 60"
+          },
+          "settingsSaved": "Configuración de impuestos y moneda guardada",
+          "settingsSavedDescription": "Tu configuración se ha actualizado."
+        },
+        "subTabs": {
+          "profile": "Profile",
+          "commissions": "Commissions",
+          "emailTemplates": "Email Templates",
+          "notifications": "Notifications",
+          "taxAndCurrency": "Tax & Currency",
+          "team": "Team",
+          "fileStorage": "File Storage",
+          "integrations": "Integrations"
+        },
+        "emailTemplates": {
+          "title": "Email Templates",
+          "subtitle": "Customize automated email messages",
+          "newTemplate": "New Template",
+          "save": "Save Email Templates",
+          "saving": "Guardando...",
+          "settingsSaved": "Plantillas de correo guardadas",
+          "settingsSavedDescription": "Tus plantillas de correo se han guardado.",
+          "availableVariables": "Available Variables:",
+          "editTemplate": "Edit Template",
+          "templateName": "Template Name",
+          "subject": "Subject:",
+          "body": "Body:",
+          "subjectLabel": "Subject",
+          "bodyLabel": "Body",
+          "active": "Active",
+          "enableTemplateHint": "Enable this template for automated emails",
+          "templateNames": {
+            "bookingConfirmation": "Booking Confirmation",
+            "invoiceEmail": "Invoice Email",
+            "paymentReminder": "Payment Reminder"
+          },
+          "defaults": {
+            "bookingConfirmation": {
+              "name": "Booking Confirmation",
+              "subject": "Booking Confirmed - {client_name}",
+              "body": "Hi {talent_name},\n\nYour booking with {client_name} on {booking_date} at {call_time} has been confirmed.\n\nLocation: {location}\nRate: {rate}\n\nBest regards,\n{agency_name}"
+            },
+            "invoiceEmail": {
+              "name": "Invoice Email",
+              "subject": "Invoice {invoice_number} from {agency_name}",
+              "body": "Dear {client_name},\n\nPlease find attached invoice {invoice_number} for the amount of {invoice_total}.\n\nPayment terms: {payment_terms}\n\nThank you for your business.\n\n{agency_name}"
+            },
+            "paymentReminder": {
+              "name": "Payment Reminder",
+              "subject": "Payment Reminder - Invoice {invoice_number}",
+              "body": "Dear {client_name},\n\nThis is a friendly reminder that invoice {invoice_number} for {invoice_total} is due on {due_date}.\n\nIf you have already made the payment, please disregard this message.\n\nThank you,\n{agency_name}"
+            }
+          }
+        },
+        "fileStorage": {
+          "title": "File Storage",
+          "subtitle": "Organize and manage your agency files",
+          "goToStudio": "Go to Studio",
+          "storageUsage": "Storage usage",
+          "ofUsed": "of {{total}} used",
+          "remaining": "remaining",
+          "billingSubscription": "Billing & subscription",
+          "searchPlaceholder": "Search files and folders",
+          "view": {
+            "grid": "Grid",
+            "list": "List"
+          },
+          "search": "Search files and folders",
+          "viewMode": {
+            "grid": "Grid View",
+            "list": "List View"
+          },
+          "actions": {
+            "back": "Back",
+            "all": "All",
+            "newFolder": "New Folder",
+            "loadMoreFolders": "Load more folders",
+            "loadMoreFiles": "Load more files",
+            "uploadFiles": "Upload files",
+            "upload": "Upload File",
+            "addFile": "Add file",
+            "rename": "Rename",
+            "delete": "Delete",
+            "download": "Download",
+            "share": "Share",
+            "preview": "Preview"
+          },
+          "clickToCreate": "Click to create",
+          "clickToUpload": "Click to upload",
+          "loading": "Loading…",
+          "uploading": "Uploading…",
+          "uploadingShort": "Uploading",
+          "noMoreFolders": "No more folders",
+          "noMoreFiles": "No more files",
+          "fileCount": "{{count}} file",
+          "fileCount_other": "{{count}} files",
+          "deleteFile": {
+            "title": "Delete file",
+            "description": "Are you sure you want to delete this file?",
+            "cannotUndo": "This action cannot be undone.",
+            "confirm": "Delete file"
+          },
+          "deleteFolder": {
+            "title": "Delete folder",
+            "description": "Are you sure you want to delete the folder",
+            "descriptionSuffix": "and all of its contents?",
+            "confirm": "Delete folder"
+          },
+          "folders": {
+            "title": "Folders",
+            "createFolder": "Create Folder",
+            "folderName": "Folder Name",
+            "createSuccess": "Folder created successfully",
+            "createFailed": "Failed to create folder",
+            "renameSuccess": "Folder renamed successfully",
+            "renameFailed": "Failed to rename folder",
+            "deleteSuccess": "Folder deleted successfully",
+            "deleteFailed": "Failed to delete folder"
+          },
+          "files": {
+            "title": "Files",
+            "uploadSuccess": "File uploaded successfully",
+            "uploadFailed": "Failed to upload file",
+            "deleteSuccess": "File deleted successfully",
+            "deleteFailed": "Failed to delete file",
+            "downloadSuccess": "File downloaded successfully",
+            "downloadFailed": "Failed to download file"
+          },
+          "storage": {
+            "used": "Used",
+            "of": "of",
+            "total": "Total Storage"
+          }
+        },
+        "integrations": {
+          "title": "Integrations",
+          "calendly": "Calendly",
+          "stripe": "Stripe",
+          "connect": "Connect",
+          "disconnect": "Disconnect",
+          "connectSuccess": "Integration connected successfully",
+          "connectFailed": "Failed to connect integration",
+          "disconnectSuccess": "Integration disconnected successfully",
+          "disconnectFailed": "Failed to disconnect integration",
+          "calendlyEventType": "Tipo de evento de Calendly",
+          "calendlyEventTypeDescription": "Selecciona el tipo de evento de Calendly que Likelee debe usar para invitaciones y recordatorios de reservas",
+          "calendlyEventTypeManualPaste": "Pega el URI completo del tipo de evento de Calendly que Likelee debe usar para reservas. Esto funciona incluso cuando el token no puede listar tipos de eventos automáticamente.",
+          "calendlyNoEventTypes": "No se encontraron tipos de eventos activos de Calendly para esta cuenta",
+          "calendlySaveTokenFirst": "Guarda un token de Calendly válido para cargar tipos de eventos",
+          "fieldStatus": {
+            "saving": "Guardando...",
+            "saved": "Guardado",
+            "saveFailed": "Error al guardar"
+          },
+          "saveSettings": "Guardar configuración",
+          "saving": "Guardando..."
+        },
+        "billing": {
+          "title": "Billing",
+          "plan": "Current Plan",
+          "upgrade": "Upgrade Plan",
+          "cancel": "Cancel Subscription",
+          "paymentMethod": "Payment Method",
+          "invoices": "Invoices",
+          "downloadInvoice": "Download Invoice"
+        },
+        "notifications": {
+          "title": "Notifications",
+          "email": "Email Notifications",
+          "push": "Push Notifications",
+          "sms": "SMS Notifications",
+          "preferences": "Notification Preferences",
+          "saveSuccess": "Preferences saved successfully",
+          "saveFailed": "Failed to save preferences",
+          "settingsSaved": "Configuración de notificaciones guardada",
+          "settingsSavedDescription": "Tus preferencias de notificación se han actualizado."
+        }
+      },
+      "comingSoon": "Coming soon",
+      "comingSoonDescription": "Coming soon.",
+      "commissionStructure": {
+        "connectionRequired": "Conexión requerida",
+        "connectionRequiredDescription": "Solo los talentos con una cuenta de creador activa se enumeran aquí. Para administrar comisiones para miembros del roster pendientes o no invitados, asegúrese de que hayan aceptado su invitación al portal de talentos. Las cuentas de creador conectadas al marketplace se muestran como controladas por contrato una vez que su acuerdo firmado se activa.",
+        "currentTier": "Nivel actual",
+        "commissionSource": "Fuente de comisión",
+        "effectiveRate": "Tasa efectiva",
+        "settingsRate": "Tasa de configuración (%)",
+        "contractControlled": "Controlado por contrato",
+        "customOverride": "Anulación personalizada",
+        "tierDefault": "Predeterminado de nivel",
+        "marketplaceConnected": "Conectado al marketplace",
+        "agencyManaged": "Gestionado por agencia",
+        "locked": "Bloqueado",
+        "agencyShare": "Participación de la agencia",
+        "commissionModel": "Modelo de comisión",
+        "modelDescriptionPrefix": "Las tasas de comisión representan la",
+        "modelDescriptionBody": ". Las cuentas de {{entity}} gestionadas por la agencia se pueden ajustar aquí con anulaciones de configuración, mientras que las cuentas de {{entity}} conectadas al marketplace siguen la tasa del contrato firmado activo y permanecen bloqueadas en esta pantalla.",
+        "saveChanges": "Guardar cambios",
+        "discardAll": "Descartar todo",
+        "saving": "Guardando...",
+        "loadingRoster": "Cargando roster...",
+        "loadFailed": "Error al cargar la configuración de comisiones",
+        "tryAgain": "Intentar de nuevo",
+        "discardChange": "Descartar cambio",
+        "resetToTierDefault": "Restablecer al predeterminado de nivel",
+        "noResultsFound": "No se encontraron resultados",
+        "noEntityFound": "No se encontró {{entity}}"
       }
     },
     "navigation": {
@@ -385,7 +1724,12 @@
       },
       "signOut": "Cerrar sesión",
       "choosePlan": "Elegir un plan",
-      "requiresPro": "Requiere Pro"
+      "requiresPro": "Requiere Pro",
+      "addIrlBooking": "Agregar Reserva Presencial",
+      "getIrlBookingAddon": "Obtener complemento de Reserva Presencial",
+      "buyIrlBookingAddon": "Comprar complemento de Reserva Presencial",
+      "irlBookingRequired": "Requiere complemento de Reserva Presencial",
+      "enableIrlBookingMessage": "Habilite el complemento de Reserva Presencial para usar Calendly, scouting, CRM de clientes, reservas y flujos de trabajo de contabilidad presencial."
     },
     "settings": {
       "title": "Configuración",
@@ -434,10 +1778,17 @@
           "upload": "Subir",
           "addFile": "Agregar archivo",
           "download": "Descargar",
-          "delete": "Eliminar"
+          "delete": "Eliminar",
+          "rename": "Umbenennen",
+          "share": "Teilen",
+          "preview": "Vorschau"
         },
-        "folders": "Carpetas",
-        "files": "Archivos",
+        "folders": {
+          "title": "Ordner"
+        },
+        "files": {
+          "title": "Dateien"
+        },
         "clickToCreate": "Haz clic para crear",
         "clickToUpload": "Haz clic para subir",
         "loading": "Cargando…",
@@ -648,7 +1999,8 @@
           "addScout": "Agregar scout",
           "cancel": "Cancelar",
           "createTrip": "Crear viaje",
-          "updateTrip": "Actualizar viaje"
+          "updateTrip": "Actualizar viaje",
+          "saving": "Guardando..."
         }
       },
       "pipeline": {
@@ -775,6 +2127,41 @@
       },
       "search": {
         "placeholder": "Buscar por nombre, rol, biografía o habilidades..."
+      },
+      "submissions": {
+        "title": "Envíos del sitio web",
+        "subtitle": "Revisar solicitudes de talento",
+        "pendingReview": "18 pendientes de revisión",
+        "bulkActions": "Acciones masivas",
+        "emptyTitle": "No hay nuevos envíos",
+        "emptyDescription": "Las solicitudes de tu sitio web aparecerán aquí."
+      },
+      "openCalls": {
+        "title": "Convocatorias abiertas y eventos",
+        "subtitle": "Organiza convocatorias abiertas y castings virtuales para encontrar nuevo talento",
+        "loading": "Cargando eventos...",
+        "emptyTitle": "No hay eventos planificados",
+        "emptyDescription": "Crea tu primera convocatoria abierta o evento de scouting",
+        "createFirstEvent": "Crear primer evento",
+        "active": "Activo",
+        "noDescription": "Sin descripción disponible.",
+        "delete": "Eliminar",
+        "editDetails": "Editar detalles"
+      },
+      "analytics": {
+        "failedToLoad": "No se pudieron cargar los datos analíticos.",
+        "totalProspects": "TOTAL DE PROSPECTOS",
+        "allTime": "Todo el tiempo",
+        "conversionRate": "TASA DE CONVERSIÓN",
+        "prospectsToSigned": "Prospectos → Firmados",
+        "avgTimeToSign": "TIEMPO MEDIO HASTA LA FIRMA",
+        "fromDiscovery": "Desde el descubrimiento"
+      },
+      "toasts": {
+        "eventDeleted": "Evento eliminado",
+        "eventDeletedDescription": "\"{{name}}\" ha sido eliminado correctamente.",
+        "deleteFailed": "Error al eliminar",
+        "deleteFailedDescription": "Se produjo un error al eliminar el evento."
       }
     },
     "bookings": {
@@ -1023,6 +2410,93 @@
             "ongoing": "En curso",
             "completed": "Completada"
           }
+        },
+        "campaignModal": {
+          "titleCreate": "Crear nueva campaña",
+          "titleEdit": "Editar campaña",
+          "fields": {
+            "name": "Nombre de la campaña *",
+            "status": "Estado",
+            "duration": "Duración (días)",
+            "startDate": "Fecha de inicio"
+          },
+          "placeholders": {
+            "name": "p. ej. Sesión de verano 2024",
+            "startDate": "mm/dd/aaaa"
+          },
+          "statuses": {
+            "created": "Creada",
+            "ongoing": "En curso",
+            "completed": "Completada"
+          },
+          "actions": {
+            "cancel": "Cancelar",
+            "saving": "Guardando...",
+            "save": "Guardar campaña"
+          },
+          "errors": {
+            "missingName": "Por favor ingresa el nombre de la campaña"
+          },
+          "toasts": {
+            "created": "Campaña creada",
+            "updated": "Campaña actualizada",
+            "error": "Error al guardar la campaña"
+          }
+        }
+      },
+      "bookingDetails": {
+        "title": "Detalles de la reserva",
+        "status": {
+          "confirmed": "Confirmado",
+          "pending": "Pendiente"
+        },
+        "talent": "Talento",
+        "athlete": "Atleta",
+        "client": "Cliente",
+        "clientProfile": "Haga clic para ver el perfil del cliente",
+        "notSpecified": "No especificado",
+        "dateTime": "Fecha y hora",
+        "dateLabel": "Fecha:",
+        "location": "Ubicación",
+        "viewOnMap": "Ver en Google Maps",
+        "payment": "Pago",
+        "dayRate": "Tarifa diaria",
+        "usageTerms": "Términos de uso",
+        "duration": "Duración:",
+        "specialInstructions": "Instrucciones especiales",
+        "attachments": "Archivos adjuntos",
+        "buttons": {
+          "edit": "Editar",
+          "duplicate": "Duplicar",
+          "complete": "Completar",
+          "remind": "Recordar",
+          "downloadPdf": "Descargar PDF",
+          "generateInvoice": "Generar factura",
+          "shareLink": "Compartir enlace",
+          "cancelBooking": "Cancelar reserva",
+          "cancel": "Cancelar",
+          "ok": "Aceptar"
+        },
+        "activityLog": "Registro de actividad",
+        "bookingId": "ID de reserva:",
+        "toasts": {
+          "cancelTitle": "¿Seguro que quieres cancelar esta reserva?",
+          "cancelDesc": "Esta acción no se puede deshacer.",
+          "completeTitle": "¿Marcar esta reserva como completada?",
+          "completeDesc": "El estado se actualizará a Completado.",
+          "completeSuccess": "Reserva marcada como completada",
+          "completeSuccessDesc": "El estado se ha actualizado correctamente.",
+          "remindTitle": "¿Enviar recordatorio a {{entity}}?",
+          "remindDesc": "Esto enviará un recordatorio a {{name}}",
+          "remindSuccess": "Recordatorio enviado",
+          "remindSuccessDesc": "Se ha enviado la notificación a {{name}}",
+          "downloadStarted": "Descarga iniciada",
+          "downloading": "Descargando {{name}}",
+          "downloadFailed": "Descarga fallida",
+          "couldNotDownload": "No se pudo descargar el archivo",
+          "pdfComingSoon": "¡Descarga de PDF próximamente disponible!",
+          "invoiceComingSoon": "¡Generación de facturas próximamente disponible!",
+          "linkCopied": "¡Enlace de reserva copiado!"
         }
       },
       "newBooking": {
@@ -1190,7 +2664,13 @@
         "campaignsPerMonth": "campañas/mes",
         "totalEntities": "{{entityPlural}} totales",
         "percentOfRoster": "% del roster",
-        "campaignsCount": "{{count}} campañas"
+        "campaignsCount": "{{count}} campañas",
+        "avgDealFrequency": "Frecuencia media de acuerdos",
+        "dealsPerMonth": "acuerdos/mes",
+        "deal": "acuerdo",
+        "deal_other": "acuerdos",
+        "booking": "reserva",
+        "booking_other": "reservas"
       },
       "thresholds": {
         "dynamic": "Umbrales: {{earnings}}/mes • {{bookings}} bookings",
@@ -1206,7 +2686,15 @@
         "minMonthlyEarnings": "Ingresos mensuales mínimos ($)",
         "minBookingsPerMonth": "Bookings mínimos/mes",
         "noteLabel": "Nota:",
-        "noteBody": "El nivel 4 incluye todos los perfiles del roster que no cumplen con los requisitos del nivel 3."
+        "noteBody": "El nivel 4 incluye todos los perfiles del roster que no cumplen con los requisitos del nivel 3.",
+        "aiDescription": "Define los requisitos minimos de ingresos para cada nivel",
+        "talentPayoutNet": "Pago al talento % (del neto)",
+        "talentPayoutHelp": "El talento recibe este % del neto despues de la tarifa de plataforma",
+        "agencyCommission": "Comision de agencia %",
+        "agencyCommissionHelp": "La agencia toma este % de la parte bruta del talento",
+        "splitPreview": "Vista previa del reparto - en un acuerdo neto de $1,000",
+        "talent": "Talento",
+        "agency": "Agencia"
       },
       "tiers": {
         "Premium": {
@@ -1614,6 +3102,45 @@
             "fileUploadedTitle": "Archivo subido",
             "fileUploadedDescription": "El documento se ha subido correctamente.",
             "uploadFailedTitle": "Error al subir"
+          },
+          "addContact": {
+            "title": "Anadir contacto",
+            "fullName": "Nombre completo *",
+            "role": "Rol",
+            "email": "Email",
+            "phone": "Telefono",
+            "primary": "Contacto principal",
+            "placeholders": {
+              "fullName": "Juan Perez",
+              "role": "Director de casting"
+            },
+            "toasts": {
+              "created": "Contacto anadido correctamente",
+              "failed": "No se pudo anadir el contacto"
+            }
+          },
+          "logCommunication": {
+            "contact": "Contacto",
+            "type": "Tipo",
+            "selectContact": "Seleccionar contacto",
+            "selectType": "Seleccionar tipo",
+            "date": "Fecha",
+            "subject": "Asunto",
+            "notes": "Notas",
+            "types": {
+              "email": "Email",
+              "call": "Llamada telefonica",
+              "meeting": "Reunion",
+              "other": "Otro"
+            },
+            "placeholders": {
+              "subject": "Resumen de la reunion...",
+              "notes": "Detalles sobre la comunicacion..."
+            },
+            "toasts": {
+              "created": "Comunicacion registrada correctamente",
+              "failed": "No se pudo registrar la comunicacion"
+            }
           }
         }
       }
@@ -1624,48 +3151,316 @@
         "talentCount_other": "{{count}} {{entity}}s"
       },
       "stats": {
-        "totalPackages": "Paquetes totales",
-        "activeShares": "Enlaces activos",
-        "totalViews": "Vistas totales"
+        "totalPackages": "Total Packages",
+        "activeShares": "Active Shares",
+        "totalViews": "Total Views"
       },
       "tabs": {
-        "templates": "Plantillas",
-        "sent": "Paquetes enviados"
+        "templates": "Templates",
+        "sent": "Packages Sent",
+        "packagesSent": "Packages Sent"
       },
       "actions": {
-        "useExisting": "Usar existente",
-        "createNew": "Crear nuevo",
-        "template": "Plantilla",
-        "package": "Paquete",
-        "packagePlural": "Paquetes",
-        "edit": "Editar",
-        "delete": "Eliminar",
-        "sendToClient": "Enviar al cliente"
+        "useExisting": "Use Existing",
+        "createNew": "Create New",
+        "template": "Template",
+        "package": "Package",
+        "packagePlural": "Packages",
+        "edit": "Edit",
+        "delete": "Delete",
+        "sendToClient": "Send to Client",
+        "createPackage": "Create Package",
+        "newPackage": "New Package"
       },
       "offerBanner": {
-        "title": "Envío para oferta",
-        "description": "Elige si quieres enviar un paquete/plantilla existente o crear uno nuevo.",
-        "pickTemplate": "Elige una plantilla (o reenvía un paquete existente) abajo, luego haz clic en \"Enviar\" para mandarlo a la bandeja de entrada de la marca para esta oferta."
+        "title": "Sending for offer",
+        "description": "Choose whether to send an existing package/template or create a new one.",
+        "pickTemplate": "Pick a template (or resend an existing package) below, then click \"Send\" to send it to the brand inbox for this offer."
       },
-      "search": "Buscar {{target}}...",
+      "search": "Search {{target}}...",
       "empty": {
-        "title": "No se encontraron {{target}}",
-        "templatesDescription": "Crea plantillas reutilizables para enviar a múltiples clientes."
+        "title": "No {{target}} Found",
+        "templatesDescription": "Create reusable templates to send to multiple clients."
       },
       "pagination": {
-        "previous": "Anterior",
-        "next": "Siguiente"
+        "previous": "Previous",
+        "next": "Next"
       },
       "status": {
-        "expired": "Vencido",
-        "active": "Activo"
+        "expired": "Expired",
+        "active": "Active"
       },
       "labels": {
-        "campaignOffer": "Oferta de campaña"
+        "campaignOffer": "Campaign Offer"
       },
       "toasts": {
-        "deleted": "Paquete eliminado",
-        "linkCopied": "¡Enlace copiado al portapapeles!"
+        "deleted": "Package deleted",
+        "linkCopied": "Link copied to clipboard!"
+      },
+      "clientActivity": {
+        "title": "Client Activity",
+        "description": "View client interactions with this package",
+        "views": "Views",
+        "downloads": "Downloads",
+        "favorites": "Favorites",
+        "comments": "Comments",
+        "lastViewed": "Last Viewed",
+        "noActivity": "No activity yet",
+        "close": "Close"
+      },
+      "view": {
+        "stats": {
+          "totalPackages": "Paquetes Totales",
+          "activeShares": "Compartidos Activos",
+          "totalViews": "Vistas Totales"
+        },
+        "tabs": {
+          "templates": "Plantillas",
+          "packagesSent": "Paquetes Enviados"
+        },
+        "search": {
+          "templates": "Buscar plantillas...",
+          "sent": "Buscar paquetes enviados..."
+        },
+        "buttons": {
+          "template": "Plantilla",
+          "package": "Paquete",
+          "useExisting": "Usar Existente",
+          "createNew": "Crear Nuevo"
+        },
+        "empty": {
+          "noTemplatesFound": "No se encontraron plantillas",
+          "noPackagesFound": "No se encontraron paquetes",
+          "templatesDescription": "Cree plantillas reutilizables para enviar a múltiples clientes.",
+          "packagesDescription": "Comience creando su primer portafolio de {{entity}} para un cliente."
+        },
+        "offerBanner": {
+          "sendingForOffer": "Enviando para oferta",
+          "chooseDescription": "Elija si desea enviar un paquete/plantilla existente o crear uno nuevo.",
+          "pickTemplate": "Elija una plantilla (o reenvíe un paquete existente) a continuación, luego haga clic en \"Enviar\" para enviarlo a la bandeja de entrada de la marca para esta oferta."
+        },
+        "packageCard": {
+          "created": "Creado",
+          "expires": "Expira",
+          "noExpiry": "Sin Expiración",
+          "views": "Vistas",
+          "expired": "Expirado",
+          "active": "Activo",
+          "campaignOffer": "Oferta de Campaña",
+          "resend": "Reenviar",
+          "activity": "Actividad",
+          "editPackage": "Editar Paquete",
+          "delete": "Eliminar"
+        },
+        "pagination": {
+          "previous": "Anterior",
+          "next": "Siguiente"
+        },
+        "deleteDialog": {
+          "title": "¿Está seguro?",
+          "description": "Esta acción no se puede deshacer. Esto eliminará permanentemente el paquete \"{{title}}\".",
+          "cancel": "Cancelar",
+          "confirm": "Eliminar"
+        },
+        "toasts": {
+          "packageDeleted": "Paquete eliminado",
+          "linkCopied": "¡Enlace copiado al portapapeles!"
+        }
+      },
+      "wizard": {
+        "title": "Crear un Nuevo Paquete de {{entity}}",
+        "editTitle": "Editar Paquete de {{entity}}",
+        "subtitle": "Cree un hermoso paquete de portafolio para mostrar su {{entity}} a los clientes",
+        "templateBanner": "Creando nuevo paquete desde la plantilla \"{{title}}\"",
+        "steps": {
+          "basicInfo": "Información Básica",
+          "selectTalents": "Seleccionar {{entities}}",
+          "customize": "Personalizar",
+          "consents": "Consentimientos",
+          "send": "Enviar"
+        },
+        "basicInfo": {
+          "title": "Título del Paquete *",
+          "titlePlaceholder": "ej. Campaña de Verano 2026",
+          "introductionNote": "Nota de Introducción",
+          "introductionPlaceholder": "Comparta la visión para esta selección...",
+          "coverImage": "Imagen de Portada",
+          "coverImageDescription": "JPG, PNG o GIF. Máximo {{maxMB}}MB.",
+          "coverImagePlaceholder": "https://images.unsplash.com/...",
+          "upload": "Subir",
+          "uploading": "Subiendo...",
+          "agencyBranding": "Marca de la Agencia",
+          "primaryAccent": "Acento Primario",
+          "secondaryAccent": "Acento Secundario",
+          "customFooterMessage": "Mensaje de Pie de Página Personalizado",
+          "customFooterPlaceholder": "Una nota personal para el cliente..."
+        },
+        "selectTalents": {
+          "title": "{{entities}} Seleccionados",
+          "description": "Seleccione {{entities}} y elija sus mejores activos para este paquete",
+          "addButton": "Agregar {{entity}}",
+          "assets": "Activos",
+          "selected": "Seleccionado",
+          "updateSelection": "Actualizar Selección",
+          "selectAssets": "Seleccionar Activos",
+          "noTalentsAdded": "Aún no se han agregado {{entities}}",
+          "noTalentsDescription": "Agregue {{entity}} de su lista para comenzar a construir el paquete",
+          "searchPlaceholder": "Filtrar por nombre o categoría...",
+          "confirmSelection": "Confirmar Selección ({{count}})",
+          "inviteRequired": "Invitación Requerida",
+          "connected": "Conectado"
+        },
+        "customize": {
+          "title": "Controles del Paquete",
+          "description": "Ajuste la experiencia del cliente y los permisos",
+          "clientFeedback": "Comentarios del Cliente",
+          "clientFeedbackDesc": "Permitir que los clientes dejen notas sobre {{entities}} específicos",
+          "interestTracking": "Seguimiento de Interés",
+          "interestTrackingDesc": "Permitir que los clientes marquen como favoritos {{entities}} para preseleccionarlos",
+          "callbackRequests": "Solicitudes de Devolución de Llamada",
+          "callbackRequestsDesc": "Los clientes pueden solicitar directamente consultas o devoluciones de llamada",
+          "accessControl": "Control de Acceso",
+          "accessControlDesc": "Asegure este paquete con una contraseña privada",
+          "gatewayPassword": "Contraseña de Acceso",
+          "passwordPlaceholder": "Cree una contraseña segura...",
+          "hidePassword": "Ocultar contraseña",
+          "showPassword": "Mostrar contraseña",
+          "privacyExpiration": "Expiración de Privacidad",
+          "expirationDescription": "Dejar vacío para un enlace de paquete permanente"
+        },
+        "consents": {
+          "title": "Lista de Verificación de Consentimientos",
+          "description": "Los puntos predeterminados están prellenados. Edite, elimine o agregue puntos personalizados para este paquete.",
+          "addPoint": "Agregar Punto",
+          "consentPlaceholder": "Punto de consentimiento {{number}}",
+          "defaultConsents": {
+            "0": "Use cada activo seleccionado solo para el objetivo de campaña aprobado y los canales.",
+            "1": "No altere la imagen del atleta/talento de manera engañosa, dañina o difamatoria.",
+            "2": "No sublicencie, revenda, transfiera o comparta archivos sin procesar con terceros.",
+            "3": "No use los activos para contenido político, adulto, tabaco, juegos de azar o ilegal.",
+            "4": "Detenga todo uso inmediatamente después de la expiración del paquete o licencia a menos que se renueve por escrito."
+          }
+        },
+        "send": {
+          "title": "¿Listo para enviar?",
+          "description": "Complete los detalles del destinatario para publicar el paquete",
+          "offerDescription": "Confirme el destinatario de la marca para este paquete de oferta",
+          "passwordMissing": "Falta Contraseña",
+          "passwordMissingDescription": "Este paquete tiene control de acceso habilitado pero no se ha establecido ninguna contraseña. Vuelva al paso Personalizar para establecer una.",
+          "recipientBrand": "Marca Destinataria *",
+          "selectBrand": "Seleccionar una marca…",
+          "brandDeliveryNote": "Este paquete se entregará a la bandeja de entrada del panel de la marca para esta oferta.",
+          "permissionRequired": "Permiso Requerido: No tiene acceso para ver las conexiones de marca.",
+          "clientContact": "Contacto del Cliente *",
+          "clientContactPlaceholder": "ej. Juan Pérez",
+          "deliveryEmail": "Correo de Entrega *",
+          "deliveryEmailPlaceholder": "cliente@empresa.com",
+          "deliveryEmailNote": "Entregado a través de la bandeja de entrada (el correo es informativo).",
+          "livePreviewSummary": "Resumen de Vista Previa en Vivo",
+          "untitledSelection": "Selección Sin Título",
+          "noIntroduction": "No se proporcionó nota de introducción.",
+          "activeExperience": "Experiencia Activa",
+          "favorites": "Favoritos",
+          "notes": "Notas",
+          "callbacks": "Devoluciones de Llamada",
+          "locked": "Bloqueado",
+          "lockedSet": "Bloqueado (Establecido)",
+          "lockedEmpty": "Bloqueado (¡Vacío!)",
+          "consent": "Consentimiento",
+          "brandingApplied": "Marca aplicada"
+        },
+        "buttons": {
+          "cancel": "Cancelar",
+          "back": "Atrás",
+          "continue": "Continuar",
+          "saveTemplate": "Guardar Plantilla",
+          "done": "Hecho",
+          "publishAndSend": "Publicar y Enviar"
+        },
+        "toasts": {
+          "required": "Requerido",
+          "titleRequired": "El título es requerido",
+          "empty": "Vacío",
+          "selectAtLeastOne": "Por favor seleccione al menos un {{entity}}",
+          "consentRequired": "Consentimiento Requerido",
+          "consentDescription": "Agregue al menos un punto de consentimiento antes de continuar.",
+          "clientNameRequired": "El nombre del contacto del cliente es requerido.",
+          "deliveryEmailRequired": "El correo de entrega es requerido.",
+          "invalidEmail": "Correo Inválido",
+          "invalidEmailDescription": "Por favor ingrese una dirección de correo válida para la entrega.",
+          "passwordRequired": "Contraseña Requerida",
+          "passwordDescription": "Por favor establezca una contraseña para este paquete protegido en el paso 'Personalizar'.",
+          "missingOffer": "Falta oferta",
+          "offerDescription": "Este paquete no está vinculado a una oferta.",
+          "selectBrandRequired": "Por favor seleccione una marca conectada.",
+          "invalidFile": "Archivo inválido",
+          "invalidFileDescription": "Por favor seleccione un archivo de imagen.",
+          "fileTooLarge": "Archivo demasiado grande",
+          "fileTooLargeDescription": "La imagen de portada del paquete debe ser de {{maxMB}}MB o menos. Su archivo es de {{fileSizeMB}}MB. Por favor comprima o redimensione su imagen e intente nuevamente.",
+          "imageUploaded": "Imagen subida",
+          "uploadFailed": "Subida fallida",
+          "uploadFailedDescription": "Por favor intente nuevamente."
+        },
+        "inviteModal": {
+          "title": "Invitación Requerida",
+          "description": "{{name}} aún no ha aceptado su invitación al portal. Necesitan completar la incorporación antes de que puedan ser agregados a un paquete o asignados a un contrato.",
+          "whyMatters": "Por qué esto importa",
+          "whyMattersDescription": "Sin acceso al portal, este {{entity}} no puede recibir pagos, firmar contratos o comunicarse a través de la plataforma.",
+          "goToRoster": "Ir a la Lista e Invitar"
+        }
+      },
+      "templateCard": {
+        "edit": "Editar",
+        "delete": "Eliminar",
+        "sendToClient": "Enviar al Cliente"
+      },
+      "feedbackDialog": {
+        "title": "Actividad del Cliente",
+        "client": "Cliente",
+        "description": "Línea de tiempo detallada de las interacciones del cliente con",
+        "consent": "Consentimiento",
+        "consentStatus": {
+          "complete": "completo",
+          "missing": "faltante",
+          "expired": "expirado"
+        },
+        "noSelectionsYet": "Aún no hay selecciones",
+        "noFavoritesYet": "Aún no hay favoritos",
+        "noCallbacksYet": "Aún no hay devoluciones de llamada",
+        "loadingActivity": "Cargando actividad...",
+        "noActivityYet": "Aún no hay actividad",
+        "noActivityDescription": "El cliente aún no ha interactuado con este paquete.",
+        "unknownTalent": "Talento Desconocido",
+        "interactionTypes": {
+          "favoritedTalent": "Talento Favorito",
+          "selectedTalent": "Talento Seleccionado",
+          "updatedConsent": "Consentimiento Actualizado",
+          "requestedAssets": "Activos Completos Solicitados",
+          "commentedOnTalent": "Comentó sobre un Talento",
+          "requestedCallback": "Devolución de Llamada Solicitada"
+        },
+        "hasComment": "Tiene Comentario",
+        "clientContactDetails": "Detalles de Contacto del Cliente",
+        "assetRequest": "Solicitud de Activos",
+        "fullName": "Nombre Completo",
+        "emailAddress": "Dirección de Correo",
+        "personalMessage": "Mensaje Personal",
+        "notSpecified": "No especificado",
+        "consentUpdated": "Consentimiento actualizado",
+        "close": "Cerrar"
+      },
+      "assetSelector": {
+        "title": "Seleccionar Activos para {{talentName}}",
+        "description": "Elija las mejores fotos y videos para mostrar en este paquete",
+        "uploadAssets": "Subir Activos",
+        "uploading": "Subiendo ({{count}})…",
+        "noAssetsFound": "No se encontraron activos para este talento",
+        "uploadFirstAsset": "Sube tu primer activo",
+        "asset": "ACTIVO",
+        "assets": "ACTIVOS",
+        "selected": "SELECCIONADO",
+        "cancel": "Cancelar",
+        "applySelection": "Aplicar Selección"
       }
     },
     "catalogs": {
@@ -1678,6 +3473,7 @@
         "description": "Selecciona una solicitud pagada y prepara assets y grabaciones de voz para la entrega.",
         "steps": {
           "select-request": "Solicitud",
+          "selectRequest": "Solicitud",
           "info": "Detalles",
           "assets": "Assets",
           "voice": "Voz",
@@ -1781,7 +3577,8 @@
       },
       "empty": {
         "title": "Aún no hay catálogos",
-        "description": "Cuando se confirme un pago de licencia, crea un catálogo para entregar los assets y grabaciones a tu cliente."
+        "description": "Cuando se confirme un pago de licencia, crea un catálogo para entregar los assets y grabaciones a tu cliente.",
+        "createButton": "Create Catalog"
       },
       "deleteDialog": {
         "title": "¿Eliminar catálogo?",
@@ -1807,7 +3604,52 @@
       "toasts": {
         "deleted": "Catálogo eliminado",
         "deleteFailedTitle": "No se pudo eliminar el catálogo",
-        "linkCopied": "¡Enlace copiado al portapapeles!"
+        "linkCopied": "¡Enlace copiado al portapapeles!",
+        "catalogDeleted": "Catalog deleted",
+        "failedToDelete": "Failed to delete catalog"
+      },
+      "description": "Deliver licensed assets and voice recordings to clients after payment.",
+      "newCatalog": "New Catalog",
+      "card": {
+        "created": "Created",
+        "expires": "Expires",
+        "paid": "Paid",
+        "unpaid": "Unpaid",
+        "expired": "Expired",
+        "sent": "Sent",
+        "draft": "Draft",
+        "copyLink": "Copy Link"
+      },
+      "deleteModal": {
+        "title": "Delete Catalog?",
+        "description": "This will permanently remove the catalog and its share link. This cannot be undone.",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "deleting": "Deleting…"
+      },
+      "previewModal": {
+        "title": "Catalog Preview",
+        "description": "Summary of the distribution settings for this catalog.",
+        "fields": {
+          "title": "Title",
+          "client": "Client",
+          "recipient": "Recipient",
+          "payment": "Payment",
+          "talents": "Talents",
+          "athletes": "Athletes",
+          "assets": "Assets",
+          "voice": "Voice",
+          "linkedReceipt": "Linked Receipt",
+          "createdOn": "Created On",
+          "expiration": "Expiration",
+          "active": "Active",
+          "no": "No",
+          "expired": "Expired",
+          "mandatoryMissing": "Mandatory (Missing)"
+        },
+        "internalNotes": "Internal Notes",
+        "close": "Close",
+        "copyLink": "Copy Link"
       }
     },
     "payouts": {
@@ -1893,10 +3735,15 @@
         "customOverride": "Ajuste personalizado",
         "tierDefault": "Valor predeterminado del nivel",
         "currentTier": "Nivel actual",
+        "talent": "Talent",
+        "commissionSource": "Fuente de comisión",
+        "effectiveRate": "Tarifa efectiva",
         "settingsRate": "Tarifa de ajustes (%)",
         "contractControlled": "Controlado por contrato",
         "marketplaceConnected": "Conectado al marketplace",
         "agencyManaged": "Gestionado por la agencia",
+        "agencyShare": "Parte de la agencia",
+        "premium": "Premium",
         "locked": "Bloqueado",
         "discardChange": "Descartar cambio",
         "resetToTierDefault": "Restablecer al valor del nivel",
@@ -1960,7 +3807,11 @@
         "pendingApproval": "Pendiente de aprobacion",
         "awaitingPayoutProcessing": "Esperando procesamiento del pago",
         "ytdPaidToEntity": "Pagado a {{entitySingular}} en el ano",
-        "totalNetPayouts": "Pagos netos totales 2024"
+        "totalNetPayouts": "Pagos netos totales 2024",
+        "searchTalentByName": "Buscar {{entity}} por nombre...",
+        "contractLocked": "Contrato bloqueado",
+        "customOverride": "Anulación personalizada",
+        "tierDefault": "Predeterminado de nivel"
       }
     },
     "subscribe": {
@@ -2204,7 +4055,10 @@
         "savedTitle": "Talent guardado",
         "savedDescription": "Información del talent actualizada correctamente.",
         "failedToSaveTitle": "Error al guardar",
-        "failedToSaveDescription": "No se pudo guardar la información del talent. Inténtalo de nuevo."
+        "failedToSaveDescription": "No se pudo guardar la información del talent. Inténtalo de nuevo.",
+        "photoUpdatedTitle": "Foto actualizada correctamente",
+        "photoUploadFailedTitle": "No se pudo subir la foto",
+        "unknownError": "Error desconocido"
       },
       "specialSkills": "Habilidades especiales",
       "heroVideo": "Video principal",
@@ -2247,7 +4101,30 @@
       "country": "País",
       "licensingRate": "Tarifa de licencia (USD/mes)",
       "negotiation": "Negociación",
-      "loadingCampaigns": "Cargando campañas…"
+      "loadingCampaigns": "Cargando campañas…",
+      "title": "Detalles del talento",
+      "identity": "Identidad",
+      "social": "Social",
+      "syncing": "Sincronizando",
+      "connect": "Conectar",
+      "categories": "Categorias",
+      "appearance": "Apariencia",
+      "details": "Detalles",
+      "business": "Negocio",
+      "openToNegotiations": "Abierto a negociaciones",
+      "instagramFollowers": "Seguidores de Instagram",
+      "totalAssets": "Assets totales",
+      "earnings30d": "Ingresos 30D",
+      "recentCampaigns": "Campanas recientes",
+      "untitledCampaign": "Campana sin titulo",
+      "talentEarns": "El talento gana",
+      "options": {
+        "female": "Femme",
+        "male": "Homme",
+        "nonBinary": "Non-binaire",
+        "genderFluid": "Genre fluide",
+        "preferNotToSay": "Préfère ne pas dire"
+      }
     },
     "licensingRequests": {
       "title": "Solicitudes de licencia",
@@ -2256,7 +4133,15 @@
         "archive": "Archivo",
         "brandRequests": "Solicitudes de marca"
       },
-      "filter": "Filtrar",
+      "filter": {
+        "title": "Filtrar solicitudes",
+        "status": "Estado",
+        "date": "Fecha",
+        "reset": "Restablecer filtros",
+        "button": "Filtrar",
+        "clear": "Borrar",
+        "apply": "Aplicar"
+      },
       "loading": "Cargando...",
       "loadFailed": "Error al cargar las solicitudes de licencia",
       "noActiveRequests": "No hay solicitudes de licencia activas",
@@ -2304,14 +4189,19 @@
         "description": "Ingrese su mensaje de contraoferta a continuación.",
         "messagePlaceholder": "Ingrese su mensaje de contraoferta...",
         "send": "Enviar contraoferta",
-        "cancel": "Cancelar"
+        "cancel": "Cancelar",
+        "messageLabel": "Mensaje para el cliente"
       },
       "declineModal": {
         "title": "Rechazar solicitud",
         "description": "Ingrese un motivo para rechazar esta solicitud.",
         "reasonPlaceholder": "Ingrese el motivo del rechazo...",
         "decline": "Rechazar solicitud",
-        "cancel": "Cancelar"
+        "cancel": "Cancelar",
+        "confirmQuestion": "Estás a punto de rechazar la solicitud de",
+        "thisBrand": "esta marca",
+        "yesDecline": "Sí, rechazar",
+        "declining": "Rechazando..."
       },
       "status": {
         "approved": "Aprobado",
@@ -2346,7 +4236,126 @@
         "customTerms": "Términos personalizados",
         "contractPhase": "Fase del contrato",
         "declined": "Rechazado"
-      }
+      },
+      "filterModal": {
+        "title": "Filtrar solicitudes de licencia",
+        "description": "Reduce las solicitudes por estado, tarifa de licencia y duración.",
+        "status": "Estado",
+        "allStatuses": "Todos los estados",
+        "licenseFee": "Tarifa de licencia",
+        "duration": "Duración",
+        "apply": "Aplicar",
+        "clear": "Borrar",
+        "any": "Cualquiera",
+        "days0to7": "0-7 días",
+        "days8to30": "8-30 días",
+        "days31to90": "31-90 días",
+        "days90Plus": "90+ días",
+        "clearFilters": "Borrar filtros",
+        "applyFilters": "Aplicar filtros"
+      },
+      "archiveNotice": "Las solicitudes de licencia que superen su fecha de finalización se moverán automáticamente a la pestaña Archivo.",
+      "noActive": "No hay solicitudes de licencia activas",
+      "noArchived": "No hay solicitudes de licencia archivadas",
+      "statusLabels": {
+        "approved": "Aprobado",
+        "declined": "Rechazado",
+        "pending": "Pendiente"
+      },
+      "actions": {
+        "decline": "Rechazar",
+        "approve": "Aprobar",
+        "counterOffer": "Contraoferta",
+        "sendPaymentLink": "Enviar enlace de pago",
+        "resendPaymentLink": "Reenviar enlace de pago",
+        "recoverToActive": "Recuperar a activo",
+        "deletePermanently": "Eliminar permanentemente",
+        "acceptWriteContract": "Aceptar y redactar contrato"
+      },
+      "fields": {
+        "licenseFee": "Tarifa de licencia",
+        "regions": "Regiones",
+        "usageScope": "Alcance de uso",
+        "deadline": "Fecha límite",
+        "duration": "Duración",
+        "timeline": "Cronograma",
+        "modsAllowed": "Modificaciones permitidas",
+        "contractPhase": "Fase del contrato",
+        "territory": "Territorio",
+        "exclusivity": "Exclusividad"
+      },
+      "messages": {
+        "recovering": "Recuperando...",
+        "deleting": "Eliminando...",
+        "sending": "Enviando...",
+        "sendingCounterOffer": "Enviando...",
+        "counterOfferSent": "Contraoferta enviada",
+        "clientNotified": "El cliente ha sido notificado.",
+        "failedToSendCounterOffer": "Error al enviar la contraoferta",
+        "couldNotSendCounterOffer": "No se pudo enviar la contraoferta",
+        "updateFailed": "Error al actualizar",
+        "couldNotFindIds": "No se pudieron encontrar los ID de las solicitudes de licencia para actualizar. Actualiza la página e inténtalo de nuevo.",
+        "requestDeclined": "Solicitud rechazada",
+        "requestDeclinedDescription": "La solicitud de licencia ha sido rechazada.",
+        "requestApproved": "Solicitud aprobada",
+        "requestApprovedDescription": "La solicitud de licencia ha sido aprobada.",
+        "couldNotUpdate": "No se pudo actualizar la solicitud de licencia",
+        "paymentLinkSent": "Enlace de pago enviado",
+        "paymentLinkGenerated": "Enlace de pago generado y enviado.",
+        "paymentLinkSentSimple": "Enlace de pago enviado.",
+        "sendPaymentLinkFailed": "Error al enviar el enlace de pago",
+        "couldNotGenerateSendPaymentLink": "No se pudo generar/enviar el enlace de pago",
+        "recovered": "Recuperado",
+        "recoveredDescription": "La solicitud de licencia se ha movido de nuevo a activa.",
+        "recoveryFailed": "Error al recuperar",
+        "couldNotRecover": "No se pudo recuperar la solicitud de licencia",
+        "deleted": "Eliminado",
+        "deletedDescription": "Solicitudes de licencia eliminadas permanentemente.",
+        "deleteFailed": "Error al eliminar",
+        "couldNotDelete": "No se pudo eliminar la solicitud de licencia",
+        "close": "Cerrar",
+        "messageTalent": "Mensaje al talento",
+        "messageAthlete": "Mensaje al atleta",
+        "yesDecline": "Sí, rechazar",
+        "declining": "Rechazando...",
+        "sendCounterOffer": "Enviar contraoferta",
+        "cancel": "Cancelar",
+        "paymentLinkEmailed": "El enlace de pago se envió al cliente por correo.",
+        "paymentLinkGeneratedManual": "Enlace de pago generado. No se encontró correo del cliente; compártelo manualmente."
+      },
+      "deleteModal": {
+        "title": "Eliminar solicitud de licencia",
+        "description": "Esto eliminará permanentemente esta solicitud de licencia archivada. Esta acción no se puede deshacer.",
+        "descriptionActive": "Esto archivará y luego eliminará permanentemente esta solicitud de licencia. Esta acción no se puede deshacer.",
+        "confirmQuestion": "¿Seguro que quieres eliminar la solicitud de licencia de",
+        "unknownBrand": "Marca desconocida",
+        "cancel": "Cancelar",
+        "delete": "Eliminar permanentemente",
+        "deleting": "Eliminando..."
+      },
+      "detailsModal": {
+        "title": "Detalles de la solicitud de licencia",
+        "description": "Descripción",
+        "campaign": "Campaña",
+        "category": "Categoría",
+        "exclusivity": "Exclusividad",
+        "offerAmount": "Importe de la oferta",
+        "customTerms": "Términos personalizados",
+        "modificationsAllowed": "Modificaciones permitidas"
+      },
+      "paymentReadinessModal": {
+        "title": "Configuración del talento requerida",
+        "titleAthlete": "Configuración del atleta requerida",
+        "description": "Los siguientes talentos deben completar la configuración de su cuenta antes de enviar un enlace de pago.",
+        "descriptionAthlete": "Los siguientes atletas deben completar la configuración de su cuenta antes de enviar un enlace de pago.",
+        "accountSetupIncomplete": "Configuración de la cuenta incompleta",
+        "close": "Cerrar",
+        "messageTalent": "Mensaje al talento",
+        "messageAthlete": "Mensaje al atleta"
+      },
+      "fromDate": "Desde {{date}}",
+      "days": "{{count}} día",
+      "days_other": "{{count}} días"
     },
     "activeLicenses": {
       "title": "Licencias activas",
@@ -2372,6 +4381,7 @@
       "status": {
         "active": "Activa",
         "expiring": "Venciendo",
+        "expiringSoon": "Próxima a vencer",
         "expired": "Vencida"
       },
       "headers": {
@@ -2414,7 +4424,10 @@
       "autoRenew": "Renovación automática",
       "daysLeft": "{{days}} días restantes",
       "expiresToday": "Expira hoy",
-      "expired": "Vencida"
+      "expired": "Vencida",
+      "tryAdjustingFilters": "Prueba a ajustar los filtros.",
+      "to": "hasta {{date}}",
+      "cannotRenew": "No se puede renovar"
     },
     "licenseSubmissions": {
       "title": "Envíos de licencia",
@@ -2428,8 +4441,8 @@
         "signed": "Firmado",
         "sent": "Enviado",
         "opened": "Abierto",
-        "agencyPending": "Pendiente de la agencia",
-        "clientPending": "Pendiente del cliente",
+        "agencyPending": "Pendiente agencia",
+        "clientPending": "Pendiente cliente",
         "archived": "Archivado",
         "declined": "Rechazado",
         "expired": "Vencido"
@@ -2474,12 +4487,20 @@
         "copyClientLink": "Copiar enlace del cliente",
         "copyAgencyLink": "Copiar enlace de la agencia",
         "viewDocument": "Ver documento",
-        "recoverToActive": "Recuperar como activo"
+        "recoverToActive": "Recuperar a activo"
       },
       "noSubmissions": "No se encontraron envíos",
       "noActiveSubmissions": "No se encontraron envíos activos.",
       "noArchivedSubmissions": "No se encontraron envíos archivados.",
-      "searchPlaceholder": "Buscar envíos..."
+      "searchPlaceholder": "Buscar envíos...",
+      "resendingContractEmail": "Reenviando correo del contrato",
+      "refreshingSubmissions": "Actualizando envíos para que el envío actualizado aparezca aquí.",
+      "signHere": "Firmar aquí",
+      "resend": "Reenviar",
+      "resending": "Reenviando...",
+      "agencyLink": "Enlace de la agencia",
+      "clientLink": "Enlace del cliente",
+      "loadingTable": "Cargando..."
     },
     "licenseTemplates": {
       "title": "Plantillas de licencia",
@@ -2519,7 +4540,12 @@
         "copyTemplate": "Copiar plantilla",
         "useTemplate": "Usar plantilla",
         "editInBuilder": "Editar en constructor",
-        "sendContract": "Enviar contrato"
+        "sendContract": "Enviar contrato",
+        "editDetails": "Edit Details",
+        "editLayout": "Edit Layout",
+        "duplicate": "Duplicate",
+        "delete": "Delete",
+        "useContract": "Use Contract"
       },
       "modal": {
         "newTitle": "Nueva plantilla de contrato",
@@ -2558,7 +4584,10 @@
         "commercials": "Condiciones comerciales",
         "durationDays": "Duración (días)",
         "territory": "Territorio",
-        "clientEmailRequired": "El correo del cliente es obligatorio"
+        "clientEmailRequired": "El correo del cliente es obligatorio",
+        "dealSpecificsModal": "Detalles del acuerdo",
+        "newContractTemplate": "Nueva plantilla de contrato",
+        "filterModal": "Filtro"
       },
       "form": {
         "templateIdentity": "Identidad de plantilla",
@@ -2586,7 +4615,10 @@
         "customTerms": "Términos personalizados",
         "customTermsPlaceholder": "Cualquier condición extra...",
         "modificationsAllowed": "Modificaciones permitidas",
-        "selectOption": "Seleccionar opción"
+        "selectOption": "Seleccionar opción",
+        "territoryPlaceholder": "Mundial",
+        "yes": "Sí",
+        "no": "No"
       },
       "useModal": {
         "title": "Usar contrato: {{name}}",
@@ -2610,13 +4642,23 @@
         "totalSubmissions": "Total de envíos"
       },
       "searchPlaceholder": "Buscar plantillas...",
-      "noTemplates": "No se encontraron plantillas",
+      "noTemplates": "No templates yet. Create your first one to get started!",
       "noTemplatesInCategory": "No hay plantillas en esta categoría",
       "loadingTemplates": "Cargando plantillas...",
       "noTemplatesMatch": "Ninguna plantilla coincide con sus criterios.",
       "noTemplatesYet": "Aún no hay plantillas. ¡Cree la primera para comenzar!",
       "notSet": "No establecido",
-      "brandContext": "Cualquier envío de contrato creado se enviará a {{brand}}."
+      "brandContext": "Cualquier envío de contrato creado se enviará a {{brand}}.",
+      "newTemplate": "New template",
+      "loading": "Loading...",
+      "noMatch": "No templates match your criteria.",
+      "delete": {
+        "title": "Delete Template"
+      },
+      "useContract": "Use Contract",
+      "messages": {
+        "close": "Cerrar"
+      }
     },
     "addTalent": {
       "title": "Agregar nuevo {{entityTitle}}",
@@ -2658,7 +4700,14 @@
         "no": "No",
         "preferNotToSay": "Prefiero no decirlo",
         "roleCategories": "Categorías de roles",
-        "selectRoles": "Seleccionar categorías de roles"
+        "selectRoles": "Seleccionar categorías de roles",
+        "options": {
+          "female": "Weiblich",
+          "male": "Männlich",
+          "nonBinary": "Nicht-binär",
+          "genderFluid": "Genderfluid",
+          "preferNotToSay": "Keine Angabe"
+        }
       },
       "mediaSocial": {
         "title": "Medios y redes sociales",
@@ -2702,6 +4751,29 @@
         "description": "Un {{entityLower}} con este correo ya existe en {{agencyType}}.",
         "sameAgency": "su agencia",
         "otherAgency": "otra agencia"
+      },
+      "negotiationHelp": "Permite que las marcas propongan tarifas personalizadas para este {{entityLower}}.",
+      "profile": "Perfil",
+      "setAsProfile": "Definir como perfil",
+      "addMorePhotos": "Anadir mas fotos",
+      "mediaLaterHelp": "Siempre puedes anadir mas medios y actualizar detalles despues desde la pantalla de gestion del roster.",
+      "addingEntity": "Anadiendo {{entityLower}}...",
+      "addToRoster": "Anadir {{entityTitle}} al roster",
+      "photosUploadFailedDesc": "No se pudieron subir las fotos. {{entityTitle}} se creara sin fotos.",
+      "roleCategories": {
+        "model": "Modelo",
+        "actor": "Actor",
+        "creator": "Creador",
+        "voice": "Voz",
+        "athlete": "Atleta",
+        "music": "Música"
+      },
+      "genderOptions": {
+        "female": "Femenino",
+        "male": "Masculino",
+        "nonBinary": "No binario",
+        "genderFluid": "Género fluido",
+        "preferNotToSay": "Prefiero no decir"
       }
     },
     "header": {
@@ -2755,7 +4827,8 @@
       "talent": {
         "label": "Seleccionar talento",
         "noTalent": "No se encontró talento activo.",
-        "selected": "{{count}} talento seleccionado"
+        "selected": "{{count}} talento seleccionado",
+        "selectToPreview": "Selecciona un talento para previsualizar"
       },
       "export": {
         "label": "Formato de exportación",
@@ -2791,23 +4864,31 @@
         "send": "Enviar",
         "sending": "Enviando...",
         "success": "Enlace de comp card enviado a los clientes seleccionados.",
-        "failed": "Error al compartir"
-      }
+        "failed": "No se pudo compartir la comp card",
+        "notSignedInTitle": "Sesion no iniciada",
+        "signInAgain": "Vuelve a iniciar sesion y reintenta compartir la comp card.",
+        "sessionExpiredTitle": "Sesion expirada",
+        "partiallySent": "Enviado parcialmente",
+        "partialDescription": "{{sent}} enviados, {{failed}} fallidos.",
+        "sent": "Enviado",
+        "shareFailed": "No se pudo compartir"
+      },
+      "bannerDescription": "Genera automaticamente comp cards profesionales a partir de perfiles de talento"
     },
     "analytics": {
       "title": "Panel de Analíticas",
       "exportReport": "Exportar informe",
       "tabs": {
         "overview": "Resumen",
-        "rosterInsights": "Perspectivas del Roster",
+        "rosterInsights": "Información del Roster",
         "clientsCampaigns": "Clientes y Campañas",
         "compliance": "Cumplimiento"
       },
       "overview": {
         "totalEarnings": "Ganancias totales (30d)",
-        "vsLastPeriod": "vs período anterior",
+        "vsLastPeriod": "vs. período anterior",
         "activeLicenses": "Licencias activas",
-        "aiUsages": "Usos de IA (30d)",
+        "aiUsages": "Usos de IA",
         "activeCampaigns": "Campañas activas",
         "inProgress": "En progreso",
         "readyToLaunch": "Listo para lanzar",
@@ -2816,18 +4897,97 @@
         "consentBreakdown": "Desglose de consentimientos",
         "noConsentData": "Sin datos de consentimiento",
         "withConsent": "Con consentimiento",
-        "withoutConsent": "Sin consentimiento"
+        "withoutConsent": "Sin consentimiento",
+        "totalRevenue": "Ingresos totales",
+        "revenueGrowth": "Crecimiento de ingresos",
+        "bookingsCompleted": "Reservas completadas",
+        "averageDealValue": "Valor promedio del acuerdo",
+        "topPerformers": "Mejor desempeño",
+        "recentActivity": "Actividad reciente",
+        "totalEarnings30d": "Ganancias totales (30d)",
+        "aiUsages30d": "Usos de IA (30d)",
+        "totalValue": "Valor total",
+        "avgValue": "Valor promedio",
+        "topScope": "Alcance principal",
+        "campaignStatusBreakdown": "Desglose del estado de la campaña",
+        "monthlyPerformanceTrends": "Tendencias de rendimiento mensual",
+        "earningsDollar": "Ganancias ($)",
+        "licenses": "Licencias",
+        "campaigns": "Campañas",
+        "aiUsageTypeDistribution": "Distribución de tipos de uso de IA",
+        "image": "Imagen",
+        "video": "Video",
+        "voice": "Voz",
+        "consentStatusBreakdown": "Desglose del estado de consentimiento",
+        "complete": "Completo",
+        "missing": "Faltante",
+        "expired": "Expirado",
+        "of": "de",
+        "campaignStatus": {
+          "inProgress": "En Progreso",
+          "readyToLaunch": "Listo para Lanzar",
+          "completed": "Completado"
+        },
+        "aiUsageTypes": {
+          "image": "Imagen",
+          "video": "Video",
+          "voice": "Voz"
+        },
+        "consentStatus": {
+          "complete": "Completo",
+          "missing": "Faltante",
+          "expired": "Expirado"
+        },
+        "chart": {
+          "earnings": "Ganancias ($)",
+          "aiUsages": "Usos de IA"
+        }
       },
       "rosterInsights": {
-        "title": "Perspectivas del Roster",
-        "topPerformer": "Mejor desempeño (Ganancias)",
-        "highestFollowers": "Más seguidores",
+        "title": "Información del Roster",
+        "topPerformer": "Mejor Rendimiento (Ganancias)",
+        "highestFollowers": "Más Seguidores",
         "avgValue": "Valor promedio",
-        "noData": "No hay datos de perspectivas del roster disponibles."
+        "noData": "No hay datos disponibles",
+        "totalTalent": "Total de talentos",
+        "activeTalent": "Talentos activos",
+        "performanceMetrics": "Métricas de desempeño",
+        "engagementRate": "Tasa de compromiso",
+        "mostActive": "Más activo",
+        "highestEngagement": "Mayor compromiso",
+        "talentPerformance30d": "Rendimiento del talento (30d)",
+        "talent": "Talento",
+        "earnings30d": "Ganancias (30d)",
+        "projected": "Proyectado",
+        "status": "Estado",
+        "earningsByTalent": "Ganancias por Talento (Últimos 30 Días)",
+        "chart": {
+          "earnings30d": "Ganancias 30D ($)",
+          "projected": "Proyectado ($)"
+        }
       },
       "clientsCampaigns": {
         "title": "Clientes y Campañas",
-        "noData": "No hay datos de clientes o campañas disponibles."
+        "noData": "No hay datos de clientes o campañas disponibles.",
+        "totalClients": "Total de clientes",
+        "activeClients": "Clientes activos",
+        "campaignPerformance": "Desempeño de campaña",
+        "clientSatisfaction": "Satisfacción del cliente",
+        "repeatClientRate": "Tasa de clientes recurrentes",
+        "avgCampaignDuration": "Duración promedio de campaña",
+        "days": "días",
+        "newClientAcquisitions": "Nuevas adquisiciones de clientes",
+        "topClientsPerformance": "Rendimiento de los principales clientes",
+        "client": "Cliente",
+        "budget": "Presupuesto",
+        "percentOfTotal": "% del total",
+        "earningsByClient": "Ganancias por cliente",
+        "geographicDistribution": "Distribución geográfica",
+        "region": "Región",
+        "value": "Valor",
+        "fromBookingToCompletion": "Desde reserva hasta finalización",
+        "newClientsLast30Days": "Nuevos clientes en los últimos 30 días",
+        "ofTotal": "del total"
       },
       "compliance": {
         "title": "Cumplimiento",
@@ -2836,7 +4996,28 @@
         "expiringSoon": "Expira pronto",
         "assignedTalent": "Talent asignado",
         "renewLicense": "Renovar licencia",
-        "noData": "No hay datos de cumplimiento disponibles."
+        "noData": "No se encontraron licencias vencidas",
+        "complianceScore": "Puntuación de cumplimiento",
+        "documentsRequired": "Documentos requeridos",
+        "verificationsComplete": "Verificaciones completas",
+        "licenseExpiryPipeline": "Pipeline de vencimiento de licencias",
+        "brandClient": "Marca / Cliente",
+        "expiryDate": "Fecha de vencimiento",
+        "noExpiredLicenses": "No se encontraron licencias vencidas",
+        "refreshData": "Actualizar datos",
+        "lastUpdated": "Última actualización",
+        "renew": "Renovar",
+        "expiredContractsMessage": "Los contratos vencidos aparecerán aquí para renovación.",
+        "refreshing": "Actualizando...",
+        "refresh": "Actualizar",
+        "expiredContracts": "Contratos vencidos",
+        "verified": "verificado",
+        "complete": "completo",
+        "terminatedOrExpired": "Terminado o vencido",
+        "consentStatusDistribution": "Distribución del estado de consentimiento",
+        "comingSoon": "Próximamente",
+        "expiredContractsAppearHere": "Los contratos vencidos aparecerán aquí para renovación.",
+        "likenessProtection": "Protección de Imagen"
       },
       "loading": "Cargando analíticas...",
       "error": "Error al cargar datos de analíticas",
@@ -2853,10 +5034,15 @@
         "fromTemplateSuffix": "",
         "steps": {
           "basic": "Información básica",
+          "basicInfo": "Información básica",
           "talent": "Seleccionar talentos",
+          "selectTalents": "Seleccionar talentos",
           "custom": "Personalizar",
+          "customize": "Personalizar",
           "consent": "Consentimientos",
-          "send": "Enviar"
+          "consents": "Consentimientos",
+          "send": "Enviar",
+          "review": "Revisar"
         },
         "basicInfo": {
           "title": "Información básica",
@@ -2871,14 +5057,19 @@
           "invalidFile": "Archivo inválido",
           "invalidFileDesc": "Por favor elija un archivo de imagen.",
           "coverUploaded": "Imagen de portada cargada",
-          "coverUploadFailed": "Error al cargar la portada"
+          "coverUploadFailed": "Error al cargar la portada",
+          "packageName": "Nombre del paquete",
+          "packageDescription": "Descripción del paquete"
         },
         "selectTalents": {
           "title": "Seleccionar talentos",
           "searchPlaceholder": "Buscar talentos...",
           "noTalentsSelected": "No hay talentos seleccionados",
           "selectedTalents": "Talentos seleccionados",
-          "addTalent": "Agregar talento"
+          "addTalent": "Agregar talento",
+          "selectAtLeastOne": "Seleccione al menos un talento",
+          "talentList": "Lista de talentos",
+          "availableTalents": "Talentos disponibles"
         },
         "customize": {
           "title": "Personalizar",
@@ -2889,13 +5080,18 @@
           "customMessagePlaceholder": "Agregar un mensaje personal",
           "allowComments": "Permitir comentarios",
           "allowFavorites": "Permitir favoritos",
-          "allowCallbacks": "Permitir devoluciones de llamada"
+          "allowCallbacks": "Permitir devoluciones de llamada",
+          "theme": "Tema",
+          "layout": "Diseño",
+          "branding": "Marca"
         },
         "consents": {
           "title": "Consentimientos",
           "consentItems": "Elementos de consentimiento",
           "addConsent": "Agregar consentimiento",
           "removeConsent": "Eliminar consentimiento",
+          "consentText": "Texto de consentimiento",
+          "consentRequired": "Consentimiento requerido",
           "defaultConsents": [
             "Use cada activo seleccionado solo para el objetivo de campaña y canales aprobados.",
             "No altere la imagen del atleta/talent de manera engañosa, dañina o difamatoria.",
@@ -2922,7 +5118,12 @@
           "selectBrandRequired": "Por favor seleccione una marca conectada",
           "selectConnectedBrand": "Por favor seleccione una marca conectada",
           "clientNameRequired": "El nombre del contacto del cliente es requerido",
-          "deliveryEmailRequired": "El correo de entrega es requerido"
+          "deliveryEmailRequired": "El correo de entrega es requerido",
+          "recipientEmail": "Correo del destinatario",
+          "message": "Mensaje",
+          "messagePlaceholder": "Agregar un mensaje al destinatario",
+          "expiresOn": "Expira el",
+          "neverExpires": "Nunca expira"
         },
         "validation": {
           "required": "Requerido",
@@ -2930,13 +5131,17 @@
           "empty": "Vacío",
           "selectTalent": "Por favor seleccione al menos un talento",
           "selectAthlete": "Por favor seleccione al menos un atleta",
-          "addConsent": "Agregue al menos un punto de consentimiento antes de continuar"
+          "addConsent": "Agregue al menos un punto de consentimiento antes de continuar",
+          "invalidEmail": "Dirección de correo inválida",
+          "fieldRequired": "Este campo es requerido"
         },
         "upload": {
           "invalidFile": "Archivo inválido",
           "invalidFileDesc": "Por favor seleccione un archivo de imagen",
           "imageUploaded": "Imagen subida",
-          "uploadFailed": "Error al subir"
+          "uploadFailed": "Error al subir",
+          "uploading": "Subiendo...",
+          "selectFile": "Seleccionar archivo"
         },
         "common": {
           "next": "Siguiente",
@@ -2944,13 +5149,18 @@
           "cancel": "Cancelar",
           "save": "Guardar",
           "delete": "Eliminar",
-          "loading": "Cargando..."
+          "loading": "Cargando...",
+          "submit": "Enviar",
+          "continue": "Continuar",
+          "finish": "Finalizar",
+          "close": "Cerrar"
         }
       },
       "deliverables": {
         "title": "Entregables",
         "subtitle": "Asigne talentos, solicite assets y revise entregables para ofertas de marca.",
         "collapseAll": "Contraer todo",
+        "expandAll": "Expandir todo",
         "noBrandOffers": "No hay ofertas de marca disponibles.",
         "addTalent": "Agregar talento",
         "assigned": "Asignado",
@@ -2975,7 +5185,12 @@
         },
         "actions": {
           "hide": "Ocultar",
-          "open": "Abrir"
+          "open": "Abrir",
+          "viewDetails": "Ver detalles",
+          "approve": "Aprobar",
+          "reject": "Rechazar",
+          "download": "Descargar",
+          "upload": "Subir"
         },
         "states": {
           "loadingAssignments": "Cargando asignaciones...",
@@ -3021,7 +5236,9 @@
           "submitted": "Enviado",
           "approved": "Aprobado",
           "rejected": "Rechazado",
-          "revisionRequested": "Revisión solicitada"
+          "revisionRequested": "Revisión solicitada",
+          "inReview": "En revisión",
+          "completed": "Completado"
         },
         "uploadSuccess": "Entregable subido exitosamente",
         "uploadFailed": "Error al subir el entregable",
@@ -3068,16 +5285,21 @@
           "chooseFile": "Elegir archivo",
           "noFileSelected": "Ningún archivo seleccionado",
           "sendRequest": "Enviar solicitud",
-          "selectedTalent": "Talento seleccionado"
+          "selectedTalent": "Talento seleccionado",
+          "cancel": "Cancelar",
+          "sending": "Enviando..."
         },
         "uploadDeliverableModal": {
           "title": "Subir entregable",
           "subtitle": "Agregue un título y suba uno o más archivos.",
           "captionPlaceholder": "Título",
+          "captionLabel": "Título",
           "chooseFiles": "Elegir archivos",
           "noFilesSelected": "Ningún archivo seleccionado",
           "filesSelected": "{count} archivo(s) seleccionado(s)",
-          "upload": "Subir"
+          "upload": "Subir",
+          "cancel": "Cancelar",
+          "uploading": "Subiendo..."
         },
         "viewOnly": {
           "title": "Modo solo lectura",
@@ -3135,7 +5357,9 @@
           "rejectFailed": "Error al rechazar la solicitud",
           "noRequests": "No hay solicitudes pendientes",
           "accept": "Aceptar",
-          "reject": "Rechazar"
+          "reject": "Rechazar",
+          "deliverables": "Lieferungen",
+          "feedback": "Feedback"
         },
         "offers": {
           "title": "Ofertas",
@@ -3520,7 +5744,22 @@
         "packageFeedback": "Comentarios del paquete",
         "loadingBrands": "Cargando marcas conectadas…",
         "loadBrandsFailed": "Error al cargar las marcas conectadas.",
-        "noBrands": "Aún no hay marcas conectadas."
+        "noBrands": "Aún no hay marcas conectadas.",
+        "connections": {
+          "title": "Verbundene Marken",
+          "noConnections": "Keine verbundenen Marken",
+          "loadingBrands": "Verbundene Marken werden geladen...",
+          "loadBrandsFailed": "Laden der verbundenen Marken fehlgeschlagen.",
+          "noBrands": "Noch keine verbundenen Marken.",
+          "disconnect": "Trennen",
+          "disconnectSuccess": "Marke erfolgreich getrennt",
+          "disconnectFailed": "Trennen der Marke fehlgeschlagen"
+        },
+        "packageFeedbackData": {
+          "title": "Paket-Feedback",
+          "empty": "Noch kein Paket-Feedback verfügbar.",
+          "loading": "Paket-Feedback wird geladen…"
+        }
       },
       "settings": {
         "title": "Configuración",
@@ -3869,6 +6108,10 @@
             "licenseExpiring": {
               "title": "Licencia próxima a vencer",
               "desc": "Cuando una licencia de {{entitySingularLower}} está a punto de vencer"
+            },
+            "talentUnavailable": {
+              "title": "Talent indisponible",
+              "desc": "Lorsque {{entitySingularLower}} se marque comme indisponible"
             }
           },
           "email": "Notificaciones por correo",
@@ -3901,7 +6144,17 @@
             "net15": "Net 15",
             "net30": "Net 30",
             "net60": "Net 60"
-          }
+          },
+          "defaultRate": "Standard-Steuersatz (%)",
+          "defaultRateHint": "Wird auf Rechnungen angewendet (z. B. Umsatzsteuer, VAT)",
+          "taxDisplayName": "Anzeigename der Steuer",
+          "includeTaxInPrices": "Steuer in angezeigten Preisen enthalten",
+          "paymentTermsLabel": "Zahlungsbedingungen",
+          "lateFee": "Mahngebühr (%)",
+          "lateFeeHint": "Monatliche Zinsen auf überfällige Rechnungen",
+          "invoicePrefix": "Rechnungspräfix",
+          "invoicePrefixExample": "Beispiel: INV-00001, INV-00002",
+          "save": "Steuer- und Währungseinstellungen speichern"
         }
       },
       "labels": {
@@ -3931,11 +6184,11 @@
         "percentOfTotal": "{{value}}% of total",
         "topClientsPerformance": "Top Clients Performance",
         "geographicDistribution": "Geographic Distribution",
-        "complianceSummary": "Compliance Summary",
+        "complianceSummary": "Resumen de cumplimiento",
         "consentStatusDistribution": "Consent Status Distribution",
         "comingSoon": "Proximamente",
         "licenseExpiryPipeline": "License Expiry Pipeline",
-        "expiredOn": "Expired on {{date}}",
+        "expiredOn": "Vencido el {{date}}",
         "nextDays": "Next {{count}} days",
         "next10Days": "Next 10 days",
         "verified": "{{count}} of {{total}} verified",
@@ -3943,7 +6196,14 @@
         "completeOfTotal": "{{count}} of {{total}} complete",
         "licensesLower": "licenses",
         "campaignsLower": "campaigns",
-        "30dEarnings": "30D Earnings"
+        "30dEarnings": "30D Earnings",
+        "totalBookings": "Gesamtbuchungen",
+        "conversionRate": "Konversionsrate",
+        "averageBookingValue": "Durchschnittlicher Buchungswert",
+        "topBookedTalent": "Meistgebuchtes Talent",
+        "bookingsByType": "Buchungen nach Typ",
+        "revenueBySource": "Einnahmen nach Quelle",
+        "performanceTrends": "Leistungstrends"
       },
       "months": {
         "jan": "Jan",
@@ -3959,7 +6219,607 @@
         "nov": "Nov",
         "dec": "Dec"
       },
-      "irlComingSoonDescription": "Analytics Dashboard for IRL Mode is coming soon."
+      "irlComingSoonDescription": "Analytics Dashboard for IRL Mode is coming soon.",
+      "toasts": {
+        "refreshed": "Aktualisiert",
+        "refreshedDescription": "Die Lizenzablauf-Pipeline wurde erfolgreich aktualisiert. {{count}} abgelaufene Lizenzen gefunden.",
+        "refreshFailed": "Aktualisierung fehlgeschlagen",
+        "refreshFailedDescription": "Die Lizenzablauf-Pipeline konnte nicht aktualisiert werden.",
+        "reportExported": "Bericht exportiert",
+        "popupBlocked": "Popup blockiert",
+        "popupBlockedDescription": "Erlauben Sie Popups für diese Website und versuchen Sie es erneut.",
+        "pdfExportReady": "PDF-Export bereit",
+        "pdfExportReadyDescription": "Verwenden Sie im Druckdialog „Als PDF speichern“.",
+        "refreshExpired": "Abgelaufene Lizenzen aktualisieren"
+      },
+      "team": {
+        "title": "Teamverwaltung",
+        "subtitle": "Verwalten Sie Teammitglieder, Rollen und Berechtigungen",
+        "invite": "Mitglied einladen",
+        "inviteUser": "Benutzer einladen",
+        "remove": "Mitglied entfernen",
+        "editPermissions": "Berechtigungen bearbeiten",
+        "activeMembers": "Aktive Teammitglieder",
+        "loadingMembers": "Teammitglieder werden geladen...",
+        "emptyMembers": "Noch keine aktiven Teammitglieder.",
+        "memberCount": "{{count}} Mitglieder",
+        "memberStatus": "Status",
+        "active": "Aktiv",
+        "inactive": "Inaktiv",
+        "pendingInvitations": {
+          "title": "Ausstehende Einladungen",
+          "description": "Einladungen an Teammitglieder, die noch nicht beigetreten sind.",
+          "pending": "ausstehend",
+          "empty": "Keine ausstehenden Einladungen.",
+          "expires": "Läuft ab"
+        },
+        "actions": {
+          "inviteUser": "Benutzer einladen",
+          "editRole": "Rolle bearbeiten"
+        },
+        "activity": {
+          "title": "Aktivität"
+        },
+        "roles": {
+          "owner": "Inhaber",
+          "admin": {
+            "label": "Administrator",
+            "description": "Voller Zugriff auf Agentureinstellungen und Teamverwaltung"
+          },
+          "projectManager": {
+            "label": "Projektmanager",
+            "description": "Kann Projekte, Buchungen und Kommunikation verwalten"
+          },
+          "reviewer": {
+            "label": "Prüfer",
+            "description": "Kann Inhalte prüfen und Aktivitäten verfolgen"
+          },
+          "unknown": "Unbekannte Rolle",
+          "manager": "Manager",
+          "member": "Mitglied"
+        },
+        "inviteSuccess": "Mitglied erfolgreich eingeladen",
+        "inviteFailed": "Einladung des Mitglieds fehlgeschlagen",
+        "removeSuccess": "Mitglied erfolgreich entfernt",
+        "removeFailed": "Entfernen des Mitglieds fehlgeschlagen"
+      },
+      "integrations": {
+        "title": "Integrationen",
+        "subtitle": "Verbinden Sie Ihre Agentur mit anderen Tools",
+        "addIntegration": "Integration hinzufügen",
+        "connectBankAccount": "Bankkonto verbinden",
+        "connectBankHint": "Verbinden Sie Ihr Bankkonto, um Kundenzahlungen zu erhalten und Auszahlungen zu verwalten.",
+        "connected": "Verbunden",
+        "notConnected": "Nicht verbunden",
+        "changeAccount": "Konto ändern",
+        "calendly": {
+          "title": "Calendly-Integration",
+          "enabledHint": "Automatisieren Sie die Terminplanung mit Ihren Kunden",
+          "lockedHint": "Verfügbar im Pro-Tarif mit dem IRL Booking Add-on",
+          "upgradeHint": "Aktivieren Sie das IRL Booking Add-on, um Calendly, Scouting, Client CRM, Buchungen und IRL-Buchhaltungsabläufe zu nutzen.",
+          "getAddon": "IRL Booking Add-on holen",
+          "buyAddon": "IRL Booking Add-on kaufen",
+          "tokenLabel": "Calendly Personal Access Token",
+          "getToken": "Token abrufen",
+          "tokenPlaceholder": "calendly_v2_...",
+          "publicLinkLabel": "Öffentlicher Calendly-Buchungslink",
+          "whereToFind": "Hier finden",
+          "publicLinkPlaceholder": "https://calendly.com/your-handle/your-event",
+          "publicLinkHelp": "Verwenden Sie den öffentlichen Calendly-Event-Link, der geöffnet werden soll, wenn eine Buchung über Calendly aus Likelee gesendet wird. Öffnen Sie in Calendly Ihre Scheduling-Seite, suchen Sie den Event-Typ und kopieren Sie dessen Link.",
+          "eventTypeLabel": "Calendly-Ereignistyp",
+          "eventTypeHint": "Wählen Sie den Calendly-Ereignistyp aus, den Likelee für Buchungseinladungen und Erinnerungen verwenden soll",
+          "selectEvent": "Calendly-Ereignis auswählen",
+          "leaveUnset": "Nicht festlegen",
+          "durationMins": "{{mins}} Min.",
+          "eventTypeUriPlaceholder": "https://api.calendly.com/event_types/...",
+          "eventTypeUriHelp": "Fügen Sie die vollständige Calendly-Ereignistyp-URI ein, die Likelee für Buchungen verwenden soll. Das funktioniert auch dann, wenn der Token Ereignistypen nicht automatisch auflisten kann.",
+          "noActiveTypes": "Keine aktiven Calendly-Ereignistypen für dieses Konto gefunden",
+          "saveValidToken": "Speichern Sie einen gültigen Calendly-Token, um Ereignistypen zu laden",
+          "saveConfiguration": "Calendly-Konfiguration speichern"
+        },
+        "stripe": "Stripe",
+        "connect": "Verbinden",
+        "disconnect": "Trennen",
+        "disabled": "Deaktiviert",
+        "locked": "Gesperrt",
+        "connectSuccess": "Integration erfolgreich verbunden",
+        "connectFailed": "Verbindung der Integration fehlgeschlagen",
+        "disconnectSuccess": "Integration erfolgreich getrennt",
+        "disconnectFailed": "Trennung der Integration fehlgeschlagen"
+      },
+      "billing": {
+        "title": "Abrechnung",
+        "plan": "Aktueller Plan",
+        "upgrade": "Plan upgraden",
+        "cancel": "Abonnement kündigen",
+        "paymentMethod": "Zahlungsmethode",
+        "invoices": "Rechnungen",
+        "downloadInvoice": "Rechnung herunterladen"
+      },
+      "notifications": {
+        "title": "Benachrichtigungen",
+        "subtitle": "Wählen Sie, wie Sie über wichtige Ereignisse benachrichtigt werden möchten",
+        "channels": {
+          "email": "E-Mail",
+          "sms": "SMS",
+          "push": "Push",
+          "comingSoon": "Demnächst"
+        },
+        "recipients": {
+          "title": "Benachrichtigungsempfänger",
+          "primaryEmail": "Primäre Benachrichtigungs-E-Mail",
+          "smsNumber": "SMS-Benachrichtigungsnummer",
+          "additional": "Zusätzliche Empfänger (kommagetrennt)"
+        },
+        "save": "Benachrichtigungseinstellungen speichern",
+        "events": {
+          "bookingCreated": {
+            "title": "Buchung erstellt",
+            "desc": "Wenn eine neue Buchung erstellt wird"
+          },
+          "bookingConfirmed": {
+            "title": "Buchung bestätigt",
+            "desc": "Wenn sich der Buchungsstatus auf bestätigt ändert"
+          },
+          "paymentReceived": {
+            "title": "Zahlung eingegangen",
+            "desc": "Wenn eine Zahlung von einem Kunden eingeht"
+          },
+          "invoiceSent": {
+            "title": "Rechnung gesendet",
+            "desc": "Wenn eine Rechnung an einen Kunden gesendet wird"
+          },
+          "entityBookOut": {
+            "title": "{{entitySingular}} nicht verfügbar",
+            "desc": "Wenn {{entitySingularLower}} sich als nicht verfügbar markiert"
+          },
+          "licenseExpiring": {
+            "title": "Lizenz läuft bald ab",
+            "desc": "Wenn eine Lizenz von {{entitySingularLower}} bald abläuft"
+          }
+        },
+        "preferences": "Benachrichtigungseinstellungen",
+        "saveSuccess": "Einstellungen erfolgreich gespeichert",
+        "saveFailed": "Speichern der Einstellungen fehlgeschlagen"
+      }
+    },
+    "digitals": {
+      "history": {
+        "title": "Digitals History"
+      }
+    },
+    "licenses": {
+      "comingSoon": "Gestión de licencias próximamente"
+    },
+    "campaigns": {
+      "comingSoon": "Campaign tracking coming soon"
+    },
+    "invites": {
+      "title": "Send Portal Invite",
+      "description": "Select an existing {{entity}} in your roster to send them a portal invite.",
+      "searchLabel": "Search {{entity}}",
+      "searchPlaceholder": "Search by name or email",
+      "noMatchingEntity": "No matching {{entity}}.",
+      "noEmailOnFile": "No email on file",
+      "alreadyConnectedTitle": "Already connected",
+      "alreadyConnectedDescription": "This creator is already connected to your agency. No new invite was sent.",
+      "sentTitle": "Portal invite sent",
+      "sentDescription": "Invitation sent to {{email}}",
+      "linkCopiedTitle": "Invite link copied",
+      "linkCopiedDescription": "Copied invite URL to clipboard.",
+      "failedToSendTitle": "Failed to send",
+      "failedToSendDescription": "Could not send invite",
+      "pendingInvites": "Pending invites",
+      "noPendingInvites": "No pending invites.",
+      "expires": "Expires",
+      "inviteRevokedTitle": "Invite revoked",
+      "failedToRevokeTitle": "Failed to revoke",
+      "reinvitedTitle": "Re-invited",
+      "failedToReinviteTitle": "Failed to re-invite"
+    },
+    "reminder": {
+      "title": "Send digitals reminder",
+      "description": "Sends an email to the selected {{entity}}. Requires SMTP configuration on the server.",
+      "subject": "Subject",
+      "subjectPlaceholder": "Digitals update reminder",
+      "message": "Message",
+      "personalizeHelp": "Use {name} to personalize.",
+      "noEmailsTitle": "No emails found",
+      "noEmailsDescription": "None of the selected {{entityPlural}} have an email address on file.",
+      "emailNotSentTitle": "Email not sent",
+      "emailNotSentDescription": "Email sending failed",
+      "sentTitle": "Reminders sent",
+      "sentDescription": "Sent: {{sent}}, Failed: {{failed}}"
+    },
+    "seats": {
+      "insufficientTitle": "Insufficient seats!",
+      "insufficientDescription": "Your current plan allows {{count}} {{entity}}. Upgrade to add more.",
+      "viewPlans": "View plans"
+    },
+    "upload": {
+      "title": "Upload New Digitals - {{name}}",
+      "guidelinesTitle": "Digitals Guidelines:",
+      "guidelinesDescription": "Plain photos with no makeup, natural lighting, simple background. Include: headshot, 3/4 body, full body, left profile, right profile.",
+      "uploadPhotos": "Upload Photos",
+      "dragDrop": "Click to upload or drag and drop",
+      "fileHelp": "JPEG or PNG, max 5MB each",
+      "filesSelected": "{{count}} file(s) selected",
+      "dateTaken": "Date Taken",
+      "uploadDigitals": "Upload Digitals",
+      "successTitle": "Digital uploaded successfully!",
+      "successDescription": "The {{entity}}'s digitals have been updated.",
+      "errorTitle": "Upload failed",
+      "errorDescription": "Upload failed"
+    },
+    "history": {
+      "title": "Digitals History - {{name}}",
+      "loading": "Loading history...",
+      "previousUpdates": "Previous Updates",
+      "unknown": "Unknown",
+      "view": "View",
+      "photos": "photos",
+      "lastUpdated": "Last updated:",
+      "never": "Never",
+      "viewHistory": "View History",
+      "uploadPhoto": "Upload Photo"
+    },
+    "support": {
+      "toasts": {
+        "missingDetails": "Missing details",
+        "missingDetailsDescription": "Please add a subject and message.",
+        "messageSent": "Message sent",
+        "messageSentDescription": "Support will get back to you shortly.",
+        "failedToSend": "Failed to send",
+        "failedToSendDescription": "Could not send your message to support."
+      }
+    },
+    "deliverables": {
+      "toasts": {
+        "assignmentsLocked": "Assignments locked",
+        "contractAlreadySigned": "El contrato ya está firmado y no puede cambiar los talentos asignados.",
+        "cantChangeAfterSent": "No puede cambiar los talentos asignados después de enviar el contrato.",
+        "talentUnassigned": "Talent unassigned",
+        "talentRemoved": "Talent removed from this offer.",
+        "unassignFailed": "Unassign failed",
+        "pleaseTryAgain": "Please try again.",
+        "nothingToRetry": "Nothing to retry",
+        "allTransfersSuccessful": "All transfers were successful.",
+        "notYetAvailable": "Not yet available",
+        "retryAfterApproval": "Retry transfers after escrow approval.",
+        "retryFailed": "Retry failed",
+        "talentAssigned": "Talent assigned",
+        "deliverablesUploaded": "Deliverables uploaded",
+        "uploadFailed": "Upload failed",
+        "permissionRequired": "Permission required",
+        "cannotSubmitDeliverables": "Your role cannot submit deliverables.",
+        "submittedToBrand": "Submitted to brand",
+        "submitFailed": "Submit failed",
+        "cannotReviewDeliverables": "Your role cannot review deliverables.",
+        "reviewSubmitted": "Review submitted",
+        "reviewFailed": "Review failed",
+        "deliverableDeleted": "Deliverable deleted",
+        "deleteFailed": "Delete failed",
+        "assignmentFailed": "Assignment failed"
+      },
+      "statusLabels": {
+        "draft": "Draft",
+        "sentToBrand": "Sent to Brand",
+        "brandApproved": "Brand Approved",
+        "new": "New",
+        "contractSigned": "Contract Signed",
+        "contractSent": "Contract Sent",
+        "sent": "Sent",
+        "accepted": "Accepted",
+        "open": "Open"
+      },
+      "deliverableCard": {
+        "feedback": "Feedback",
+        "noCaption": "No caption",
+        "yourFeedback": "Your Feedback:",
+        "brandFeedback": "Brand Feedback:",
+        "approve": "Approve",
+        "revise": "Revise",
+        "reject": "Reject",
+        "deliverable": "Deliverable"
+      },
+      "offerCard": {
+        "offer": "Offer",
+        "brand": "Brand",
+        "signed": "Signed",
+        "notSigned": "Not signed",
+        "paid": "Paid",
+        "awaitingPayment": "Awaiting Payment",
+        "hide": "Hide",
+        "open": "Open",
+        "assignTalent": "Assign Talent",
+        "addTalent": "Add Talent"
+      },
+      "payoutStatus": {
+        "agency": "agency",
+        "talent": "talent",
+        "retry": "reintento",
+        "retries": "reintentos"
+      },
+      "retryTransferDialog": {
+        "failed": "failed",
+        "transferred": "Transferred",
+        "transfersNotAllowed": "Transfers not allowed on this Stripe account.",
+        "noAccount": "Sin cuenta",
+        "noStripeConnected": "No hay cuenta Stripe conectada.",
+        "stripeNotSetup": "Cuenta Stripe incompleta; transferencias no activadas."
+      },
+      "title": "Entregables de ofertas",
+      "description": "Asigna talentos, solicita recursos y revisa entregables para ofertas de marca.",
+      "collapseAll": "Contraer todo",
+      "noBrandOffers": "No se encontraron ofertas de marca.",
+      "delete": "Eliminar",
+      "viewOnlyMode": "Modo solo lectura",
+      "viewOnlyDescription": "Tu rol permite ver entregables, pero no aprobarlos ni gestionarlos.",
+      "assignTalent": {
+        "filterPlaceholder": "Buscar talento por nombre o correo...",
+        "talentFallback": "Talento"
+      },
+      "requestAssetModal": {
+        "selectedTalent": "Talento seleccionado",
+        "sendRequest": "Enviar solicitud",
+        "sending": "Enviando...",
+        "titlePlaceholder": "p. ej. Foto de producto de campaña",
+        "detailsPlaceholder": "Describe lo que necesitas...",
+        "noFileSelected": "Ningún archivo seleccionado"
+      },
+      "uploadDeliverableModal": {
+        "captionPlaceholder": "Añadir una leyenda...",
+        "noFilesSelected": "Ningún archivo seleccionado"
+      },
+      "reviewModal": {
+        "approveDescription": "Aprobar este entregable.",
+        "rejectDescription": "Rechazar este entregable y añadir comentarios.",
+        "requestChangesDescription": "Enviar comentarios y solicitar cambios.",
+        "optionalNoteLabel": "Nota opcional",
+        "feedbackLabel": "Comentarios",
+        "feedbackPlaceholder": "Añadir comentarios...",
+        "sendFeedbackAction": "Enviar comentarios"
+      },
+      "unassignTalent": {
+        "unassign": "Quitar asignación",
+        "unassigning": "Quitando..."
+      },
+      "permissionCannotApprove": "Tu rol no puede aprobar entregables",
+      "permissionCannotRevise": "Tu rol no puede solicitar revisiones de entregables",
+      "permissionCannotReject": "Tu rol no puede rechazar entregables"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "tabs": {
+      "profile": "Profile",
+      "subscription": "Subscription",
+      "commissions": "Commissions",
+      "emailTemplates": "Email Templates",
+      "notifications": "Notifications",
+      "taxCurrency": "Tax & Currency",
+      "team": "Team",
+      "integrations": "Integrations",
+      "fileStorage": "File Storage"
+    },
+    "profile": {
+      "title": "Agency Profile",
+      "description": "Manage your agency information and branding",
+      "fields": {
+        "agencyName": "Agency Name",
+        "agencyNamePlaceholder": "Enter agency name",
+        "email": "Email",
+        "emailPlaceholder": "agency@example.com",
+        "website": "Website",
+        "websitePlaceholder": "https://yourwebsite.com",
+        "phone": "Phone",
+        "phonePlaceholder": "+1 (555) 000-0000",
+        "description": "Description",
+        "descriptionPlaceholder": "Tell us about your agency...",
+        "logo": "Agency Logo",
+        "uploadLogo": "Upload Logo",
+        "primaryColor": "Primary Color",
+        "secondaryColor": "Secondary Color"
+      },
+      "buttons": {
+        "save": "Save Changes",
+        "saving": "Saving...",
+        "cancel": "Cancel"
+      },
+      "toasts": {
+        "saved": "Profile saved",
+        "savedDescription": "Your agency profile has been updated",
+        "saveFailed": "Save failed",
+        "uploadSuccess": "Logo uploaded",
+        "uploadFailed": "Upload failed"
+      }
+    },
+    "team": {
+      "title": "Team Management",
+      "description": "Manage team members and permissions",
+      "inviteButton": "Invite Team Member",
+      "userRole": "User Role",
+      "selectRole": "Select role",
+      "note": "Note",
+      "inviteNote": "The invited user will receive an email with instructions to join your team.",
+      "newRole": "New Role",
+      "members": "Team Members",
+      "pendingInvites": "Pending Invitations",
+      "activityLog": "Activity Log",
+      "noMembers": "No team members yet",
+      "noInvites": "No pending invitations",
+      "roles": {
+        "owner": "Owner",
+        "admin": {
+          "label": "Admin",
+          "description": "Full access to all features and settings"
+        },
+        "projectManager": {
+          "label": "Project Manager",
+          "description": "Manage projects, campaigns, and deliverables"
+        },
+        "reviewer": {
+          "label": "Reviewer",
+          "description": "View and review deliverables only"
+        },
+        "unknown": "Unknown"
+      },
+      "modals": {
+        "inviteTitle": "Invite Team Member",
+        "inviteDescription": "Send an invitation to join your agency team",
+        "emailAddress": "Email Address",
+        "emailPlaceholder": "colleague@example.com",
+        "sending": "Sending...",
+        "sendInvitation": "Send Invitation",
+        "updateRoleTitle": "Update Team Member Role",
+        "currentRole": "{{email}} is currently a {{role}}",
+        "roleChangeWarning": "Changing this member's role will immediately update their permissions across the platform.",
+        "saving": "Saving...",
+        "confirmRoleChange": "Confirm Role Change"
+      },
+      "actions": {
+        "editPermissions": "Edit Permissions",
+        "resendInvite": "Resend Invite",
+        "revokeInvite": "Revoke Invite",
+        "removeMember": "Remove Member"
+      },
+      "toasts": {
+        "inviteSent": "Invitation sent",
+        "inviteSentDescription": "Team invitation has been sent",
+        "inviteFailed": "Invite failed",
+        "roleUpdated": "Role updated",
+        "roleUpdateFailed": "Role update failed",
+        "memberRemoved": "Member removed",
+        "removeFailed": "Remove failed"
+      }
+    },
+    "commissions": {
+      "title": "Commission Settings",
+      "description": "Configure default commission rates for your talent",
+      "defaultRate": "Default Commission Rate",
+      "defaultRateDescription": "This rate applies to all talent unless individually customized",
+      "saveButton": "Save Commission Settings",
+      "saving": "Saving...",
+      "toasts": {
+        "saved": "Commission settings saved",
+        "saveFailed": "Failed to save commission settings"
+      }
+    },
+    "emailTemplates": {
+      "title": "Email Templates",
+      "description": "Customize automated email templates",
+      "newTemplate": "New Template",
+      "editTemplate": "Edit Template",
+      "fields": {
+        "name": "Template Name",
+        "subject": "Email Subject",
+        "body": "Email Body",
+        "active": "Active"
+      },
+      "placeholders": {
+        "talentName": "{talent_name}",
+        "athleteName": "{athlete_name}",
+        "agencyName": "{agency_name}",
+        "brandName": "{brand_name}"
+      },
+      "toasts": {
+        "saved": "Template saved",
+        "saveFailed": "Failed to save template",
+        "deleted": "Template deleted",
+        "deleteFailed": "Failed to delete template"
+      }
+    },
+    "notifications": {
+      "title": "Notification Preferences",
+      "description": "Manage how you receive notifications",
+      "emailNotifications": "Email Notifications",
+      "pushNotifications": "Push Notifications",
+      "types": {
+        "newOffers": "New Offers",
+        "deliverables": "Deliverable Updates",
+        "payments": "Payment Notifications",
+        "teamActivity": "Team Activity"
+      }
+    },
+    "taxCurrency": {
+      "title": "Tax & Currency",
+      "description": "Configure tax and currency settings",
+      "currency": "Currency",
+      "taxId": "Tax ID",
+      "taxIdPlaceholder": "Enter tax ID",
+      "vatNumber": "VAT Number",
+      "vatNumberPlaceholder": "Enter VAT number"
+    },
+    "integrations": {
+      "title": "Integrations",
+      "description": "Connect third-party services",
+      "calendly": {
+        "title": "Calendly Integration",
+        "description": "Connect Calendly for booking management",
+        "apiToken": "API Token",
+        "apiTokenPlaceholder": "Enter Calendly API token",
+        "schedulingUrl": "Scheduling URL",
+        "schedulingUrlPlaceholder": "https://calendly.com/your-link",
+        "enabled": "Enable Calendly",
+        "fetchEventTypes": "Fetch Event Types",
+        "fetching": "Fetching...",
+        "mappings": "Event Type Mappings",
+        "noEventTypes": "No event types found",
+        "saveButton": "Save Calendly Settings",
+        "saving": "Saving...",
+        "saved": "Saved",
+        "saveFailed": "Save failed"
+      },
+      "stripe": {
+        "title": "Stripe Integration",
+        "description": "Manage payment processing",
+        "connected": "Connected",
+        "notConnected": "Not Connected",
+        "connect": "Connect Stripe"
+      }
+    },
+    "fileStorage": {
+      "title": "File Storage",
+      "description": "Manage your file storage and uploads"
+    }
+  },
+  "subscribe": {
+    "title": "Choose Your Plan",
+    "description": "Select the perfect plan for your agency",
+    "monthly": "Monthly",
+    "annual": "Annual",
+    "savePercent": "Save {{percent}}%",
+    "perMonth": "/month",
+    "perYear": "/year",
+    "currentPlan": "Current Plan",
+    "selectPlan": "Select Plan",
+    "upgrade": "Upgrade",
+    "downgrade": "Downgrade",
+    "features": {
+      "title": "Features",
+      "unlimited": "Unlimited",
+      "included": "Included",
+      "notIncluded": "Not Included"
+    },
+    "plans": {
+      "starter": {
+        "name": "Starter",
+        "description": "Perfect for small agencies getting started"
+      },
+      "professional": {
+        "name": "Professional",
+        "description": "For growing agencies with more needs"
+      },
+      "enterprise": {
+        "name": "Enterprise",
+        "description": "For large agencies with advanced requirements"
+      }
+    },
+    "toasts": {
+      "subscribed": "Subscription updated",
+      "subscribedDescription": "Your plan has been updated successfully",
+      "subscribeFailed": "Subscription failed",
+      "tryAgain": "Please try again"
     }
   }
 }

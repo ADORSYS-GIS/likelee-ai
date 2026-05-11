@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -48,6 +49,7 @@ export default function CompCardAttachModal(props: {
   onAttached: (meta: PublicUploadMeta) => void;
 }) {
   const { open, onOpenChange, talent, mode = "self", onAttached } = props;
+  const { t } = useTranslation("agency");
   const [selectedTemplate, setSelectedTemplate] = useState<
     "classic" | "modern" | "minimal"
   >("classic");
@@ -230,10 +232,10 @@ export default function CompCardAttachModal(props: {
       <DialogContent className="max-w-[96vw] lg:max-w-5xl h-[92vh] lg:h-[80vh] flex flex-col p-0 overflow-hidden">
         <DialogHeader className="p-4 sm:p-6 pb-2">
           <DialogTitle className="text-2xl font-bold">
-            Comp Card Generator
+            {t("agencyDashboard.compCard.title")}
           </DialogTitle>
           <DialogDescription>
-            Generate a comp card and attach it to your job application.
+            {t("agencyDashboard.compCard.description")}
           </DialogDescription>
         </DialogHeader>
 

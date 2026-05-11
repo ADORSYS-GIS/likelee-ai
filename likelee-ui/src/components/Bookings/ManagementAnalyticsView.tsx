@@ -27,9 +27,13 @@ import {
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { format, parseISO, isSameMonth, isSameWeek } from "date-fns";
+import { useTranslation } from "react-i18next";
 
 export const ManagementAnalyticsView = ({ bookings }: { bookings: any[] }) => {
-  const [activeTab, setActiveTab] = useState("Analytics");
+  const { t } = useTranslation("agency");
+  const [activeTab, setActiveTab] = useState(
+    t("agencyDashboard.bookings.tabs.managementAnalytics.tabs.analytics"),
+  );
 
   return (
     <div className="space-y-6">
@@ -38,16 +42,26 @@ export const ManagementAnalyticsView = ({ bookings }: { bookings: any[] }) => {
           <div className="flex items-center gap-2">
             <BarChart2 className="w-6 h-6 text-indigo-600" />
             <h2 className="text-2xl font-bold text-gray-900">
-              Management & Analytics
+              {t("agencyDashboard.bookings.tabs.managementAnalytics.title")}
             </h2>
           </div>
           <p className="text-gray-500 font-medium text-sm mt-1">
-            Filter, search, and analyze your bookings
+            {t("agencyDashboard.bookings.tabs.managementAnalytics.subtitle")}
           </p>
         </div>
         <div className="overflow-x-auto">
           <div className="flex bg-gray-100 p-1 rounded-lg w-max min-w-full sm:min-w-0 sm:w-fit">
-            {["Analytics", "Manage Bookings", "Reports & Export"].map((tab) => (
+            {[
+              t(
+                "agencyDashboard.bookings.tabs.managementAnalytics.tabs.analytics",
+              ),
+              t(
+                "agencyDashboard.bookings.tabs.managementAnalytics.tabs.manageBookings",
+              ),
+              t(
+                "agencyDashboard.bookings.tabs.managementAnalytics.tabs.reportsExport",
+              ),
+            ].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -64,20 +78,24 @@ export const ManagementAnalyticsView = ({ bookings }: { bookings: any[] }) => {
         </div>
       </div>
 
-      {activeTab === "Analytics" && (
-        <ManagementAnalyticsTab bookings={bookings} />
-      )}
-      {activeTab === "Manage Bookings" && (
-        <ManageBookingsTab bookings={bookings} />
-      )}
-      {activeTab === "Reports & Export" && (
-        <ReportsExportTab bookings={bookings} />
-      )}
+      {activeTab ===
+        t(
+          "agencyDashboard.bookings.tabs.managementAnalytics.tabs.analytics",
+        ) && <ManagementAnalyticsTab bookings={bookings} />}
+      {activeTab ===
+        t(
+          "agencyDashboard.bookings.tabs.managementAnalytics.tabs.manageBookings",
+        ) && <ManageBookingsTab bookings={bookings} />}
+      {activeTab ===
+        t(
+          "agencyDashboard.bookings.tabs.managementAnalytics.tabs.reportsExport",
+        ) && <ReportsExportTab bookings={bookings} />}
     </div>
   );
 };
 
 const ManagementAnalyticsTab = ({ bookings }: { bookings: any[] }) => {
+  const { t } = useTranslation("agency");
   const now = new Date();
 
   const safeParseDate = (v: any) => {
@@ -112,9 +130,12 @@ const ManagementAnalyticsTab = ({ bookings }: { bookings: any[] }) => {
   };
 
   const formatTypeLabel = (type: string) => {
-    const t = normalizeType(type);
-    if (t === "test-shoot") return "Test Shoot";
-    return t
+    const t_type = normalizeType(type);
+    if (t_type === "test-shoot")
+      return t(
+        "agencyDashboard.bookings.tabs.managementAnalytics.analytics.testShoot",
+      );
+    return t_type
       .split("-")
       .map((p) => (p ? p[0].toUpperCase() + p.slice(1) : p))
       .join(" ");
@@ -198,33 +219,49 @@ const ManagementAnalyticsTab = ({ bookings }: { bookings: any[] }) => {
 
   const stats = [
     {
-      label: "This Month",
+      label: t(
+        "agencyDashboard.bookings.tabs.managementAnalytics.analytics.thisMonth",
+      ),
       value: overviewStats.monthCount.toString(),
-      subtext: "Total bookings",
+      subtext: t(
+        "agencyDashboard.bookings.tabs.managementAnalytics.analytics.totalBookings",
+      ),
       icon: Calendar,
       color: "text-blue-600",
       bg: "bg-blue-50",
     },
     {
-      label: "This Week",
+      label: t(
+        "agencyDashboard.bookings.tabs.managementAnalytics.analytics.thisWeek",
+      ),
       value: overviewStats.weekCount.toString(),
-      subtext: "Total bookings",
+      subtext: t(
+        "agencyDashboard.bookings.tabs.managementAnalytics.analytics.totalBookings",
+      ),
       icon: Calendar,
       color: "text-green-600",
       bg: "bg-green-50",
     },
     {
-      label: "Revenue",
+      label: t(
+        "agencyDashboard.bookings.tabs.managementAnalytics.analytics.revenue",
+      ),
       value: `$${overviewStats.monthRevenue.toLocaleString()}`,
-      subtext: "This month",
+      subtext: t(
+        "agencyDashboard.bookings.tabs.managementAnalytics.analytics.thisMonthLower",
+      ),
       icon: DollarSign,
       color: "text-emerald-600",
       bg: "bg-emerald-50",
     },
     {
-      label: "Conversion",
+      label: t(
+        "agencyDashboard.bookings.tabs.managementAnalytics.analytics.conversion",
+      ),
       value: conversionPct,
-      subtext: "This month",
+      subtext: t(
+        "agencyDashboard.bookings.tabs.managementAnalytics.analytics.thisMonthLower",
+      ),
       icon: TrendingUp,
       color: "text-purple-600",
       bg: "bg-purple-50",
@@ -257,7 +294,9 @@ const ManagementAnalyticsTab = ({ bookings }: { bookings: any[] }) => {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <Card className="p-6 border shadow-sm">
           <h3 className="text-lg font-bold text-gray-900 mb-6">
-            Bookings by Type
+            {t(
+              "agencyDashboard.bookings.tabs.managementAnalytics.analytics.bookingsByType",
+            )}
           </h3>
           <div className="space-y-4">
             {Object.entries(typeCounts).length > 0 ? (
@@ -290,7 +329,11 @@ const ManagementAnalyticsTab = ({ bookings }: { bookings: any[] }) => {
                 ),
               )
             ) : (
-              <p className="text-sm text-gray-500">No bookings yet</p>
+              <p className="text-sm text-gray-500">
+                {t(
+                  "agencyDashboard.bookings.tabs.managementAnalytics.analytics.noBookingsYet",
+                )}
+              </p>
             )}
           </div>
         </Card>
@@ -298,7 +341,9 @@ const ManagementAnalyticsTab = ({ bookings }: { bookings: any[] }) => {
         <Card className="p-6 border shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-bold text-gray-900">
-              Top Booked Talent
+              {t(
+                "agencyDashboard.bookings.tabs.managementAnalytics.analytics.topBookedTalent",
+              )}
             </h3>
           </div>
           <div className="space-y-4">
@@ -310,7 +355,10 @@ const ManagementAnalyticsTab = ({ bookings }: { bookings: any[] }) => {
                 </span>
               </div>
               <Badge variant="secondary" className="font-bold">
-                {topTalent.count} bookings
+                {topTalent.count}{" "}
+                {t(
+                  "agencyDashboard.bookings.tabs.managementAnalytics.analytics.bookings",
+                )}
               </Badge>
             </div>
           </div>
@@ -321,6 +369,7 @@ const ManagementAnalyticsTab = ({ bookings }: { bookings: any[] }) => {
 };
 
 const ManageBookingsTab = ({ bookings }: { bookings: any[] }) => {
+  const { t } = useTranslation("agency");
   const [searchQuery, setSearchQuery] = useState("");
   const [dateStart, setDateStart] = useState("");
   const [dateEnd, setDateEnd] = useState("");
@@ -455,7 +504,9 @@ const ManageBookingsTab = ({ bookings }: { bookings: any[] }) => {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
         <Input
-          placeholder="Search by talent, client, location, or notes..."
+          placeholder={t(
+            "agencyDashboard.bookings.tabs.managementAnalytics.manage.searchPlaceholder",
+          )}
           className="pl-10 h-10 bg-white"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -465,13 +516,19 @@ const ManageBookingsTab = ({ bookings }: { bookings: any[] }) => {
       <Card className="p-6 border shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <Filter className="w-4 h-4 text-gray-900" />
-          <h3 className="font-bold text-gray-900">Filters</h3>
+          <h3 className="font-bold text-gray-900">
+            {t(
+              "agencyDashboard.bookings.tabs.managementAnalytics.manage.filters",
+            )}
+          </h3>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
           <div className="border border-gray-200 rounded-lg p-4">
             <Label className="font-bold text-xs uppercase text-gray-500 mb-3 block">
-              Talent
+              {t(
+                "agencyDashboard.bookings.tabs.managementAnalytics.manage.talent",
+              )}
             </Label>
             <div className="space-y-2 max-h-[150px] overflow-y-auto pr-2">
               {["Emma", "Sergine", "Milan", "Julia", "Matt"].map((t) => (
@@ -494,7 +551,9 @@ const ManageBookingsTab = ({ bookings }: { bookings: any[] }) => {
 
           <div className="border border-gray-200 rounded-lg p-4">
             <Label className="font-bold text-xs uppercase text-gray-500 mb-3 block">
-              Client
+              {t(
+                "agencyDashboard.bookings.tabs.managementAnalytics.manage.client",
+              )}
             </Label>
             <div className="space-y-2 max-h-[150px] overflow-y-auto pr-2">
               {["Company", "Company", "name"].map((c, i) => (
@@ -517,51 +576,104 @@ const ManageBookingsTab = ({ bookings }: { bookings: any[] }) => {
 
           <div className="border border-gray-200 rounded-lg p-4">
             <Label className="font-bold text-xs uppercase text-gray-500 mb-3 block">
-              Booking Type
+              {t(
+                "agencyDashboard.bookings.tabs.managementAnalytics.manage.bookingType",
+              )}
             </Label>
             <div className="space-y-2">
-              {["Casting", "Option", "Confirmed", "Completed", "Cancelled"].map(
-                (t) => (
-                  <div key={t} className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id={`bt-${t}`}
-                      className="rounded border-gray-300"
-                    />
-                    <label
-                      htmlFor={`bt-${t}`}
-                      className="text-sm font-medium text-gray-700 cursor-pointer"
-                    >
-                      {t}
-                    </label>
-                  </div>
-                ),
-              )}
+              {[
+                {
+                  label: t(
+                    "agencyDashboard.bookings.tabs.managementAnalytics.manage.casting",
+                  ),
+                  value: "Casting",
+                },
+                {
+                  label: t(
+                    "agencyDashboard.bookings.tabs.managementAnalytics.manage.option",
+                  ),
+                  value: "Option",
+                },
+                {
+                  label: t(
+                    "agencyDashboard.bookings.tabs.managementAnalytics.manage.confirmed",
+                  ),
+                  value: "Confirmed",
+                },
+                {
+                  label: t(
+                    "agencyDashboard.bookings.tabs.managementAnalytics.manage.completed",
+                  ),
+                  value: "Completed",
+                },
+                {
+                  label: t(
+                    "agencyDashboard.bookings.tabs.managementAnalytics.manage.cancelled",
+                  ),
+                  value: "Cancelled",
+                },
+              ].map((bt) => (
+                <div key={bt.value} className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id={`bt-${bt.value}`}
+                    className="rounded border-gray-300"
+                  />
+                  <label
+                    htmlFor={`bt-${bt.value}`}
+                    className="text-sm font-medium text-gray-700 cursor-pointer"
+                  >
+                    {bt.label}
+                  </label>
+                </div>
+              ))}
             </div>
           </div>
 
           <div className="border border-gray-200 rounded-lg p-4">
             <Label className="font-bold text-xs uppercase text-gray-500 mb-3 block">
-              Status
+              {t(
+                "agencyDashboard.bookings.tabs.managementAnalytics.manage.status",
+              )}
             </Label>
             <div className="space-y-2">
               {[
-                "Pending Confirmation",
-                "Confirmed",
-                "Completed",
-                "Cancelled",
+                {
+                  label: t(
+                    "agencyDashboard.bookings.tabs.managementAnalytics.manage.pendingConfirmation",
+                  ),
+                  value: "Pending Confirmation",
+                },
+                {
+                  label: t(
+                    "agencyDashboard.bookings.tabs.managementAnalytics.manage.confirmed",
+                  ),
+                  value: "Confirmed",
+                },
+                {
+                  label: t(
+                    "agencyDashboard.bookings.tabs.managementAnalytics.manage.completed",
+                  ),
+                  value: "Completed",
+                },
+                {
+                  label: t(
+                    "agencyDashboard.bookings.tabs.managementAnalytics.manage.cancelled",
+                  ),
+                  value: "Cancelled",
+                },
               ].map((s) => (
-                <div key={s} className="flex items-center gap-2">
+                <div key={s.value} className="flex items-center gap-2">
                   <input
                     type="checkbox"
-                    id={`s-${s}`}
+                    id={`s-${s.value}`}
                     className="rounded border-gray-300"
                   />
                   <label
-                    htmlFor={`s-${s}`}
+                    htmlFor={`s-${s.value}`}
                     className="text-sm font-medium text-gray-700 cursor-pointer"
                   >
-                    {s}
+                    {s.label}
                   </label>
                 </div>
               ))}
@@ -572,36 +684,48 @@ const ManageBookingsTab = ({ bookings }: { bookings: any[] }) => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="border border-gray-200 rounded-lg p-4">
             <Label className="font-bold text-xs uppercase text-gray-500 mb-3 block">
-              Date Range
+              {t(
+                "agencyDashboard.bookings.tabs.managementAnalytics.manage.dateRange",
+              )}
             </Label>
             <div className="grid grid-cols-2 gap-2">
               <Input
                 type="date"
                 value={dateStart}
                 onChange={(e) => setDateStart(e.target.value)}
-                placeholder="Start Date"
+                placeholder={t(
+                  "agencyDashboard.bookings.tabs.managementAnalytics.manage.startDate",
+                )}
               />
               <Input
                 type="date"
                 value={dateEnd}
                 onChange={(e) => setDateEnd(e.target.value)}
-                placeholder="End Date"
+                placeholder={t(
+                  "agencyDashboard.bookings.tabs.managementAnalytics.manage.endDate",
+                )}
               />
             </div>
           </div>
           <div className="border border-gray-200 rounded-lg p-4">
             <Label className="font-bold text-xs uppercase text-gray-500 mb-3 block">
-              Rate Range ($)
+              {t(
+                "agencyDashboard.bookings.tabs.managementAnalytics.manage.rateRange",
+              )}
             </Label>
             <div className="grid grid-cols-2 gap-2">
               <Input
-                placeholder="Min"
+                placeholder={t(
+                  "agencyDashboard.bookings.tabs.managementAnalytics.manage.min",
+                )}
                 type="number"
                 value={rateMin}
                 onChange={(e) => setRateMin(e.target.value)}
               />
               <Input
-                placeholder="Max"
+                placeholder={t(
+                  "agencyDashboard.bookings.tabs.managementAnalytics.manage.max",
+                )}
                 type="number"
                 value={rateMax}
                 onChange={(e) => setRateMax(e.target.value)}
@@ -614,17 +738,41 @@ const ManageBookingsTab = ({ bookings }: { bookings: any[] }) => {
       <Card className="p-4 border shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center gap-2">
           <ArrowUpDown className="w-4 h-4 text-gray-500" />
-          <span className="text-sm font-bold text-gray-700">Sort by:</span>
+          <span className="text-sm font-bold text-gray-700">
+            {t(
+              "agencyDashboard.bookings.tabs.managementAnalytics.manage.sortBy",
+            )}
+          </span>
           <Select value={sortKey} onValueChange={setSortKey}>
             <SelectTrigger className="w-full sm:w-[180px] h-9">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="bookingDate">Booking Date</SelectItem>
-              <SelectItem value="talentName">Talent Name</SelectItem>
-              <SelectItem value="clientName">Client Name</SelectItem>
-              <SelectItem value="rateAmount">Rate Amount</SelectItem>
-              <SelectItem value="createdDate">Created Date</SelectItem>
+              <SelectItem value="bookingDate">
+                {t(
+                  "agencyDashboard.bookings.tabs.managementAnalytics.manage.bookingDate",
+                )}
+              </SelectItem>
+              <SelectItem value="talentName">
+                {t(
+                  "agencyDashboard.bookings.tabs.managementAnalytics.manage.talentName",
+                )}
+              </SelectItem>
+              <SelectItem value="clientName">
+                {t(
+                  "agencyDashboard.bookings.tabs.managementAnalytics.manage.clientName",
+                )}
+              </SelectItem>
+              <SelectItem value="rateAmount">
+                {t(
+                  "agencyDashboard.bookings.tabs.managementAnalytics.manage.rateAmount",
+                )}
+              </SelectItem>
+              <SelectItem value="createdDate">
+                {t(
+                  "agencyDashboard.bookings.tabs.managementAnalytics.manage.createdDate",
+                )}
+              </SelectItem>
             </SelectContent>
           </Select>
           <Button
@@ -642,7 +790,10 @@ const ManageBookingsTab = ({ bookings }: { bookings: any[] }) => {
 
       <div className="space-y-4">
         <h4 className="font-bold text-gray-900">
-          Results ({filteredAndSortedBookings.length})
+          {t(
+            "agencyDashboard.bookings.tabs.managementAnalytics.manage.results",
+            { count: filteredAndSortedBookings.length },
+          )}
         </h4>
         {filteredAndSortedBookings.length > 0 ? (
           filteredAndSortedBookings.map((booking) => (
@@ -664,7 +815,11 @@ const ManageBookingsTab = ({ bookings }: { bookings: any[] }) => {
                       "Unknown"}
                   </h4>
                   <p className="text-xs text-gray-500">
-                    {pickString(booking?.status, booking?.type) || "Pending"} •{" "}
+                    {pickString(booking?.status, booking?.type) ||
+                      t(
+                        "agencyDashboard.bookings.tabs.managementAnalytics.manage.pending",
+                      )}{" "}
+                    •{" "}
                     {pickString(
                       booking?.type,
                       booking?.bookingType,
@@ -678,7 +833,9 @@ const ManageBookingsTab = ({ bookings }: { bookings: any[] }) => {
                   <p className="text-xs font-bold text-gray-500">
                     {booking.date
                       ? format(parseISO(booking.date), "MMM dd, yyyy")
-                      : "No date"}
+                      : t(
+                          "agencyDashboard.bookings.tabs.managementAnalytics.manage.noDate",
+                        )}
                   </p>
                   <p className="text-xs text-gray-400">
                     {pickString(booking?.call_time, booking?.callTime) ||
@@ -686,7 +843,10 @@ const ManageBookingsTab = ({ bookings }: { bookings: any[] }) => {
                   </p>
                 </div>
                 <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 border-none px-3">
-                  {pickString(booking?.status, booking?.type) || "Pending"}
+                  {pickString(booking?.status, booking?.type) ||
+                    t(
+                      "agencyDashboard.bookings.tabs.managementAnalytics.manage.pending",
+                    )}
                 </Badge>
                 <p className="font-bold text-gray-900">
                   {(() => {
@@ -702,7 +862,11 @@ const ManageBookingsTab = ({ bookings }: { bookings: any[] }) => {
           ))
         ) : (
           <div className="text-center py-12 text-gray-500">
-            <p>No bookings found matching your filters.</p>
+            <p>
+              {t(
+                "agencyDashboard.bookings.tabs.managementAnalytics.manage.noBookingsFound",
+              )}
+            </p>
           </div>
         )}
       </div>
@@ -711,6 +875,7 @@ const ManageBookingsTab = ({ bookings }: { bookings: any[] }) => {
 };
 
 const ReportsExportTab = ({ bookings }: { bookings?: any[] }) => {
+  const { t } = useTranslation("agency");
   const { toast } = useToast();
 
   const bookingsCount = Array.isArray(bookings) ? bookings.length : 0;
@@ -734,7 +899,9 @@ const ReportsExportTab = ({ bookings }: { bookings?: any[] }) => {
 
   const handleScheduleReports = () => {
     const { dismiss } = toast({
-      title: "Scheduled weekly reports via email!",
+      title: t(
+        "agencyDashboard.bookings.tabs.managementAnalytics.reports.scheduledWeeklyReports",
+      ),
       action: (
         <Button
           variant="outline"
@@ -743,7 +910,7 @@ const ReportsExportTab = ({ bookings }: { bookings?: any[] }) => {
             dismiss();
           }}
         >
-          OK
+          {t("agencyDashboard.bookings.tabs.managementAnalytics.reports.ok")}
         </Button>
       ),
     });
@@ -753,9 +920,16 @@ const ReportsExportTab = ({ bookings }: { bookings?: any[] }) => {
     <div className="space-y-6">
       <Card className="p-6 border shadow-sm">
         <div className="mb-6">
-          <h3 className="text-lg font-bold text-gray-900">Export Bookings</h3>
+          <h3 className="text-lg font-bold text-gray-900">
+            {t(
+              "agencyDashboard.bookings.tabs.managementAnalytics.reports.exportBookings",
+            )}
+          </h3>
           <p className="text-gray-500 font-medium text-sm mt-1">
-            Export {bookingsCount} filtered bookings to your preferred format
+            {t(
+              "agencyDashboard.bookings.tabs.managementAnalytics.reports.exportDescription",
+              { count: bookingsCount },
+            )}
           </p>
         </div>
 
@@ -766,7 +940,11 @@ const ReportsExportTab = ({ bookings }: { bookings?: any[] }) => {
             onClick={() => handleExport("CSV")}
           >
             <FileText className="w-6 h-6 text-green-600 group-hover:scale-110 transition-transform" />
-            <span className="font-bold text-green-700">Export to CSV</span>
+            <span className="font-bold text-green-700">
+              {t(
+                "agencyDashboard.bookings.tabs.managementAnalytics.reports.exportToCSV",
+              )}
+            </span>
           </Button>
           <Button
             variant="outline"
@@ -774,7 +952,11 @@ const ReportsExportTab = ({ bookings }: { bookings?: any[] }) => {
             onClick={() => handleExport("PDF")}
           >
             <FileText className="w-6 h-6 text-red-600 group-hover:scale-110 transition-transform" />
-            <span className="font-bold text-red-700">Export to PDF</span>
+            <span className="font-bold text-red-700">
+              {t(
+                "agencyDashboard.bookings.tabs.managementAnalytics.reports.exportToPDF",
+              )}
+            </span>
           </Button>
           <Button
             variant="outline"
@@ -782,26 +964,58 @@ const ReportsExportTab = ({ bookings }: { bookings?: any[] }) => {
             onClick={() => handleExport("EXCEL")}
           >
             <FileText className="w-6 h-6 text-blue-600 group-hover:scale-110 transition-transform" />
-            <span className="font-bold text-blue-700">Export to Excel</span>
+            <span className="font-bold text-blue-700">
+              {t(
+                "agencyDashboard.bookings.tabs.managementAnalytics.reports.exportToExcel",
+              )}
+            </span>
           </Button>
         </div>
 
         <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-          <h4 className="font-bold text-gray-900 mb-4">Included Columns:</h4>
+          <h4 className="font-bold text-gray-900 mb-4">
+            {t(
+              "agencyDashboard.bookings.tabs.managementAnalytics.reports.includedColumns",
+            )}
+          </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             {[
-              "Talent Name",
-              "Client Name",
-              "Booking Date",
-              "Call Time",
-              "Wrap Time",
-              "Location",
-              "Rate",
-              "Type",
-              "Status",
-              "Notes",
-              "Created Date",
-              "Updated Date",
+              t(
+                "agencyDashboard.bookings.tabs.managementAnalytics.reports.talentName",
+              ),
+              t(
+                "agencyDashboard.bookings.tabs.managementAnalytics.reports.clientName",
+              ),
+              t(
+                "agencyDashboard.bookings.tabs.managementAnalytics.reports.bookingDate",
+              ),
+              t(
+                "agencyDashboard.bookings.tabs.managementAnalytics.reports.callTime",
+              ),
+              t(
+                "agencyDashboard.bookings.tabs.managementAnalytics.reports.wrapTime",
+              ),
+              t(
+                "agencyDashboard.bookings.tabs.managementAnalytics.reports.location",
+              ),
+              t(
+                "agencyDashboard.bookings.tabs.managementAnalytics.reports.rate",
+              ),
+              t(
+                "agencyDashboard.bookings.tabs.managementAnalytics.reports.type",
+              ),
+              t(
+                "agencyDashboard.bookings.tabs.managementAnalytics.reports.status",
+              ),
+              t(
+                "agencyDashboard.bookings.tabs.managementAnalytics.reports.notes",
+              ),
+              t(
+                "agencyDashboard.bookings.tabs.managementAnalytics.reports.createdDate",
+              ),
+              t(
+                "agencyDashboard.bookings.tabs.managementAnalytics.reports.updatedDate",
+              ),
             ].map((col) => (
               <div key={col} className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-orange-500 fill-orange-500" />
@@ -815,36 +1029,54 @@ const ReportsExportTab = ({ bookings }: { bookings?: any[] }) => {
       <Card className="p-6 border shadow-sm">
         <div className="mb-6">
           <h3 className="text-lg font-bold text-gray-900">
-            Schedule Automated Reports
+            {t(
+              "agencyDashboard.bookings.tabs.managementAnalytics.reports.scheduleAutomatedReports",
+            )}
           </h3>
           <p className="text-gray-500 font-medium text-sm mt-1">
-            Receive booking reports automatically via email
+            {t(
+              "agencyDashboard.bookings.tabs.managementAnalytics.reports.scheduleDescription",
+            )}
           </p>
         </div>
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label className="font-bold">Report Frequency</Label>
+            <Label className="font-bold">
+              {t(
+                "agencyDashboard.bookings.tabs.managementAnalytics.reports.reportFrequency",
+              )}
+            </Label>
             <Select defaultValue="weekly">
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="daily">
-                  Daily (every morning at 8 AM)
+                  {t(
+                    "agencyDashboard.bookings.tabs.managementAnalytics.reports.daily",
+                  )}
                 </SelectItem>
                 <SelectItem value="weekly">
-                  Weekly (every Monday at 8 AM)
+                  {t(
+                    "agencyDashboard.bookings.tabs.managementAnalytics.reports.weekly",
+                  )}
                 </SelectItem>
                 <SelectItem value="monthly">
-                  Monthly (1st of each month)
+                  {t(
+                    "agencyDashboard.bookings.tabs.managementAnalytics.reports.monthly",
+                  )}
                 </SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
-            <Label className="font-bold">Email Recipients</Label>
+            <Label className="font-bold">
+              {t(
+                "agencyDashboard.bookings.tabs.managementAnalytics.reports.emailRecipients",
+              )}
+            </Label>
             <Input defaultValue="agent@agency.com" />
           </div>
 

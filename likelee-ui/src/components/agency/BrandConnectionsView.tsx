@@ -136,9 +136,215 @@ const BrandConnectionsView = ({
   feedbackCount?: number;
 }) => {
   const { toast } = useToast();
-  const { t } = useTranslation();
+  const { t: baseTranslate, i18n } = useTranslation("agency");
+  const brandFallbacks: Record<string, Record<string, string>> = {
+    en: {
+      connectedBrands: "Connected Brands",
+      requests: "Requests",
+      brandOffers: "Brand Offers",
+      deliverables: "Deliverables",
+      packageFeedback: "Package Feedback",
+      loadingBrands: "Loading brands...",
+      loadBrandsFailed: "Failed to load brands.",
+      noBrands: "No connected brands yet.",
+      "ui.connected": "Connected",
+      "ui.since": "Since {{date}}",
+      "ui.loadingRequests": "Loading requests...",
+      "ui.failedToLoadRequests": "Failed to load requests.",
+      "ui.noPendingRequests": "No pending requests.",
+      "ui.noEmailProvided": "No email provided",
+      "ui.disconnectFromBrand": "Disconnect from brand",
+      "ui.noDisconnectPermission":
+        "You do not have permission to disconnect brands.",
+      "ui.brandFallback": "Brand",
+      "ui.pending": "Pending",
+      "ui.requestedOn": "Requested on {{date}}",
+      "ui.working": "Working...",
+      "ui.accept": "Accept",
+      "ui.decline": "Decline",
+      "ui.noAcceptRequestPermission":
+        "You do not have permission to accept requests.",
+      "ui.noDeclineRequestPermission":
+        "You do not have permission to decline requests.",
+      "ui.loadingOffers": "Loading offers...",
+      "ui.noOffers": "No offers available.",
+      "ui.offerNotFound": "Offer not found.",
+      "ui.backToList": "Back to list",
+      "actions.view": "View",
+      "actions.hide": "Hide",
+      "actions.open": "Open",
+      "actions.sending": "Sending...",
+      "actions.sendMessage": "Send Message",
+      "fallbacks.directRequest": "Direct request",
+      "fallbacks.talentPackage": "Talent package",
+      "fallbacks.campaignOffer": "Campaign offer",
+      "contractHub.title": "Contract Hub",
+      "contractHub.submissions": "Submissions",
+      "contractHub.newContract": "New Contract",
+      "contractHub.assignTalentBeforeContract":
+        "Assign talent before creating a contract.",
+      "contractHub.connectStripeBeforeSending":
+        "Connect Stripe before sending.",
+      "contractHub.setupPayouts": "Set up payouts",
+      "contractHub.noContractsForOffer": "No contracts for this offer yet.",
+      "contractHub.createFirstContract": "Create first contract",
+      "contractHub.contractTemplates": "Contract Templates",
+      "contractHub.readyToPrepare": "Ready to prepare",
+      "contractHub.titleColumn": "Title",
+      "contractHub.actionsColumn": "Actions",
+      "contractHub.contractDraft": "Contract Draft",
+      "contractHub.templateId": "Template ID",
+      "contractHub.prepare": "Prepare",
+      "contractHub.send": "Send",
+      "contractHub.sentSubmissions": "Sent Submissions",
+      "contractHub.activeSubmissions": "Active Submissions",
+      "contractHub.statusColumn": "Status",
+      "contractHub.contractSubmission": "Contract Submission",
+      "contractHub.id": "ID",
+      "contractHub.uploadingPdf": "Uploading PDF...",
+      "contractHub.creatingTemplate": "Creating template...",
+      "contractHub.uploadContractPdf": "Upload Contract PDF",
+      "contractHub.uploadPdfDescription":
+        "Upload a contract PDF to send for signature.",
+      "contractHub.assignTalentFirst": "Assign talent first",
+      "contractHub.saveContract": "Save Contract",
+      "toasts.requestAccepted": "Request accepted",
+      "toasts.requestDeclined": "Request declined",
+      "toasts.requestApproved": "The brand has been notified.",
+      "toasts.requestDeclinedDesc": "The brand has been notified.",
+      "toasts.actionFailed": "Action failed",
+      "toasts.pleaseTryAgain": "Please try again.",
+      "toasts.disconnected": "Disconnected",
+      "toasts.disconnectedDesc": "The brand connection was removed.",
+      "toasts.disconnectFailed": "Disconnect failed",
+      "toasts.offerAccepted": "Offer accepted",
+      "toasts.offerDeclined": "Offer declined",
+      "toasts.pleaseTryAgainShort": "Please try again.",
+      "toasts.contractUploaded": "Contract uploaded",
+      "toasts.draftCreated": "Draft created",
+      "toasts.uploadFailed": "Upload failed",
+      "toasts.uploadFailedDesc": "Could not upload this contract.",
+      "toasts.agencySignatureRequired": "Agency signature required",
+      "toasts.signToRelease": "Sign to release this contract to the client.",
+      "toasts.contractSent": "Contract sent",
+      "toasts.contractSentDesc": "The client has been notified.",
+      "toasts.sendFailed": "Send failed",
+      "toasts.assignTalentFirst": "Assign talent before sending.",
+      "toasts.noSignatureFields": "No signature fields found.",
+      "toasts.sendFailedGeneric": "Could not send this contract.",
+      "toasts.statusSynced": "Status synced",
+      "toasts.statusSyncedDesc": "Contract status updated.",
+      "toasts.syncFailed": "Sync failed",
+      "toasts.syncFailedDesc": "Could not sync status.",
+      "toasts.downloadFailed": "Download failed",
+      "toasts.downloadFailedDesc": "Could not download this file.",
+      "toasts.contractDeleted": "Contract deleted",
+      "toasts.draftRemoved": "Draft removed.",
+      "toasts.deleteFailed": "Delete failed",
+      "toasts.deleteFailedDesc": "Could not delete this contract.",
+      "toasts.packageSent": "Package sent",
+      "toasts.packageSentDesc": "Package sent to the brand.",
+      "toasts.packageSendFailed": "Package send failed",
+      "toasts.linkCopied": "Link copied",
+      "toasts.linkCopiedDesc": "The signing link was copied.",
+      "toasts.linkUnavailable": "Link unavailable",
+      "toasts.linkUnavailableDesc": "No link is available yet.",
+      "toasts.missingContract": "Missing contract",
+      "toasts.selectContractFirst": "Select a contract first.",
+      "precheck.sendAnyway": "Send anyway",
+      "packageDefaults.talentPackage": "Talent Package",
+    },
+    es: {
+      connectedBrands: "Marcas conectadas",
+      requests: "Solicitudes",
+      brandOffers: "Ofertas de marca",
+      deliverables: "Entregables",
+      packageFeedback: "Comentarios de paquetes",
+      loadingBrands: "Cargando marcas...",
+      loadBrandsFailed: "Error al cargar las marcas.",
+      noBrands: "Aún no hay marcas conectadas.",
+      "ui.connected": "Conectada",
+      "ui.since": "Desde {{date}}",
+      "ui.loadingRequests": "Cargando solicitudes...",
+      "ui.failedToLoadRequests": "Error al cargar las solicitudes.",
+      "ui.noPendingRequests": "No hay solicitudes pendientes.",
+      "ui.noEmailProvided": "Sin correo",
+      "ui.disconnectFromBrand": "Desconectar marca",
+      "ui.noDisconnectPermission": "No tienes permiso para desconectar marcas.",
+      "ui.brandFallback": "Marca",
+      "ui.pending": "Pendiente",
+      "ui.requestedOn": "Solicitado el {{date}}",
+      "ui.working": "Procesando...",
+      "ui.accept": "Aceptar",
+      "ui.decline": "Rechazar",
+      "ui.noAcceptRequestPermission":
+        "No tienes permiso para aceptar solicitudes.",
+      "ui.noDeclineRequestPermission":
+        "No tienes permiso para rechazar solicitudes.",
+      "ui.loadingOffers": "Cargando ofertas...",
+      "ui.noOffers": "No hay ofertas disponibles.",
+      "ui.offerNotFound": "Oferta no encontrada.",
+      "ui.backToList": "Volver a la lista",
+      "actions.view": "Ver",
+      "actions.hide": "Ocultar",
+      "actions.open": "Abrir",
+      "actions.sending": "Enviando...",
+      "actions.sendMessage": "Enviar mensaje",
+      "fallbacks.directRequest": "Solicitud directa",
+      "fallbacks.talentPackage": "Paquete de talento",
+      "fallbacks.campaignOffer": "Oferta de campaña",
+      "contractHub.title": "Centro de contratos",
+      "contractHub.submissions": "Envíos",
+      "contractHub.newContract": "Nuevo contrato",
+      "contractHub.assignTalentBeforeContract":
+        "Asigna talento antes de crear un contrato.",
+      "contractHub.connectStripeBeforeSending":
+        "Conecta Stripe antes de enviar.",
+      "contractHub.setupPayouts": "Configurar pagos",
+      "contractHub.noContractsForOffer":
+        "Aún no hay contratos para esta oferta.",
+      "contractHub.createFirstContract": "Crear primer contrato",
+      "contractHub.contractTemplates": "Plantillas de contrato",
+      "contractHub.readyToPrepare": "Listo para preparar",
+      "contractHub.titleColumn": "Título",
+      "contractHub.actionsColumn": "Acciones",
+      "contractHub.contractDraft": "Borrador de contrato",
+      "contractHub.templateId": "ID de plantilla",
+      "contractHub.prepare": "Preparar",
+      "contractHub.send": "Enviar",
+      "contractHub.sentSubmissions": "Envíos enviados",
+      "contractHub.activeSubmissions": "Envíos activos",
+      "contractHub.statusColumn": "Estado",
+      "contractHub.contractSubmission": "Envío de contrato",
+      "contractHub.id": "ID",
+      "contractHub.uploadingPdf": "Subiendo PDF...",
+      "contractHub.creatingTemplate": "Creando plantilla...",
+      "contractHub.uploadContractPdf": "Subir PDF de contrato",
+      "contractHub.uploadPdfDescription":
+        "Sube un PDF de contrato para enviarlo a firma.",
+      "contractHub.assignTalentFirst": "Asigna talento primero",
+      "contractHub.saveContract": "Guardar contrato",
+    },
+  };
+  const translateBrandPath = (
+    path: string,
+    options?: Record<string, unknown>,
+  ) => {
+    const defaultValue = brandFallbacks.en[path] || path;
+    return baseTranslate(`agencyDashboard.brandConnections.${path}`, {
+      defaultValue,
+      ...options,
+    });
+  };
+  const t = (key: string, options?: Record<string, unknown>) => {
+    const brandPrefix = "agencyDashboard.brandConnections.";
+    if (key.startsWith(brandPrefix)) {
+      return translateBrandPath(key.slice(brandPrefix.length), options);
+    }
+    return baseTranslate(key, options);
+  };
   const tBrand = (path: string, options?: Record<string, unknown>) =>
-    t(`agencyDashboard.analytics.brandConnections.${path}`, options);
+    translateBrandPath(path, options);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -578,7 +784,9 @@ const BrandConnectionsView = ({
               "Your Stripe account is connected, but transfers are not enabled yet. The brand can still pay, but payouts may fail until Stripe onboarding is complete.",
             actions: [
               {
-                label: "Send anyway",
+                label: t(
+                  "agencyDashboard.brandConnections.precheck.sendAnyway",
+                ),
                 onClick: () => {
                   setSendPrecheckOpen(false);
                   handleSendContract(offerId, contractId);
@@ -708,11 +916,18 @@ const BrandConnectionsView = ({
         file: null,
         sending: false,
       });
-      toast({ title: "Message sent" });
+      toast({
+        title: t("agencyDashboard.support.toasts.messageSent", {
+          defaultValue: "Nachricht gesendet",
+        }),
+      });
     } catch (e: any) {
       toast({
-        title: "Message failed",
-        description: e?.message || "Please try again.",
+        title: t("agencyDashboard.support.toasts.failedToSend", {
+          defaultValue: "Senden fehlgeschlagen",
+        }),
+        description:
+          e?.message || t("agencyDashboard.subscribe.toasts.tryAgain"),
         variant: "destructive",
       });
       setMessageDialog((prev) => ({ ...prev, sending: false }));
@@ -778,7 +993,10 @@ const BrandConnectionsView = ({
         }),
       ]);
       toast({
-        title: action === "accept" ? "Offer accepted" : "Offer declined",
+        title:
+          action === "accept"
+            ? t("agencyDashboard.brandConnections.toasts.offerAccepted")
+            : t("agencyDashboard.brandConnections.toasts.offerDeclined"),
       });
     } catch (e: any) {
       toast({
@@ -809,8 +1027,8 @@ const BrandConnectionsView = ({
         formData,
       );
       toast({
-        title: "Contract uploaded",
-        description: "Draft created successfully.",
+        title: t("agencyDashboard.brandConnections.toasts.contractUploaded"),
+        description: t("agencyDashboard.brandConnections.toasts.draftCreated"),
       });
       queryClient.invalidateQueries({
         queryKey: ["agency", "offer-contracts", offerId],
@@ -820,9 +1038,10 @@ const BrandConnectionsView = ({
     } catch (err: any) {
       console.error("upload_offer_contract failed", err);
       toast({
-        title: "Upload failed",
-        description:
-          "Failed to upload contract. Please try again with a valid PDF.",
+        title: t("agencyDashboard.brandConnections.toasts.uploadFailed"),
+        description: t(
+          "agencyDashboard.brandConnections.toasts.uploadFailedDesc",
+        ),
         variant: "destructive" as any,
       });
     } finally {
@@ -877,13 +1096,19 @@ const BrandConnectionsView = ({
       if (status === "agency_pending" && agencySignUrl) {
         window.open(agencySignUrl, "_blank");
         toast({
-          title: "Agency signature required",
-          description: "Sign the contract to release it to the brand.",
+          title: t(
+            "agencyDashboard.brandConnections.toasts.agencySignatureRequired",
+          ),
+          description: t(
+            "agencyDashboard.brandConnections.toasts.signToRelease",
+          ),
         });
       } else {
         toast({
-          title: "Contract sent",
-          description: "The contract has been sent to the brand.",
+          title: t("agencyDashboard.brandConnections.toasts.contractSent"),
+          description: t(
+            "agencyDashboard.brandConnections.toasts.contractSentDesc",
+          ),
         });
       }
       queryClient.invalidateQueries({
@@ -897,12 +1122,12 @@ const BrandConnectionsView = ({
       console.error("send_offer_contract failed", err);
       const msg = String(err?.message || "");
       toast({
-        title: "Send failed",
+        title: t("agencyDashboard.brandConnections.toasts.sendFailed"),
         description: msg.includes("no_talents_assigned")
-          ? "Assign at least 1 talent to this offer before sending the contract."
+          ? t("agencyDashboard.brandConnections.toasts.assignTalentFirst")
           : msg.toLowerCase().includes("template does not contain fields")
-            ? "This PDF template has no signature fields. Open Prepare, place fields, save, then try again."
-            : "Failed to send contract. Please try again.",
+            ? t("agencyDashboard.brandConnections.toasts.noSignatureFields")
+            : t("agencyDashboard.brandConnections.toasts.sendFailedGeneric"),
         variant: "destructive",
       });
     } finally {
@@ -922,8 +1147,10 @@ const BrandConnectionsView = ({
         contract_id: contractId,
       });
       toast({
-        title: "Status synced",
-        description: "Contract status updated from DocuSeal.",
+        title: t("agencyDashboard.brandConnections.toasts.statusSynced"),
+        description: t(
+          "agencyDashboard.brandConnections.toasts.statusSyncedDesc",
+        ),
       });
       queryClient.invalidateQueries({
         queryKey: ["agency", "offer-contracts", offerId],
@@ -933,8 +1160,10 @@ const BrandConnectionsView = ({
       });
     } catch (err: any) {
       toast({
-        title: "Sync failed",
-        description: err.message || "Failed to sync status.",
+        title: t("agencyDashboard.brandConnections.toasts.syncFailed"),
+        description:
+          err.message ||
+          t("agencyDashboard.brandConnections.toasts.syncFailedDesc"),
         variant: "destructive",
       });
     } finally {
@@ -978,9 +1207,10 @@ const BrandConnectionsView = ({
       window.URL.revokeObjectURL(url);
     } catch (err: any) {
       toast({
-        title: "Download failed",
+        title: t("agencyDashboard.brandConnections.toasts.downloadFailed"),
         description:
-          err?.message || "We couldn't download the signed contract.",
+          err?.message ||
+          t("agencyDashboard.brandConnections.toasts.downloadFailedDesc"),
         variant: "destructive",
       });
     } finally {
@@ -1002,16 +1232,18 @@ const BrandConnectionsView = ({
         `/api/campaign-offers/${offerId}/contracts/${contractId}`,
       );
       toast({
-        title: "Contract deleted",
-        description: "Draft removed successfully.",
+        title: t("agencyDashboard.brandConnections.toasts.contractDeleted"),
+        description: t("agencyDashboard.brandConnections.toasts.draftRemoved"),
       });
       queryClient.invalidateQueries({
         queryKey: ["agency", "offer-contracts", offerId],
       });
     } catch (err: any) {
       toast({
-        title: "Delete failed",
-        description: err.message || "Failed to delete contract.",
+        title: t("agencyDashboard.brandConnections.toasts.deleteFailed"),
+        description:
+          err.message ||
+          t("agencyDashboard.brandConnections.toasts.deleteFailedDesc"),
         variant: "destructive",
       });
     } finally {
@@ -1046,7 +1278,9 @@ const BrandConnectionsView = ({
       const createResp = await base44.post<{ package?: any }>(
         `/api/campaign-offers/${offerId}/packages`,
         {
-          title: draft.title || "Talent Package",
+          title:
+            draft.title ||
+            t("agencyDashboard.brandConnections.packageDefaults.talentPackage"),
           message: draft.message || "",
           package_snapshot: { items: snapshotItems },
         },
@@ -1069,10 +1303,12 @@ const BrandConnectionsView = ({
         }),
       ]);
       toast({
-        title: "Package sent",
+        title: t("agencyDashboard.brandConnections.toasts.packageSent"),
         description: (
           <div className="flex items-center gap-2">
-            <span>Talent package has been sent to the brand inbox.</span>
+            <span>
+              {t("agencyDashboard.brandConnections.toasts.packageSentDesc")}
+            </span>
             <Button
               variant="link"
               className="p-0 h-auto text-sm"
@@ -1081,15 +1317,17 @@ const BrandConnectionsView = ({
                 window.open(shareLink, "_blank");
               }}
             >
-              View
+              {t("agencyDashboard.brandConnections.actions.view")}
             </Button>
           </div>
         ),
       });
     } catch (e: any) {
       toast({
-        title: "Package send failed",
-        description: e?.message || "Please try again.",
+        title: t("agencyDashboard.brandConnections.toasts.packageSendFailed"),
+        description:
+          e?.message ||
+          t("agencyDashboard.brandConnections.toasts.pleaseTryAgain"),
         variant: "destructive" as any,
       });
     } finally {
@@ -1417,7 +1655,7 @@ const BrandConnectionsView = ({
                         <p className="text-sm text-gray-600">
                           {email ||
                             t(
-                              "agencyDashboard.analytics.brandConnections.ui.noEmailProvided",
+                              "agencyDashboard.brandConnections.ui.noEmailProvided",
                             )}
                         </p>
                       </div>
@@ -1434,7 +1672,7 @@ const BrandConnectionsView = ({
                                   }
                                   onClick={() => disconnectBrand(brandId)}
                                   aria-label={t(
-                                    "agencyDashboard.analytics.brandConnections.ui.disconnectFromBrand",
+                                    "agencyDashboard.brandConnections.ui.disconnectFromBrand",
                                   )}
                                   className="disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
@@ -1445,7 +1683,7 @@ const BrandConnectionsView = ({
                             {!canDisconnectBrands && (
                               <TooltipContent>
                                 {t(
-                                  "agencyDashboard.analytics.brandConnections.ui.noDisconnectPermission",
+                                  "agencyDashboard.brandConnections.ui.noDisconnectPermission",
                                 )}
                               </TooltipContent>
                             )}
@@ -1526,7 +1764,7 @@ const BrandConnectionsView = ({
                           <p className="text-sm text-gray-600">
                             {email ||
                               t(
-                                "agencyDashboard.analytics.brandConnections.ui.noEmailProvided",
+                                "agencyDashboard.brandConnections.ui.noEmailProvided",
                               )}
                           </p>
                         </div>
@@ -1695,7 +1933,10 @@ const BrandConnectionsView = ({
                               </h2>
                             </div>
                             <p className="text-gray-500 font-medium ml-9">
-                              {offer?.offer_title || "Direct Request"}
+                              {offer?.offer_title ||
+                                t(
+                                  "agencyDashboard.brandConnections.fallbacks.directRequest",
+                                )}
                             </p>
                           </div>
                           <div className="flex items-center gap-3">
@@ -1747,13 +1988,13 @@ const BrandConnectionsView = ({
                                           )
                                         }
                                       >
-                                        Accept Offer
+                                        {tBrand("ui.acceptOffer")}
                                       </Button>
                                     </span>
                                   </TooltipTrigger>
                                   {!canManageConnections && (
                                     <TooltipContent>
-                                      Your role cannot accept offers
+                                      {tBrand("ui.noAcceptOfferPermission")}
                                     </TooltipContent>
                                   )}
                                 </Tooltip>
@@ -1782,7 +2023,7 @@ const BrandConnectionsView = ({
                                   </TooltipTrigger>
                                   {!canManageConnections && (
                                     <TooltipContent>
-                                      Your role cannot decline offers
+                                      {tBrand("ui.noDeclineOfferPermission")}
                                     </TooltipContent>
                                   )}
                                 </Tooltip>
@@ -1841,7 +2082,7 @@ const BrandConnectionsView = ({
                                       );
                                     }}
                                   >
-                                    Build & Send Talent Package
+                                    {tBrand("ui.buildSendPackage")}
                                   </Button>
                                 );
                               })()}
@@ -1861,7 +2102,7 @@ const BrandConnectionsView = ({
                         <div className="rounded-xl border border-indigo-100 bg-white p-3 sm:p-4 space-y-3">
                           <div className="flex items-center justify-between">
                             <p className="text-sm font-bold text-gray-900">
-                              Assigned Talent
+                              {tBrand("ui.assignedTalent")}
                             </p>
                           </div>
                           {selectedOfferPackageFinalized ? (
@@ -1945,7 +2186,7 @@ const BrandConnectionsView = ({
                                               }
                                             }}
                                           >
-                                            Send Message
+                                            {tBrand("ui.sendMessage")}
                                           </Button>
                                         </div>
                                       </div>
@@ -2129,7 +2370,7 @@ const BrandConnectionsView = ({
                                     </TooltipTrigger>
                                     {!canManageConnections && (
                                       <TooltipContent>
-                                        Your role cannot accept offers
+                                        {tBrand("ui.noAcceptOfferPermission")}
                                       </TooltipContent>
                                     )}
                                   </Tooltip>
@@ -2157,7 +2398,7 @@ const BrandConnectionsView = ({
                                     </TooltipTrigger>
                                     {!canManageConnections && (
                                       <TooltipContent>
-                                        Your role cannot decline offers
+                                        {tBrand("ui.noDeclineOfferPermission")}
                                       </TooltipContent>
                                     )}
                                   </Tooltip>
@@ -2430,7 +2671,12 @@ const BrandConnectionsView = ({
                   className="border border-gray-200 rounded-lg p-4"
                 >
                   <p className="font-semibold text-gray-900">
-                    {String(item?.title || "Talent package")}
+                    {String(
+                      item?.title ||
+                        t(
+                          "agencyDashboard.brandConnections.fallbacks.talentPackage",
+                        ),
+                    )}
                   </p>
                   <p className="text-xs text-gray-500">
                     Status: {String(item?.status || "feedback_received")}
@@ -3066,17 +3312,21 @@ const BrandConnectionsView = ({
                                                                 url,
                                                               );
                                                               toast({
-                                                                title:
-                                                                  "Link Copied",
-                                                                description:
-                                                                  "Signing link copied to clipboard.",
+                                                                title: t(
+                                                                  "agencyDashboard.brandConnections.toasts.linkCopied",
+                                                                ),
+                                                                description: t(
+                                                                  "agencyDashboard.brandConnections.toasts.linkCopiedDesc",
+                                                                ),
                                                               });
                                                             } else {
                                                               toast({
-                                                                title:
-                                                                  "Link Unavailable",
-                                                                description:
-                                                                  "No submission found for this contract.",
+                                                                title: t(
+                                                                  "agencyDashboard.brandConnections.toasts.linkUnavailable",
+                                                                ),
+                                                                description: t(
+                                                                  "agencyDashboard.brandConnections.toasts.linkUnavailableDesc",
+                                                                ),
                                                                 variant:
                                                                   "destructive",
                                                               });
@@ -3242,18 +3492,26 @@ const BrandConnectionsView = ({
               >
                 <div className="flex items-center justify-between gap-2">
                   <p className="font-semibold text-gray-900">
-                    {String(offer?.brand_campaigns?.name || "Campaign offer")}
+                    {String(
+                      offer?.brand_campaigns?.name ||
+                        t(
+                          "agencyDashboard.brandConnections.fallbacks.campaignOffer",
+                        ),
+                    )}
                   </p>
                   <Button
                     size="sm"
                     variant="outline"
+                    className="border-gray-200 hover:bg-gray-50"
                     onClick={() =>
                       setSelectedOfferId((prev) =>
                         prev === offerId ? "" : offerId,
                       )
                     }
                   >
-                    {selectedOfferId === offerId ? "Hide" : "Open"}
+                    {selectedOfferId === offerId
+                      ? t("agencyDashboard.brandConnections.actions.hide")
+                      : t("agencyDashboard.brandConnections.actions.open")}
                   </Button>
                 </div>
                 {selectedOfferId === offerId && (
@@ -3368,7 +3626,9 @@ const BrandConnectionsView = ({
               onClick={handleSendTalentMessage}
               disabled={messageDialog.sending}
             >
-              {messageDialog.sending ? "Sending..." : "Send Message"}
+              {messageDialog.sending
+                ? t("agencyDashboard.brandConnections.actions.sending")
+                : t("agencyDashboard.brandConnections.actions.sendMessage")}
             </Button>
           </div>
         </DialogContent>
@@ -3426,8 +3686,12 @@ const BrandConnectionsView = ({
                   onClick={() => {
                     if (!selectedOfferId || !currentContractId) {
                       toast({
-                        title: "Missing contract",
-                        description: "Select a contract before sending.",
+                        title: t(
+                          "agencyDashboard.brandConnections.toasts.missingContract",
+                        ),
+                        description: t(
+                          "agencyDashboard.brandConnections.toasts.selectContractFirst",
+                        ),
                         variant: "destructive" as any,
                       });
                       return;
@@ -3487,7 +3751,9 @@ const BrandConnectionsView = ({
                 <docuseal-builder
                   data-token={builderToken}
                   data-autosave={true}
-                  data-save-button-text="Save Contract"
+                  data-save-button-text={t(
+                    "agencyDashboard.brandConnections.contractHub.saveContract",
+                  )}
                   data-with-send-button={false}
                   data-with-sign-yourself-button={false}
                   className="w-full h-full block"

@@ -18,6 +18,7 @@ import {
   Briefcase,
   RefreshCw,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface ActiveLicenseDetailsSheetProps {
   license: ActiveLicense | null;
@@ -30,7 +31,10 @@ interface ActiveLicenseDetailsSheetProps {
 export const ActiveLicenseDetailsSheet: React.FC<
   ActiveLicenseDetailsSheetProps
 > = ({ license, open, onClose, onRenew, isSportsAgency = false }) => {
-  const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
+  const { t } = useTranslation("agency");
+  const entitySingularTitle = isSportsAgency
+    ? t("agencyDashboard.activeLicenses.details.athlete")
+    : t("agencyDashboard.activeLicenses.details.talent");
   if (!license) return null;
 
   const formatCurrency = (val: number) => {
@@ -45,14 +49,22 @@ export const ActiveLicenseDetailsSheet: React.FC<
     switch (status) {
       case "Active":
         return (
-          <Badge className="bg-green-500 hover:bg-green-600">ACTIVE</Badge>
+          <Badge className="bg-green-500 hover:bg-green-600">
+            {t("agencyDashboard.activeLicenses.status.active")}
+          </Badge>
         );
       case "Expiring":
         return (
-          <Badge className="bg-orange-500 hover:bg-orange-600">EXPIRING</Badge>
+          <Badge className="bg-orange-500 hover:bg-orange-600">
+            {t("agencyDashboard.activeLicenses.status.expiring")}
+          </Badge>
         );
       case "Expired":
-        return <Badge className="bg-red-500 hover:bg-red-600">EXPIRED</Badge>;
+        return (
+          <Badge className="bg-red-500 hover:bg-red-600">
+            {t("agencyDashboard.activeLicenses.status.expired")}
+          </Badge>
+        );
       default:
         return <Badge variant="secondary">{status.toUpperCase()}</Badge>;
     }
@@ -62,9 +74,11 @@ export const ActiveLicenseDetailsSheet: React.FC<
     <Sheet open={open} onOpenChange={(val) => !val && onClose()}>
       <SheetContent className="sm:max-w-md overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>License Details</SheetTitle>
+          <SheetTitle>
+            {t("agencyDashboard.activeLicenses.details.title")}
+          </SheetTitle>
           <SheetDescription>
-            View comprehensive details for this license.
+            {t("agencyDashboard.activeLicenses.details.description")}
           </SheetDescription>
         </SheetHeader>
 
@@ -93,29 +107,37 @@ export const ActiveLicenseDetailsSheet: React.FC<
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
               <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Briefcase className="h-3 w-3" /> Client/Brand
+                <Briefcase className="h-3 w-3" />{" "}
+                {t("agencyDashboard.activeLicenses.details.clientBrand")}
               </span>
               <p className="font-medium text-sm">{license.brand}</p>
             </div>
             <div className="space-y-1">
               <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <FileText className="h-3 w-3" /> License Type
+                <FileText className="h-3 w-3" />{" "}
+                {t("agencyDashboard.activeLicenses.headers.licenseType")}
               </span>
               <p className="font-medium text-sm">{license.license_type}</p>
             </div>
             <div className="space-y-1">
               <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Calendar className="h-3 w-3" /> Start Date
+                <Calendar className="h-3 w-3" />{" "}
+                {t("agencyDashboard.activeLicenses.headers.startDate")}
               </span>
               <p className="font-medium text-sm">
-                {license.start_date || "N/A"}
+                {license.start_date ||
+                  t("agencyDashboard.activeLicenses.details.na")}
               </p>
             </div>
             <div className="space-y-1">
               <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Calendar className="h-3 w-3" /> End Date
+                <Calendar className="h-3 w-3" />{" "}
+                {t("agencyDashboard.activeLicenses.headers.endDate")}
               </span>
-              <p className="font-medium text-sm">{license.end_date || "N/A"}</p>
+              <p className="font-medium text-sm">
+                {license.end_date ||
+                  t("agencyDashboard.activeLicenses.details.na")}
+              </p>
             </div>
           </div>
 
@@ -126,7 +148,7 @@ export const ActiveLicenseDetailsSheet: React.FC<
                 <DollarSign className="h-5 w-5 text-indigo-600" />
               </div>
               <span className="text-sm font-medium text-indigo-900">
-                Total License Value
+                {t("agencyDashboard.activeLicenses.details.totalLicenseValue")}
               </span>
             </div>
             <span className="text-xl font-bold text-indigo-700">
@@ -137,13 +159,13 @@ export const ActiveLicenseDetailsSheet: React.FC<
           {/* Detailed Sections */}
           <div className="space-y-3">
             <h4 className="text-sm font-semibold border-b pb-1">
-              Usage & Rights
+              {t("agencyDashboard.activeLicenses.details.usageRights")}
             </h4>
 
             <div className="space-y-2">
               <div>
                 <span className="text-xs text-muted-foreground block">
-                  Usage Scope
+                  {t("agencyDashboard.activeLicenses.headers.usageScope")}
                 </span>
                 <p className="text-sm">{license.usage_scope}</p>
               </div>
@@ -153,10 +175,14 @@ export const ActiveLicenseDetailsSheet: React.FC<
 
           {/* Additional Metadata if available */}
           <div className="space-y-3">
-            <h4 className="text-sm font-semibold border-b pb-1">Timeline</h4>
+            <h4 className="text-sm font-semibold border-b pb-1">
+              {t("agencyDashboard.activeLicenses.details.timeline")}
+            </h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Days Remaining:</span>
+                <span className="text-muted-foreground">
+                  {t("agencyDashboard.activeLicenses.details.daysRemaining")}
+                </span>
                 <span
                   className={
                     license.days_left && license.days_left < 30
@@ -165,8 +191,8 @@ export const ActiveLicenseDetailsSheet: React.FC<
                   }
                 >
                   {license.days_left !== undefined
-                    ? `${license.days_left} days`
-                    : "N/A"}
+                    ? `${license.days_left} ${t("agencyDashboard.activeLicenses.details.days")}`
+                    : t("agencyDashboard.activeLicenses.details.na")}
                 </span>
               </div>
             </div>
@@ -179,7 +205,8 @@ export const ActiveLicenseDetailsSheet: React.FC<
               className="w-full bg-indigo-500 hover:bg-indigo-700"
               onClick={() => onRenew(license)}
             >
-              <RefreshCw className="mr-2 h-4 w-4" /> Renew License
+              <RefreshCw className="mr-2 h-4 w-4" />{" "}
+              {t("agencyDashboard.activeLicenses.actions.renew")}
             </Button>
           )}
         </SheetFooter>

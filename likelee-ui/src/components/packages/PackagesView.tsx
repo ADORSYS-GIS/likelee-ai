@@ -44,6 +44,7 @@ import { TemplateCard } from "./TemplateCard";
 import { PackageFeedbackDialog } from "./PackageFeedbackDialog";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
+import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -60,6 +61,7 @@ export function PackagesView({
 }: {
   isSportsAgency?: boolean;
 }) {
+  const { t } = useTranslation("agency");
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
   const location = useLocation();
@@ -126,7 +128,9 @@ export function PackagesView({
   const deleteMutation = useMutation({
     mutationFn: (id: string) => packageApi.deletePackage(id),
     onSuccess: () => {
-      toast({ title: "Package deleted" });
+      toast({
+        title: t("agencyDashboard.packages.view.toasts.packageDeleted"),
+      });
       queryClient.invalidateQueries({ queryKey: ["agency-packages"] });
       queryClient.invalidateQueries({ queryKey: ["agency-package-templates"] });
       queryClient.invalidateQueries({ queryKey: ["agency-sent-packages"] });
@@ -147,7 +151,7 @@ export function PackagesView({
   const copyToClipboard = (token: string) => {
     const url = `${window.location.origin}/share/package/${token}`;
     navigator.clipboard.writeText(url);
-    toast({ title: "Link copied to clipboard!" });
+    toast({ title: t("agencyDashboard.packages.view.toasts.linkCopied") });
   };
 
   const currentPackages = activeTab === "templates" ? templates : sentPackages;
@@ -178,21 +182,21 @@ export function PackagesView({
 
   const stats = [
     {
-      label: "Total Packages",
+      label: t("agencyDashboard.packages.view.stats.totalPackages"),
       value: realStats.total_packages,
       icon: Package,
       color: "text-blue-600",
       bgColor: "bg-blue-50",
     },
     {
-      label: "Active Shares",
+      label: t("agencyDashboard.packages.view.stats.activeShares"),
       value: realStats.active_shares,
       icon: CheckCircle2,
       color: "text-green-600",
       bgColor: "bg-green-50",
     },
     {
-      label: "Total Views",
+      label: t("agencyDashboard.packages.view.stats.totalViews"),
       value: realStats.total_views.toLocaleString(),
       icon: Eye,
       color: "text-purple-600",
@@ -207,11 +211,12 @@ export function PackagesView({
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <p className="text-xs font-black uppercase tracking-widest text-indigo-700">
-                Sending for offer
+                {t("agencyDashboard.packages.view.offerBanner.sendingForOffer")}
               </p>
               <p className="text-sm text-gray-700 font-medium mt-1">
-                Choose whether to send an existing package/template or create a
-                new one.
+                {t(
+                  "agencyDashboard.packages.view.offerBanner.chooseDescription",
+                )}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
@@ -243,8 +248,7 @@ export function PackagesView({
       {offerContext && offerSendChoice === "existing" && (
         <Card className="p-4 bg-indigo-50 border border-indigo-100">
           <p className="text-sm text-indigo-900 font-semibold">
-            Pick a template (or resend an existing package) below, then click
-            "Send" to send it to the brand inbox for this offer.
+            {t("agencyDashboard.packages.view.offerBanner.pickTemplate")}
           </p>
         </Card>
       )}
@@ -284,7 +288,7 @@ export function PackagesView({
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
-            Templates
+            {t("agencyDashboard.packages.view.tabs.templates")}
           </button>
           <button
             onClick={() => setActiveTab("sent")}
@@ -294,7 +298,7 @@ export function PackagesView({
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
-            Packages Sent
+            {t("agencyDashboard.packages.view.tabs.packagesSent")}
           </button>
         </div>
       </div>
@@ -304,7 +308,10 @@ export function PackagesView({
         <div className="flex-1 relative max-w-none sm:max-w-md">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
-            placeholder={`Search ${activeTab === "templates" ? "templates" : "sent packages"}...`}
+            placeholder={t(
+              "agencyDashboard.packages.view.search." +
+                (activeTab === "templates" ? "templates" : "sent"),
+            )}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10 h-12 bg-white border-gray-200 font-medium rounded-lg"
@@ -325,7 +332,9 @@ export function PackagesView({
             className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg w-full sm:w-auto"
           >
             <Plus className="w-4 h-4 mr-2" />{" "}
-            {activeTab === "templates" ? "Template" : "Package"}
+            {activeTab === "templates"
+              ? t("agencyDashboard.packages.view.buttons.template")
+              : t("agencyDashboard.packages.view.buttons.package")}
           </Button>
         </div>
       </div>
@@ -341,7 +350,11 @@ export function PackagesView({
             <Package className="w-10 h-10 text-gray-300" />
           </div>
           <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">
-            No {activeTab === "templates" ? "Templates" : "Packages"} Found
+            No{" "}
+            {activeTab === "templates"
+              ? t("agencyDashboard.packages.view.tabs.templates")
+              : "Packages"}{" "}
+            Found
           </h3>
           <p className="text-gray-500 font-medium mt-2 mb-8">
             {activeTab === "templates"
@@ -393,7 +406,8 @@ export function PackagesView({
                 disabled={currentPage === 1}
                 className="font-medium text-gray-500 hover:text-gray-900 px-2"
               >
-                <ChevronLeft className="w-4 h-4 mr-1" /> Previous
+                <ChevronLeft className="w-4 h-4 mr-1" />{" "}
+                {t("agencyDashboard.packages.view.pagination.previous")}
               </Button>
 
               <div className="flex items-center gap-2">
@@ -423,7 +437,8 @@ export function PackagesView({
                 disabled={currentPage === totalPages}
                 className="font-medium text-gray-500 hover:text-gray-900 px-2"
               >
-                Next <ChevronRight className="w-4 h-4 ml-1" />
+                {t("agencyDashboard.packages.view.pagination.next")}{" "}
+                <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
           )}
@@ -443,7 +458,9 @@ export function PackagesView({
               : false;
             const isExpiringSoon =
               !isExpired && daysRemaining !== null && daysRemaining <= 2;
-            const statusLabel = isExpired ? "Expired" : "Active";
+            const statusLabel = isExpired
+              ? t("agencyDashboard.packages.view.packageCard.expired")
+              : t("agencyDashboard.packages.view.packageCard.active");
             const statusClass = isExpired
               ? "bg-red-100 text-red-700 border-red-200"
               : isExpiringSoon
@@ -516,7 +533,9 @@ export function PackagesView({
                       </h4>
                       {isOffer && (
                         <Badge className="bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-200 transition-colors">
-                          Campaign Offer
+                          {t(
+                            "agencyDashboard.packages.view.packageCard.campaignOffer",
+                          )}
                         </Badge>
                       )}
                       <Badge className={statusClass}>{statusLabel}</Badge>
@@ -532,7 +551,9 @@ export function PackagesView({
                         <Calendar className="w-3.5 h-3.5" />
                         {pkg.expires_at
                           ? `Expires ${format(new Date(pkg.expires_at), "MMM d, yyyy")}`
-                          : "No Expiry"}
+                          : t(
+                              "agencyDashboard.packages.view.packageCard.noExpiry",
+                            )}
                       </span>
                       <span className="flex items-center gap-1.5">
                         <Eye className="w-3.5 h-3.5" />
@@ -555,7 +576,7 @@ export function PackagesView({
                         }}
                       >
                         <Send className="w-4 h-4 mr-2" />
-                        Resend
+                        {t("agencyDashboard.packages.view.packageCard.resend")}
                       </Button>
                     )}
                     <Button
@@ -578,7 +599,7 @@ export function PackagesView({
                       }}
                     >
                       <Activity className="w-4 h-4 mr-2" />
-                      Activity
+                      {t("agencyDashboard.packages.view.packageCard.activity")}
                     </Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -601,7 +622,9 @@ export function PackagesView({
                             }}
                           >
                             <Pencil className="w-4 h-4 mr-2" />
-                            Edit Package
+                            {t(
+                              "agencyDashboard.packages.view.packageCard.editPackage",
+                            )}
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuItem
@@ -612,7 +635,9 @@ export function PackagesView({
                           className="text-red-600"
                         >
                           <Trash2 className="w-4 h-4 mr-2" />
-                          Delete
+                          {t(
+                            "agencyDashboard.packages.view.packageCard.delete",
+                          )}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -666,14 +691,19 @@ export function PackagesView({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t("agencyDashboard.packages.view.deleteDialog.title")}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the
-              package "{deleteTarget?.title}".
+              {t("agencyDashboard.packages.view.deleteDialog.description", {
+                title: deleteTarget?.title,
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>
+              {t("agencyDashboard.packages.view.deleteDialog.cancel")}
+            </AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700"
               onClick={() => {
@@ -683,7 +713,7 @@ export function PackagesView({
                 }
               }}
             >
-              Delete
+              {t("agencyDashboard.packages.view.deleteDialog.confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

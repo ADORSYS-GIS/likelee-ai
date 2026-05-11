@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useTranslation } from "react-i18next";
 
 interface AdvancedFiltersProps {
   onReset: () => void;
@@ -32,21 +33,27 @@ const AdvancedFilters = ({
   filters,
   onChange,
 }: AdvancedFiltersProps) => {
+  const { t } = useTranslation("agency");
+
   return (
     <Card className="p-8 bg-blue-50/30 border border-blue-100 rounded-xl shadow-sm mb-6 animate-in slide-in-from-top-4 duration-300">
       <div className="flex items-center justify-between mb-8">
-        <h3 className="text-lg font-bold text-gray-900">Advanced Filters</h3>
+        <h3 className="text-lg font-bold text-gray-900">
+          {t("agencyDashboard.roster.advancedFilters.title")}
+        </h3>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
         {/* Physical Attributes */}
         <div className="space-y-6">
           <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-            Physical Attributes
+            {t("agencyDashboard.roster.advancedFilters.sections.physical")}
           </h4>
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-700">Gender</label>
+              <label className="text-xs font-bold text-gray-700">
+                {t("agencyDashboard.roster.advancedFilters.fields.gender")}
+              </label>
               <Select
                 value={filters.gender}
                 onValueChange={(value) =>
@@ -54,23 +61,41 @@ const AdvancedFilters = ({
                 }
               >
                 <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="All Genders" />
+                  <SelectValue
+                    placeholder={t(
+                      "agencyDashboard.roster.advancedFilters.placeholders.allGenders",
+                    )}
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Genders</SelectItem>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
-                  <SelectItem value="non-binary">Non-Binary</SelectItem>
+                  <SelectItem value="all">
+                    {t(
+                      "agencyDashboard.roster.advancedFilters.placeholders.allGenders",
+                    )}
+                  </SelectItem>
+                  <SelectItem value="male">
+                    {t("agencyDashboard.roster.advancedFilters.options.male")}
+                  </SelectItem>
+                  <SelectItem value="female">
+                    {t("agencyDashboard.roster.advancedFilters.options.female")}
+                  </SelectItem>
+                  <SelectItem value="non-binary">
+                    {t(
+                      "agencyDashboard.roster.advancedFilters.options.nonBinary",
+                    )}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-700">
-                Height Range
+                {t("agencyDashboard.roster.advancedFilters.fields.heightRange")}
               </label>
               <div className="flex gap-2">
                 <Input
-                  placeholder="Min (cm)"
+                  placeholder={t(
+                    "agencyDashboard.roster.advancedFilters.placeholders.minCm",
+                  )}
                   className="bg-white"
                   type="number"
                   value={filters.heightMinCm}
@@ -79,7 +104,9 @@ const AdvancedFilters = ({
                   }
                 />
                 <Input
-                  placeholder="Max (cm)"
+                  placeholder={t(
+                    "agencyDashboard.roster.advancedFilters.placeholders.maxCm",
+                  )}
                   className="bg-white"
                   type="number"
                   value={filters.heightMaxCm}
@@ -91,11 +118,13 @@ const AdvancedFilters = ({
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-700">
-                Age Range
+                {t("agencyDashboard.roster.advancedFilters.fields.ageRange")}
               </label>
               <div className="flex gap-2">
                 <Input
-                  placeholder="Min"
+                  placeholder={t(
+                    "agencyDashboard.roster.advancedFilters.placeholders.min",
+                  )}
                   className="bg-white"
                   type="number"
                   value={filters.ageMin}
@@ -104,7 +133,9 @@ const AdvancedFilters = ({
                   }
                 />
                 <Input
-                  placeholder="Max"
+                  placeholder={t(
+                    "agencyDashboard.roster.advancedFilters.placeholders.max",
+                  )}
                   className="bg-white"
                   type="number"
                   value={filters.ageMax}
@@ -120,12 +151,12 @@ const AdvancedFilters = ({
         {/* Appearance */}
         <div className="space-y-6">
           <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-            Appearance
+            {t("agencyDashboard.roster.advancedFilters.sections.appearance")}
           </h4>
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-700">
-                Hair Color
+                {t("agencyDashboard.roster.advancedFilters.fields.hairColor")}
               </label>
               <Select
                 value={filters.hairColor}
@@ -134,22 +165,42 @@ const AdvancedFilters = ({
                 }
               >
                 <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="All Hair Colors" />
+                  <SelectValue
+                    placeholder={t(
+                      "agencyDashboard.roster.advancedFilters.placeholders.allHairColors",
+                    )}
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Hair Colors</SelectItem>
-                  <SelectItem value="black">Black</SelectItem>
-                  <SelectItem value="brown">Brown</SelectItem>
-                  <SelectItem value="blonde">Blonde</SelectItem>
-                  <SelectItem value="red">Red</SelectItem>
-                  <SelectItem value="gray">Gray</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="all">
+                    {t(
+                      "agencyDashboard.roster.advancedFilters.placeholders.allHairColors",
+                    )}
+                  </SelectItem>
+                  <SelectItem value="black">
+                    {t("agencyDashboard.roster.advancedFilters.options.black")}
+                  </SelectItem>
+                  <SelectItem value="brown">
+                    {t("agencyDashboard.roster.advancedFilters.options.brown")}
+                  </SelectItem>
+                  <SelectItem value="blonde">
+                    {t("agencyDashboard.roster.advancedFilters.options.blonde")}
+                  </SelectItem>
+                  <SelectItem value="red">
+                    {t("agencyDashboard.roster.advancedFilters.options.red")}
+                  </SelectItem>
+                  <SelectItem value="gray">
+                    {t("agencyDashboard.roster.advancedFilters.options.gray")}
+                  </SelectItem>
+                  <SelectItem value="other">
+                    {t("agencyDashboard.roster.advancedFilters.options.other")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-700">
-                Eye Color
+                {t("agencyDashboard.roster.advancedFilters.fields.eyeColor")}
               </label>
               <Select
                 value={filters.eyeColor}
@@ -158,21 +209,39 @@ const AdvancedFilters = ({
                 }
               >
                 <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="All Eye Colors" />
+                  <SelectValue
+                    placeholder={t(
+                      "agencyDashboard.roster.advancedFilters.placeholders.allEyeColors",
+                    )}
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Eye Colors</SelectItem>
-                  <SelectItem value="brown">Brown</SelectItem>
-                  <SelectItem value="blue">Blue</SelectItem>
-                  <SelectItem value="green">Green</SelectItem>
-                  <SelectItem value="hazel">Hazel</SelectItem>
-                  <SelectItem value="gray">Gray</SelectItem>
+                  <SelectItem value="all">
+                    {t(
+                      "agencyDashboard.roster.advancedFilters.placeholders.allEyeColors",
+                    )}
+                  </SelectItem>
+                  <SelectItem value="brown">
+                    {t("agencyDashboard.roster.advancedFilters.options.brown")}
+                  </SelectItem>
+                  <SelectItem value="blue">
+                    {t("agencyDashboard.roster.advancedFilters.options.blue")}
+                  </SelectItem>
+                  <SelectItem value="green">
+                    {t("agencyDashboard.roster.advancedFilters.options.green")}
+                  </SelectItem>
+                  <SelectItem value="hazel">
+                    {t("agencyDashboard.roster.advancedFilters.options.hazel")}
+                  </SelectItem>
+                  <SelectItem value="gray">
+                    {t("agencyDashboard.roster.advancedFilters.options.gray")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-700">
-                Ethnicity
+                {t("agencyDashboard.roster.advancedFilters.fields.ethnicity")}
               </label>
               <Select
                 value={filters.ethnicity}
@@ -181,17 +250,43 @@ const AdvancedFilters = ({
                 }
               >
                 <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="All Ethnicities" />
+                  <SelectValue
+                    placeholder={t(
+                      "agencyDashboard.roster.advancedFilters.placeholders.allEthnicities",
+                    )}
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Ethnicities</SelectItem>
-                  <SelectItem value="white">White</SelectItem>
-                  <SelectItem value="black">Black</SelectItem>
-                  <SelectItem value="asian">Asian</SelectItem>
-                  <SelectItem value="hispanic">Hispanic</SelectItem>
-                  <SelectItem value="middle_eastern">Middle Eastern</SelectItem>
-                  <SelectItem value="mixed">Mixed</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="all">
+                    {t(
+                      "agencyDashboard.roster.advancedFilters.placeholders.allEthnicities",
+                    )}
+                  </SelectItem>
+                  <SelectItem value="white">
+                    {t("agencyDashboard.roster.advancedFilters.options.white")}
+                  </SelectItem>
+                  <SelectItem value="black">
+                    {t("agencyDashboard.roster.advancedFilters.options.black")}
+                  </SelectItem>
+                  <SelectItem value="asian">
+                    {t("agencyDashboard.roster.advancedFilters.options.asian")}
+                  </SelectItem>
+                  <SelectItem value="hispanic">
+                    {t(
+                      "agencyDashboard.roster.advancedFilters.options.hispanic",
+                    )}
+                  </SelectItem>
+                  <SelectItem value="middle_eastern">
+                    {t(
+                      "agencyDashboard.roster.advancedFilters.options.middleEastern",
+                    )}
+                  </SelectItem>
+                  <SelectItem value="mixed">
+                    {t("agencyDashboard.roster.advancedFilters.options.mixed")}
+                  </SelectItem>
+                  <SelectItem value="other">
+                    {t("agencyDashboard.roster.advancedFilters.options.other")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -201,11 +296,15 @@ const AdvancedFilters = ({
         {/* Special Features */}
         <div className="space-y-6">
           <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-            Special Features
+            {t(
+              "agencyDashboard.roster.advancedFilters.sections.specialFeatures",
+            )}
           </h4>
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-700">Tattoos</label>
+              <label className="text-xs font-bold text-gray-700">
+                {t("agencyDashboard.roster.advancedFilters.fields.tattoos")}
+              </label>
               <Select
                 value={filters.tattoos}
                 onValueChange={(value) =>
@@ -213,18 +312,34 @@ const AdvancedFilters = ({
                 }
               >
                 <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="Any" />
+                  <SelectValue
+                    placeholder={t(
+                      "agencyDashboard.roster.advancedFilters.placeholders.any",
+                    )}
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="any">Any</SelectItem>
-                  <SelectItem value="yes">Has Tattoos</SelectItem>
-                  <SelectItem value="no">No Tattoos</SelectItem>
+                  <SelectItem value="any">
+                    {t(
+                      "agencyDashboard.roster.advancedFilters.placeholders.any",
+                    )}
+                  </SelectItem>
+                  <SelectItem value="yes">
+                    {t(
+                      "agencyDashboard.roster.advancedFilters.options.hasTattoos",
+                    )}
+                  </SelectItem>
+                  <SelectItem value="no">
+                    {t(
+                      "agencyDashboard.roster.advancedFilters.options.noTattoos",
+                    )}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-700">
-                Piercings
+                {t("agencyDashboard.roster.advancedFilters.fields.piercings")}
               </label>
               <Select
                 value={filters.piercings}
@@ -233,12 +348,28 @@ const AdvancedFilters = ({
                 }
               >
                 <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="Any" />
+                  <SelectValue
+                    placeholder={t(
+                      "agencyDashboard.roster.advancedFilters.placeholders.any",
+                    )}
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="any">Any</SelectItem>
-                  <SelectItem value="yes">Has Piercings</SelectItem>
-                  <SelectItem value="no">No Piercings</SelectItem>
+                  <SelectItem value="any">
+                    {t(
+                      "agencyDashboard.roster.advancedFilters.placeholders.any",
+                    )}
+                  </SelectItem>
+                  <SelectItem value="yes">
+                    {t(
+                      "agencyDashboard.roster.advancedFilters.options.hasPiercings",
+                    )}
+                  </SelectItem>
+                  <SelectItem value="no">
+                    {t(
+                      "agencyDashboard.roster.advancedFilters.options.noPiercings",
+                    )}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -248,7 +379,7 @@ const AdvancedFilters = ({
                 className="w-full border-gray-200 text-gray-600 hover:bg-white font-bold h-12 rounded-xl"
                 onClick={onReset}
               >
-                Reset Advanced Filters
+                {t("agencyDashboard.roster.advancedFilters.actions.reset")}
               </Button>
             </div>
           </div>

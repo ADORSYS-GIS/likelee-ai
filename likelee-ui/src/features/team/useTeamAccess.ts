@@ -9,6 +9,91 @@ export type TeamAccessContext = {
   permissions: string[];
 };
 
+const ROLE_PERMISSION_FALLBACKS: Record<string, string[]> = {
+  owner: [
+    "create_campaigns",
+    "approve_deliverables",
+    "view_deliverables",
+    "manage_billing",
+    "invite_team_members",
+    "update_member_roles",
+    "view_team_members",
+    "view_brand_connections",
+    "manage_brand_connections",
+    "disconnect_brand_connections",
+    "view_clients",
+    "manage_clients",
+    "view_licenses",
+    "manage_licenses",
+    "transfer_ownership",
+    "delete_organisation",
+    "manage_jobs",
+    "view_jobs",
+    "manage_contracts",
+    "view_contracts",
+    "manage_subscriptions",
+    "view_subscriptions",
+    "manage_pay_offers",
+    "view_pay_offers",
+    "remove_team_members",
+  ],
+  admin: [
+    "create_campaigns",
+    "approve_deliverables",
+    "view_deliverables",
+    "manage_billing",
+    "invite_team_members",
+    "update_member_roles",
+    "view_team_members",
+    "view_brand_connections",
+    "manage_brand_connections",
+    "disconnect_brand_connections",
+    "view_clients",
+    "manage_clients",
+    "view_licenses",
+    "manage_licenses",
+    "manage_jobs",
+    "view_jobs",
+    "manage_contracts",
+    "view_contracts",
+    "manage_subscriptions",
+    "view_subscriptions",
+    "manage_pay_offers",
+    "view_pay_offers",
+    "remove_team_members",
+  ],
+  project_manager: [
+    "create_campaigns",
+    "approve_deliverables",
+    "view_deliverables",
+    "view_team_members",
+    "view_brand_connections",
+    "manage_brand_connections",
+    "disconnect_brand_connections",
+    "view_clients",
+    "manage_clients",
+    "view_licenses",
+    "manage_licenses",
+    "manage_jobs",
+    "view_jobs",
+    "manage_contracts",
+    "view_contracts",
+    "view_subscriptions",
+    "manage_pay_offers",
+    "view_pay_offers",
+  ],
+  reviewer: [
+    "view_deliverables",
+    "view_team_members",
+    "view_brand_connections",
+    "view_clients",
+    "view_licenses",
+    "view_jobs",
+    "view_contracts",
+    "view_pay_offers",
+  ],
+};
+
 async function parseApiResponse(resp: Response) {
   const raw = await resp.text();
   if (!raw.trim()) return {};
@@ -117,9 +202,16 @@ export function useTeamAccess(explicitOrganizationType?: "agency" | "brand") {
   }, [authenticated, initialized, organizationType, token]);
 
   const hasPermission = React.useCallback(
-    (permission: string) =>
-      Boolean(context?.permissions?.includes(String(permission || "").trim())),
-    [context?.permissions],
+    (permission: string) => {
+      const normalized = String(permission || "").trim();
+      if (!normalized) return false;
+      if (context?.permissions?.includes(normalized)) return true;
+      const role = String(context?.membership_role || "")
+        .trim()
+        .toLowerCase();
+      return Boolean(ROLE_PERMISSION_FALLBACKS[role]?.includes(normalized));
+    },
+    [context?.membership_role, context?.permissions],
   );
 
   return {

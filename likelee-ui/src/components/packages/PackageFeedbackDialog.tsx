@@ -30,6 +30,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import { useTranslation } from "react-i18next";
 
 interface PackageFeedbackDialogProps {
   open: boolean;
@@ -42,6 +43,7 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
   onOpenChange,
   packageId,
 }) => {
+  const { t } = useTranslation("agency");
   const { data: pkg, isLoading } = useQuery({
     queryKey: ["agency-package-feedback", packageId],
     queryFn: () => packageApi.getPackage(packageId!),
@@ -91,7 +93,7 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
         item?.talent?.stage_name ||
         item?.talent?.full_legal_name ||
         item?.talent?.full_name ||
-        "Unknown Talent",
+        t("agencyDashboard.packages.feedbackDialog.unknownTalent"),
       image: item?.talent?.profile_photo_url,
     };
   };
@@ -106,16 +108,17 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
-                Client Activity
+                {t("agencyDashboard.packages.feedbackDialog.title")}
                 <Badge
                   variant="secondary"
                   className="bg-indigo-50 text-indigo-700 border-indigo-100"
                 >
-                  {pkg?.client_name || "Client"}
+                  {pkg?.client_name ||
+                    t("agencyDashboard.packages.feedbackDialog.client")}
                 </Badge>
               </DialogTitle>
               <DialogDescription className="text-base text-gray-500">
-                Detailed timeline of client interactions with{" "}
+                {t("agencyDashboard.packages.feedbackDialog.description")}{" "}
                 <strong>{pkg?.title}</strong>
               </DialogDescription>
               <div className="mt-2">
@@ -128,7 +131,7 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                         : "bg-yellow-100 text-yellow-800 border-yellow-200"
                   }
                 >
-                  {`Consent: ${consentStatus}`}
+                  {`${t("agencyDashboard.packages.feedbackDialog.consent")}: ${t(`agencyDashboard.packages.feedbackDialog.consentStatus.${consentStatus}`)}`}
                 </Badge>
               </div>
             </div>
@@ -150,7 +153,9 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                 >
                   {selected.length === 0 ? (
                     <DropdownMenuItem disabled>
-                      No selections yet
+                      {t(
+                        "agencyDashboard.packages.feedbackDialog.noSelectionsYet",
+                      )}
                     </DropdownMenuItem>
                   ) : (
                     selected.map((interaction: any, index: number) => {
@@ -197,7 +202,9 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                 >
                   {favorites.length === 0 ? (
                     <DropdownMenuItem disabled>
-                      No favorites yet
+                      {t(
+                        "agencyDashboard.packages.feedbackDialog.noFavoritesYet",
+                      )}
                     </DropdownMenuItem>
                   ) : (
                     favorites.map((interaction: any, index: number) => {
@@ -244,7 +251,9 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                 >
                   {callbacks.length === 0 ? (
                     <DropdownMenuItem disabled>
-                      No callbacks yet
+                      {t(
+                        "agencyDashboard.packages.feedbackDialog.noCallbacksYet",
+                      )}
                     </DropdownMenuItem>
                   ) : (
                     callbacks.map((interaction: any, index: number) => {
@@ -282,15 +291,19 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
           <div className="flex flex-col items-center justify-center py-20">
             <Loader2 className="w-10 h-10 animate-spin text-gray-300 mb-4" />
             <p className="text-sm font-bold text-gray-400">
-              Loading activity...
+              {t("agencyDashboard.packages.feedbackDialog.loadingActivity")}
             </p>
           </div>
         ) : sortedInteractions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-100">
             <Clock className="w-12 h-12 text-gray-300 mb-4" />
-            <p className="text-lg font-bold text-gray-900">No activity yet</p>
+            <p className="text-lg font-bold text-gray-900">
+              {t("agencyDashboard.packages.feedbackDialog.noActivityYet")}
+            </p>
             <p className="text-sm text-gray-500 mt-1">
-              The client hasn't interacted with this package yet.
+              {t(
+                "agencyDashboard.packages.feedbackDialog.noActivityDescription",
+              )}
             </p>
           </div>
         ) : (
@@ -316,7 +329,9 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                     const status = String(parsed?.status || "missing");
                     consentSummary = `${status.toUpperCase()} (${checked}/${total})`;
                   } catch {
-                    consentSummary = "Consent updated";
+                    consentSummary = t(
+                      "agencyDashboard.packages.feedbackDialog.consentUpdated",
+                    );
                   }
                 }
                 // Find talent name from pkg.items
@@ -330,7 +345,7 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                   item?.talent?.stage_name ||
                   item?.talent?.full_legal_name ||
                   item?.talent?.full_name ||
-                  "Unknown Talent";
+                  t("agencyDashboard.packages.feedbackDialog.unknownTalent");
                 const talentImage = item?.talent?.profile_photo_url;
 
                 return (
@@ -379,16 +394,28 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                           <div>
                             <h4 className="font-bold text-gray-900 text-sm">
                               {isFavorite
-                                ? "Favorited a Talent"
+                                ? t(
+                                    "agencyDashboard.packages.feedbackDialog.interactionTypes.favoritedTalent",
+                                  )
                                 : isSelected
-                                  ? "Selected a Talent"
+                                  ? t(
+                                      "agencyDashboard.packages.feedbackDialog.interactionTypes.selectedTalent",
+                                    )
                                   : isConsent
-                                    ? "Updated Consent"
+                                    ? t(
+                                        "agencyDashboard.packages.feedbackDialog.interactionTypes.updatedConsent",
+                                      )
                                     : isAssetRequest
-                                      ? "Requested Full Assets"
+                                      ? t(
+                                          "agencyDashboard.packages.feedbackDialog.interactionTypes.requestedAssets",
+                                        )
                                       : isComment
-                                        ? "Commented on a Talent"
-                                        : "Requested Callback"}
+                                        ? t(
+                                            "agencyDashboard.packages.feedbackDialog.interactionTypes.commentedOnTalent",
+                                          )
+                                        : t(
+                                            "agencyDashboard.packages.feedbackDialog.interactionTypes.requestedCallback",
+                                          )}
                             </h4>
                             <p className="text-xs text-gray-400 font-medium">
                               {format(
@@ -402,7 +429,9 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                               variant="outline"
                               className="text-[10px] font-bold uppercase tracking-widest text-gray-500"
                             >
-                              Has Comment
+                              {t(
+                                "agencyDashboard.packages.feedbackDialog.hasComment",
+                              )}
                             </Badge>
                           )}
                         </div>
@@ -412,29 +441,43 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2 text-indigo-700 font-bold text-[10px] uppercase tracking-[0.2em]">
                                 <User className="w-3.5 h-3.5" />
-                                Client Contact Details
+                                {t(
+                                  "agencyDashboard.packages.feedbackDialog.clientContactDetails",
+                                )}
                               </div>
                               <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200 hover:bg-indigo-100">
-                                Asset Request
+                                {t(
+                                  "agencyDashboard.packages.feedbackDialog.assetRequest",
+                                )}
                               </Badge>
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               <div className="space-y-1">
                                 <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-tight block">
-                                  Full Name
+                                  {t(
+                                    "agencyDashboard.packages.feedbackDialog.fullName",
+                                  )}
                                 </span>
                                 <div className="flex items-center gap-2 font-medium text-gray-900 text-sm">
-                                  {interaction.client_name || "Not specified"}
+                                  {interaction.client_name ||
+                                    t(
+                                      "agencyDashboard.packages.feedbackDialog.notSpecified",
+                                    )}
                                 </div>
                               </div>
                               <div className="space-y-1">
                                 <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-tight block">
-                                  Email Address
+                                  {t(
+                                    "agencyDashboard.packages.feedbackDialog.emailAddress",
+                                  )}
                                 </span>
                                 <div className="flex items-center gap-2 font-medium text-gray-900 text-sm">
                                   <Mail className="w-3.5 h-3.5 text-indigo-400" />
-                                  {interaction.client_email || "Not specified"}
+                                  {interaction.client_email ||
+                                    t(
+                                      "agencyDashboard.packages.feedbackDialog.notSpecified",
+                                    )}
                                 </div>
                               </div>
                             </div>
@@ -442,7 +485,9 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                             {interaction.content && (
                               <div className="pt-3 border-t border-indigo-100/50">
                                 <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-tight block mb-1.5">
-                                  Personal Message
+                                  {t(
+                                    "agencyDashboard.packages.feedbackDialog.personalMessage",
+                                  )}
                                 </span>
                                 <div className="text-sm text-gray-700 bg-white/50 p-3 rounded-lg border border-indigo-50 italic leading-relaxed">
                                   "{interaction.content}"
@@ -498,7 +543,7 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
             variant="outline"
             className="font-bold"
           >
-            Close
+            {t("agencyDashboard.packages.feedbackDialog.close")}
           </Button>
         </div>
       </DialogContent>

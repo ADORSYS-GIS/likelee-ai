@@ -19,8 +19,10 @@ import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/auth/AuthProvider";
 import { createPageUrl } from "@/utils";
 import { DashboardSectionHeader } from "@/components/dashboard/DashboardResponsive";
+import { useTranslation } from "react-i18next";
 
 const AgencyJobInvitesView = () => {
+  const { t } = useTranslation("agency");
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user, profile } = useAuth();
@@ -75,7 +77,7 @@ const AgencyJobInvitesView = () => {
     if (companyName && !isConfidentialBrandPlaceholder(companyName)) {
       return companyName;
     }
-    return brandName || companyName || "Brand";
+    return brandName || companyName || t("agencyDashboard.jobs.brandFallback");
   };
 
   const isJobClosed = (job: any) => {
@@ -97,11 +99,11 @@ const AgencyJobInvitesView = () => {
     try {
       setBusyIds((prev) => new Set(prev).add(jobId));
       await base44.post(`/api/jobs/${jobId}/decline`);
-      toast({ title: "Job invite declined" });
+      toast({ title: t("agencyDashboard.jobs.toasts.declined") });
       jobInvitesQuery.refetch();
     } catch (err: any) {
       toast({
-        title: "Error declining job invite",
+        title: t("agencyDashboard.jobs.toasts.errorDecliningTitle"),
         description: err.message,
         variant: "destructive",
       });
@@ -119,11 +121,11 @@ const AgencyJobInvitesView = () => {
     try {
       setBusyIds((prev) => new Set(prev).add(jobId));
       await base44.post(`/api/jobs/${jobId}/accept`);
-      toast({ title: "Job invite accepted" });
+      toast({ title: t("agencyDashboard.jobs.toasts.accepted") });
       jobInvitesQuery.refetch();
     } catch (err: any) {
       toast({
-        title: "Error accepting job invite",
+        title: t("agencyDashboard.jobs.toasts.errorAcceptingTitle"),
         description: err.message,
         variant: "destructive",
       });
@@ -149,18 +151,18 @@ const AgencyJobInvitesView = () => {
   return (
     <div className="space-y-6">
       <DashboardSectionHeader
-        title="Job Invites"
-        description="Review invited jobs and respond from the agency dashboard."
+        title={t("agencyDashboard.jobs.title")}
+        description={t("agencyDashboard.jobs.subtitle")}
       />
 
       <Card className="space-y-4 rounded-2xl border border-gray-200 p-4 sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <div className="text-lg font-semibold text-gray-900 sm:text-xl">
-              Brand Offers
+              {t("agencyDashboard.jobs.brandOffers")}
             </div>
             <div className="text-sm font-semibold text-gray-800 sm:text-base">
-              Job Invites
+              {t("agencyDashboard.jobs.title")}
             </div>
           </div>
           <Badge className="w-fit bg-slate-100 text-slate-700 border border-slate-200">
@@ -168,16 +170,22 @@ const AgencyJobInvitesView = () => {
           </Badge>
         </div>
         {jobInvitesQuery.isLoading && (
-          <p className="text-sm text-gray-500">Loading job invites...</p>
+          <p className="text-sm text-gray-500">
+            {t("agencyDashboard.jobs.states.loading")}
+          </p>
         )}
         {!jobInvitesQuery.isLoading && jobInvites.length === 0 && (
-          <p className="text-sm text-gray-500">No job invites yet.</p>
+          <p className="text-sm text-gray-500">
+            {t("agencyDashboard.jobs.states.empty")}
+          </p>
         )}
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           {jobInvites.map((job: any) => {
             const jobId = String(job?.id || "");
             const companyName = resolveJobCompanyName(job);
-            const jobTitle = String(job?.job_title || "Job invite");
+            const jobTitle = String(
+              job?.job_title || t("agencyDashboard.jobs.jobInviteFallback"),
+            );
             const isBusy = busyIds.has(jobId);
             const isAccepted = (job?.accepted_agency_ids || []).includes(
               profile?.id || user?.id,
@@ -227,7 +235,7 @@ const AgencyJobInvitesView = () => {
                           );
                         }}
                       >
-                        View job details
+                        {t("agencyDashboard.jobs.actions.viewDetails")}
                       </Button>
                       <Button
                         size="sm"
@@ -239,7 +247,7 @@ const AgencyJobInvitesView = () => {
                           setConfirmOpen(true);
                         }}
                       >
-                        Accept
+                        {t("agencyDashboard.jobs.actions.accept")}
                       </Button>
                       <Button
                         size="sm"
@@ -252,7 +260,7 @@ const AgencyJobInvitesView = () => {
                           setConfirmOpen(true);
                         }}
                       >
-                        Decline
+                        {t("agencyDashboard.jobs.actions.decline")}
                       </Button>
                     </>
                   ) : (
@@ -262,7 +270,11 @@ const AgencyJobInvitesView = () => {
                       onClick={() => {
                         if (isJobClosed(job)) {
                           setClosedJobLabel(
-                            String(job?.job_title || job?.title || "This job"),
+                            String(
+                              job?.job_title ||
+                                job?.title ||
+                                t("agencyDashboard.jobs.thisJob"),
+                            ),
                           );
                           setClosedDialogOpen(true);
                           return;
@@ -272,7 +284,7 @@ const AgencyJobInvitesView = () => {
                         );
                       }}
                     >
-                      Apply
+                      {t("agencyDashboard.jobs.actions.apply")}
                     </Button>
                   )}
                 </div>
@@ -286,14 +298,26 @@ const AgencyJobInvitesView = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Confirm {confirmAction === "accept" ? "Acceptance" : "Decline"}
+              {t("agencyDashboard.jobs.confirm.title", {
+                action:
+                  confirmAction === "accept"
+                    ? t("agencyDashboard.jobs.confirm.acceptance")
+                    : t("agencyDashboard.jobs.confirm.declineLabel"),
+              })}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to {confirmAction} this job invite?
+              {t("agencyDashboard.jobs.confirm.description", {
+                action:
+                  confirmAction === "accept"
+                    ? t("agencyDashboard.jobs.actions.accept").toLowerCase()
+                    : t("agencyDashboard.jobs.actions.decline").toLowerCase(),
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>
+              {t("agencyDashboard.jobs.actions.cancel")}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmInviteAction}
               className={
@@ -304,8 +328,15 @@ const AgencyJobInvitesView = () => {
               disabled={busyIds.has(confirmJobId)}
             >
               {busyIds.has(confirmJobId)
-                ? "Working..."
-                : `Yes, ${confirmAction}`}
+                ? t("agencyDashboard.jobs.states.working")
+                : t("agencyDashboard.jobs.confirm.yesAction", {
+                    action:
+                      confirmAction === "accept"
+                        ? t("agencyDashboard.jobs.actions.accept").toLowerCase()
+                        : t(
+                            "agencyDashboard.jobs.actions.decline",
+                          ).toLowerCase(),
+                  })}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -314,15 +345,18 @@ const AgencyJobInvitesView = () => {
       <AlertDialog open={closedDialogOpen} onOpenChange={setClosedDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Job closed or no vacancies</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t("agencyDashboard.jobs.closed.title")}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              {closedJobLabel || "This job"} is no longer accepting
-              applications.
+              {t("agencyDashboard.jobs.closed.description", {
+                jobLabel: closedJobLabel || t("agencyDashboard.jobs.thisJob"),
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogAction onClick={() => setClosedDialogOpen(false)}>
-              Okay
+              {t("agencyDashboard.jobs.actions.okay")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
