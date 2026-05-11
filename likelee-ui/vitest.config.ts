@@ -5,13 +5,14 @@ import path from "path";
 export default defineConfig({
   plugins: [react()],
   test: {
-    globals: true,
     environment: "jsdom",
-    setupFiles: ["./src/test/setup.ts"],
+    globals: true,
+    setupFiles: "./src/test/setup.ts",
   },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    extensions: [".mjs", ".js", ".jsx", ".ts", ".tsx", ".json"],
   },
 });
