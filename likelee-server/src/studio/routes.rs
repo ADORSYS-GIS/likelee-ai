@@ -4,9 +4,9 @@ use super::wallet;
 use crate::auth::AuthUser;
 use crate::config::AppState;
 use crate::storage::{
-    canonical_object_path, download_object, insert_asset_record, safe_fetch_url,
-    sanitize_file_name, upload_object, StorageAssetRecord, StorageContextType, StorageOwnerType,
-    StorageVisibility,
+    canonical_object_path, download_object, generate_signed_url, insert_asset_record,
+    safe_fetch_url, sanitize_file_name, upload_object, StorageAssetRecord, StorageContextType,
+    StorageOwnerType, StorageVisibility,
 };
 use crate::team::{require_agency_access, require_brand_access};
 use anyhow::anyhow;
@@ -846,7 +846,7 @@ pub async fn list_licensed_assets(
     );
 
     let mut assets: Vec<serde_json::Value> = Vec::new();
-    let now = chrono::Utc::now().to_rfc3339();
+    let now = chrono::Utc::now();
 
     // Branch based on organization type
     if org_type == "agency" {
@@ -855,7 +855,7 @@ pub async fn list_licensed_assets(
         assets.extend(agency_assets);
     } else {
         // Brand: get assets from approved licensing requests
-        let brand_assets = fetch_brand_licensed_assets(&state, &org_id, &now).await;
+        let brand_assets = fetch_brand_licensed_assets(&state, &org_id, now).await;
         assets.extend(brand_assets);
     }
 
@@ -868,7 +868,7 @@ pub async fn list_licensed_assets(
 async fn fetch_brand_licensed_assets(
     state: &AppState,
     brand_id: &str,
-    now: &str,
+    now: chrono::DateTime<chrono::Utc>,
 ) -> Vec<serde_json::Value> {
     let mut assets: Vec<serde_json::Value> = Vec::new();
 
@@ -900,64 +900,15 @@ async fn fetch_brand_licensed_assets(
         Err(_) => None,
     };
 
-    // 1. Get approved licensing_requests for this brand, filtered by payment
-    let mut lr_req = state
+    // 1. Get approved licensing_requests for this brand
+    let lr_resp = state
         .pg
         .from("licensing_requests")
-        .select("id,talent_id,talent_name,campaign_title,status")
+        .select("id,agency_id,talent_id,talent_name,campaign_title,status")
         .eq("brand_id", brand_id)
-        .eq("status", "approved");
-
-    // If brand has stripe_customer_id, only include licenses with active payment
-    let mut has_active_payment = false;
-    if let Some(ref sc_id) = stripe_customer_id {
-        // Check licensing_access_grants for active subscription
-        let grants_resp = state
-            .pg
-            .from("licensing_access_grants")
-            .select("id")
-            .eq("stripe_customer_id", sc_id)
-            .eq("status", "active")
-            .limit(1)
-            .execute()
-            .await;
-
-        if let Ok(resp) = grants_resp {
-            if let Ok(text) = resp.text().await {
-                let grants: Vec<serde_json::Value> =
-                    serde_json::from_str(&text).unwrap_or_default();
-                has_active_payment = !grants.is_empty();
-            }
-        }
-
-        // Also check licensing_checkout_sessions for completed payments
-        if !has_active_payment {
-            let sessions_resp = state
-                .pg
-                .from("licensing_checkout_sessions")
-                .select("id")
-                .eq("stripe_customer_id", sc_id)
-                .eq("status", "completed")
-                .limit(1)
-                .execute()
-                .await;
-
-            if let Ok(resp) = sessions_resp {
-                if let Ok(text) = resp.text().await {
-                    let sessions: Vec<serde_json::Value> =
-                        serde_json::from_str(&text).unwrap_or_default();
-                    has_active_payment = !sessions.is_empty();
-                }
-            }
-        }
-
-        // If no active payment, skip licensing_requests path entirely
-        if !has_active_payment {
-            lr_req = lr_req.limit(0);
-        }
-    }
-
-    let lr_resp = lr_req.execute().await;
+        .eq("status", "approved")
+        .execute()
+        .await;
 
     let approved_licenses: Vec<serde_json::Value> = if let Ok(resp) = lr_resp {
         if let Ok(text) = resp.text().await {
@@ -969,9 +920,13 @@ async fn fetch_brand_licensed_assets(
         Vec::new()
     };
 
-    // 2. For each approved license, find its catalog
+    // 2. For each approved license, find its catalog and verify entitlement
     for license in &approved_licenses {
         let license_id = license.get("id").and_then(|v| v.as_str()).unwrap_or("");
+        let license_agency_id = license
+            .get("agency_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
         let talent_name = license
             .get("talent_name")
             .and_then(|v| v.as_str())
@@ -987,6 +942,55 @@ async fn fetch_brand_licensed_assets(
             continue;
         }
 
+        // Check per-license entitlement: verify payment is tied to this license's agency
+        // If brand has stripe_customer_id, verify there's an active grant for this license's agency
+        let mut license_entitled = true;
+        if let Some(ref sc_id) = stripe_customer_id {
+            if !license_agency_id.is_empty() {
+                // Check if there's an active access grant for this brand's customer
+                // tied to the specific agency that owns this license
+                let grant_resp = state
+                    .pg
+                    .from("licensing_access_grants")
+                    .select("id")
+                    .eq("stripe_customer_id", sc_id)
+                    .eq("agency_id", license_agency_id)
+                    .eq("status", "active")
+                    .limit(1)
+                    .execute()
+                    .await;
+
+                let has_grant = if let Ok(grant_r) = grant_resp {
+                    if let Ok(text) = grant_r.text().await {
+                        let grants: Vec<serde_json::Value> =
+                            serde_json::from_str(&text).unwrap_or_default();
+                        !grants.is_empty()
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                };
+
+                if !has_grant {
+                    license_entitled = false;
+                    info!(
+                        license_id = %license_id,
+                        agency_id = %license_agency_id,
+                        brand_id = %brand_id,
+                        "license_no_active_payment_entitlement_for_agency"
+                    );
+                }
+            } else {
+                // No agency_id on license - allow access (legacy case or internal license)
+                license_entitled = true;
+            }
+        }
+
+        if !license_entitled {
+            continue;
+        }
+
         // Find catalog linked to this license request
         let catalog_resp = state
             .pg
@@ -997,8 +1001,8 @@ async fn fetch_brand_licensed_assets(
             .execute()
             .await;
 
-        let catalog: Option<serde_json::Value> = if let Ok(resp) = catalog_resp {
-            if let Ok(text) = resp.text().await {
+        let catalog: Option<serde_json::Value> = if let Ok(catalog_r) = catalog_resp {
+            if let Ok(text) = catalog_r.text().await {
                 let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
                 rows.into_iter().next()
             } else {
@@ -1016,9 +1020,11 @@ async fn fetch_brand_licensed_assets(
         // Check if catalog is expired
         let expires_at = catalog.get("expires_at").and_then(|v| v.as_str());
         if let Some(exp) = expires_at {
-            if exp < now {
-                info!(license_id = %license_id, expires_at = %exp, "catalog_expired_skipping");
-                continue;
+            if let Ok(exp_dt) = chrono::DateTime::parse_from_rfc3339(exp) {
+                if exp_dt.with_timezone(&chrono::Utc) < now {
+                    info!(license_id = %license_id, expires_at = %exp, "catalog_expired_skipping");
+                    continue;
+                }
             }
         }
 
@@ -1036,8 +1042,8 @@ async fn fetch_brand_licensed_assets(
             .execute()
             .await;
 
-        let items: Vec<serde_json::Value> = if let Ok(resp) = items_resp {
-            if let Ok(text) = resp.text().await {
+        let items: Vec<serde_json::Value> = if let Ok(items_r) = items_resp {
+            if let Ok(text) = items_r.text().await {
                 serde_json::from_str(&text).unwrap_or_default()
             } else {
                 Vec::new()
@@ -1060,8 +1066,8 @@ async fn fetch_brand_licensed_assets(
                 .execute()
                 .await;
 
-            if let Ok(resp) = assets_resp {
-                if let Ok(text) = resp.text().await {
+            if let Ok(assets_r) = assets_resp {
+                if let Ok(text) = assets_r.text().await {
                     let cat_assets: Vec<serde_json::Value> =
                         serde_json::from_str(&text).unwrap_or_default();
 
@@ -1113,8 +1119,8 @@ async fn fetch_brand_licensed_assets(
                 .execute()
                 .await;
 
-            if let Ok(resp) = recs_resp {
-                if let Ok(text) = resp.text().await {
+            if let Ok(recs_r) = recs_resp {
+                if let Ok(text) = recs_r.text().await {
                     let recordings: Vec<serde_json::Value> =
                         serde_json::from_str(&text).unwrap_or_default();
 
@@ -1138,8 +1144,8 @@ async fn fetch_brand_licensed_assets(
                             .execute()
                             .await;
 
-                        if let Ok(vr_resp) = vr_resp {
-                            if let Ok(vr_text) = vr_resp.text().await {
+                        if let Ok(vr_r) = vr_resp {
+                            if let Ok(vr_text) = vr_r.text().await {
                                 let vr_rows: Vec<serde_json::Value> =
                                     serde_json::from_str(&vr_text).unwrap_or_default();
 
@@ -1154,21 +1160,20 @@ async fn fetch_brand_licensed_assets(
                                         .unwrap_or("");
 
                                     if !bucket.is_empty() && !path.is_empty() {
-                                        let url = format!(
-                                            "{}/storage/v1/object/public/{}/{}",
-                                            state.supabase_url.trim_end_matches('/'),
-                                            bucket,
-                                            path
-                                        );
-                                        assets.push(json!({
-                                            "id": format!("catalog-recording-{}", rec_id),
-                                            "type": "audio",
-                                            "name": format!("{} – Voice Recording", talent_name),
-                                            "url": url,
-                                            "campaign_name": campaign_name.clone(),
-                                            "talent_name": talent_name.clone(),
-                                            "source": "licensed"
-                                        }));
+                                        // Use signed URL instead of public URL for access control
+                                        if let Ok(url) =
+                                            generate_signed_url(state, bucket, path, 86_400).await
+                                        {
+                                            assets.push(json!({
+                                                "id": format!("catalog-recording-{}", rec_id),
+                                                "type": "audio",
+                                                "name": format!("{} – Voice Recording", talent_name),
+                                                "url": url,
+                                                "campaign_name": campaign_name.clone(),
+                                                "talent_name": talent_name.clone(),
+                                                "source": "licensed"
+                                            }));
+                                        }
                                     }
                                 }
                             }
@@ -1209,8 +1214,10 @@ async fn fetch_brand_licensed_assets(
                         continue;
                     }
                     if let Some(exp) = expires_at {
-                        if exp < now {
-                            continue;
+                        if let Ok(exp_dt) = chrono::DateTime::parse_from_rfc3339(exp) {
+                            if exp_dt.with_timezone(&chrono::Utc) < now {
+                                continue;
+                            }
                         }
                     }
 
@@ -1339,23 +1346,19 @@ async fn fetch_agency_talent_assets(state: &AppState, agency_id: &str) -> Vec<se
         let portfolio_resp = state
             .pg
             .from("talent_portfolio_items")
-            .select("id,storage_bucket,storage_path,public_url")
+            .select("id,storage_bucket,storage_path")
             .eq("talent_id", talent_id)
             .order("created_at.desc")
             .limit(50)
             .execute()
             .await;
 
-        if let Ok(resp) = portfolio_resp {
-            if let Ok(text) = resp.text().await {
+        if let Ok(portfolio_r) = portfolio_resp {
+            if let Ok(text) = portfolio_r.text().await {
                 let items: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
 
                 for item in items {
                     let item_id = item.get("id").and_then(|v| v.as_str()).unwrap_or("");
-                    let public_url = item
-                        .get("public_url")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("");
                     let bucket = item
                         .get("storage_bucket")
                         .and_then(|v| v.as_str())
@@ -1365,17 +1368,13 @@ async fn fetch_agency_talent_assets(state: &AppState, agency_id: &str) -> Vec<se
                         .and_then(|v| v.as_str())
                         .unwrap_or("");
 
-                    let url = if !public_url.is_empty() {
-                        public_url.to_string()
-                    } else if !bucket.is_empty() && !path.is_empty() {
-                        format!(
-                            "{}/storage/v1/object/public/{}/{}",
-                            state.supabase_url.trim_end_matches('/'),
-                            bucket,
-                            path
-                        )
-                    } else {
+                    if bucket.is_empty() || path.is_empty() {
                         continue;
+                    }
+
+                    let url = match generate_signed_url(state, bucket, path, 86_400).await {
+                        Ok(signed) => signed,
+                        Err(_) => continue,
                     };
 
                     assets.push(json!({
@@ -1384,7 +1383,7 @@ async fn fetch_agency_talent_assets(state: &AppState, agency_id: &str) -> Vec<se
                         "name": format!("{} – Portfolio", talent_name),
                         "url": url,
                         "talent_name": talent_name.clone(),
-                        "source": "talent"
+                        "source": "licensed"
                     }));
                 }
             }
@@ -1394,21 +1393,20 @@ async fn fetch_agency_talent_assets(state: &AppState, agency_id: &str) -> Vec<se
         let ref_images_resp = state
             .pg
             .from("reference_images")
-            .select("id,public_url,storage_bucket,storage_path")
+            .select("id,storage_bucket,storage_path")
             .eq("user_id", talent_id)
             .order("created_at.desc")
             .limit(50)
             .execute()
             .await;
 
-        if let Ok(resp) = ref_images_resp {
-            if let Ok(text) = resp.text().await {
+        if let Ok(ref_images_r) = ref_images_resp {
+            if let Ok(text) = ref_images_r.text().await {
                 let images: Vec<serde_json::Value> =
                     serde_json::from_str(&text).unwrap_or_default();
 
                 for img in images {
                     let img_id = img.get("id").and_then(|v| v.as_str()).unwrap_or("");
-                    let public_url = img.get("public_url").and_then(|v| v.as_str()).unwrap_or("");
                     let bucket = img
                         .get("storage_bucket")
                         .and_then(|v| v.as_str())
@@ -1418,17 +1416,13 @@ async fn fetch_agency_talent_assets(state: &AppState, agency_id: &str) -> Vec<se
                         .and_then(|v| v.as_str())
                         .unwrap_or("");
 
-                    let url = if !public_url.is_empty() {
-                        public_url.to_string()
-                    } else if !bucket.is_empty() && !path.is_empty() {
-                        format!(
-                            "{}/storage/v1/object/public/{}/{}",
-                            state.supabase_url.trim_end_matches('/'),
-                            bucket,
-                            path
-                        )
-                    } else {
+                    if bucket.is_empty() || path.is_empty() {
                         continue;
+                    }
+
+                    let url = match generate_signed_url(state, bucket, path, 86_400).await {
+                        Ok(signed) => signed,
+                        Err(_) => continue,
                     };
 
                     assets.push(json!({
@@ -1437,7 +1431,7 @@ async fn fetch_agency_talent_assets(state: &AppState, agency_id: &str) -> Vec<se
                         "name": format!("{} – Reference Image", talent_name),
                         "url": url,
                         "talent_name": talent_name.clone(),
-                        "source": "talent"
+                        "source": "licensed"
                     }));
                 }
             }
@@ -1455,8 +1449,8 @@ async fn fetch_agency_talent_assets(state: &AppState, agency_id: &str) -> Vec<se
             .execute()
             .await;
 
-        if let Ok(resp) = recordings_resp {
-            if let Ok(text) = resp.text().await {
+        if let Ok(recordings_r) = recordings_resp {
+            if let Ok(text) = recordings_r.text().await {
                 let recordings: Vec<serde_json::Value> =
                     serde_json::from_str(&text).unwrap_or_default();
 
@@ -1479,21 +1473,17 @@ async fn fetch_agency_talent_assets(state: &AppState, agency_id: &str) -> Vec<se
                         continue;
                     }
 
-                    let url = format!(
-                        "{}/storage/v1/object/public/{}/{}",
-                        state.supabase_url.trim_end_matches('/'),
-                        bucket,
-                        path
-                    );
-
-                    assets.push(json!({
-                        "id": format!("rec-{}", rec_id),
-                        "type": "audio",
-                        "name": format!("{} – {} Recording", talent_name, emotion_tag),
-                        "url": url,
-                        "talent_name": talent_name.clone(),
-                        "source": "talent"
-                    }));
+                    // Use signed URL instead of public URL for access control
+                    if let Ok(url) = generate_signed_url(state, bucket, path, 86_400).await {
+                        assets.push(json!({
+                            "id": format!("rec-{}", rec_id),
+                            "type": "audio",
+                            "name": format!("{} – {} Recording", talent_name, emotion_tag),
+                            "url": url,
+                            "talent_name": talent_name.clone(),
+                            "source": "licensed"
+                        }));
+                    }
                 }
             }
         }
@@ -1503,25 +1493,22 @@ async fn fetch_agency_talent_assets(state: &AppState, agency_id: &str) -> Vec<se
 }
 
 /// Helper to resolve asset URL from reference_images or agency_files
+/// Returns a signed URL for access-controlled assets
 async fn resolve_asset_url(state: &AppState, asset_id: &str) -> Option<String> {
     // Try reference_images first
     let ri_resp = state
         .pg
         .from("reference_images")
-        .select("public_url,storage_bucket,storage_path")
+        .select("storage_bucket,storage_path")
         .eq("id", asset_id)
         .limit(1)
         .execute()
         .await;
 
-    if let Ok(resp) = ri_resp {
-        if let Ok(text) = resp.text().await {
+    if let Ok(ri_r) = ri_resp {
+        if let Ok(text) = ri_r.text().await {
             let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
             if let Some(ri) = rows.into_iter().next() {
-                let pu = ri.get("public_url").and_then(|v| v.as_str()).unwrap_or("");
-                if !pu.is_empty() {
-                    return Some(pu.to_string());
-                }
                 let bucket = ri
                     .get("storage_bucket")
                     .and_then(|v| v.as_str())
@@ -1531,12 +1518,7 @@ async fn resolve_asset_url(state: &AppState, asset_id: &str) -> Option<String> {
                     .and_then(|v| v.as_str())
                     .unwrap_or("");
                 if !bucket.is_empty() && !path.is_empty() {
-                    return Some(format!(
-                        "{}/storage/v1/object/public/{}/{}",
-                        state.supabase_url.trim_end_matches('/'),
-                        bucket,
-                        path
-                    ));
+                    return generate_signed_url(state, bucket, path, 86_400).await.ok();
                 }
             }
         }
@@ -1546,20 +1528,16 @@ async fn resolve_asset_url(state: &AppState, asset_id: &str) -> Option<String> {
     let af_resp = state
         .pg
         .from("agency_files")
-        .select("public_url,storage_bucket,storage_path")
+        .select("storage_bucket,storage_path")
         .eq("id", asset_id)
         .limit(1)
         .execute()
         .await;
 
-    if let Ok(resp) = af_resp {
-        if let Ok(text) = resp.text().await {
+    if let Ok(af_r) = af_resp {
+        if let Ok(text) = af_r.text().await {
             let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
             if let Some(af) = rows.into_iter().next() {
-                let pu = af.get("public_url").and_then(|v| v.as_str()).unwrap_or("");
-                if !pu.is_empty() {
-                    return Some(pu.to_string());
-                }
                 let bucket = af
                     .get("storage_bucket")
                     .and_then(|v| v.as_str())
@@ -1569,12 +1547,7 @@ async fn resolve_asset_url(state: &AppState, asset_id: &str) -> Option<String> {
                     .and_then(|v| v.as_str())
                     .unwrap_or("");
                 if !bucket.is_empty() && !path.is_empty() {
-                    return Some(format!(
-                        "{}/storage/v1/object/public/{}/{}",
-                        state.supabase_url.trim_end_matches('/'),
-                        bucket,
-                        path
-                    ));
+                    return generate_signed_url(state, bucket, path, 86_400).await.ok();
                 }
             }
         }

@@ -1608,15 +1608,6 @@ export default function BrandDashboard() {
           setLoadingBrandLicensingRequests(true);
         }
         const resp = await getBrandLicensingRequests();
-        console.log(
-          "getBrandLicensingRequests raw response:",
-          JSON.stringify(resp, null, 2),
-        );
-        console.log("🔍 Brand user profile:", profile);
-        console.log(
-          "🔍 Fetching licensing requests for brand_id:",
-          profile?.id,
-        );
         if (!mounted) return;
         const rows = Array.isArray(resp) ? resp : resp?.requests || [];
         setBrandLicensingRequests(Array.isArray(rows) ? rows : []);
@@ -1749,7 +1740,6 @@ export default function BrandDashboard() {
               return [];
             }),
           ]);
-          console.log("Loaded licensed assets:", licensed);
           if (mounted) {
             const cacheData = {
               version: CACHE_VERSION,
@@ -2212,7 +2202,6 @@ export default function BrandDashboard() {
             return [];
           }),
         ]);
-        console.log("Refreshed licensed assets:", licensed);
         const cacheData = {
           version: 4,
           files: files || [],
