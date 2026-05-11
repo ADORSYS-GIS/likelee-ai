@@ -11181,27 +11181,29 @@ export default function CreatorDashboard() {
           </div>
         </div>
 
-        {/* Info banner */}
-        <div className="bg-blue-50 border border-blue-200 text-blue-900 rounded-lg p-4 flex gap-3">
-          <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p>
-              <span className="font-semibold">
-                {t("creatorDashboard.earnings.readyTitle")}
-              </span>{" "}
-              {t("creatorDashboard.earnings.readyMessage")}
-            </p>
-            {payoutAccountStatus?.bank_last4 && (
-              <div className="mt-2 flex items-center gap-2 text-sm text-blue-800 font-medium">
-                <CreditCard className="w-4 h-4" />
-                <span>
-                  Connected bank account ending in{" "}
-                  <strong>{payoutAccountStatus.bank_last4}</strong>
-                </span>
-              </div>
-            )}
+        {/* Info banner — only shown when Stripe is not yet connected */}
+        {!payoutAccountStatus?.connected && (
+          <div className="bg-blue-50 border border-blue-200 text-blue-900 rounded-lg p-4 flex gap-3">
+            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p>
+                <span className="font-semibold">
+                  {t("creatorDashboard.earnings.readyTitle")}
+                </span>{" "}
+                {t("creatorDashboard.earnings.readyMessage")}
+              </p>
+              {payoutAccountStatus?.bank_last4 && (
+                <div className="mt-2 flex items-center gap-2 text-sm text-blue-800 font-medium">
+                  <CreditCard className="w-4 h-4" />
+                  <span>
+                    Connected bank account ending in{" "}
+                    <strong>{payoutAccountStatus.bank_last4}</strong>
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Key metrics */}
         <div className="grid md:grid-cols-4 gap-6">
@@ -11292,40 +11294,6 @@ export default function CreatorDashboard() {
             </div>
           </Card>
         </div>
-
-        {/* Comparison Banner */}
-        <Card className="p-6 bg-gradient-to-r from-cyan-50 to-white border border-cyan-200">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">
-              {t("creatorDashboard.earnings.comparison.title")}
-            </h3>
-            <p className="text-sm text-gray-600">
-              {t("creatorDashboard.earnings.comparison.subtitle")}
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="p-5 bg-white rounded-lg border border-gray-200">
-              <p className="text-sm text-gray-600 mb-1">
-                {t("creatorDashboard.earnings.comparison.traditionalModel")}
-              </p>
-              <p className="text-3xl font-bold text-gray-900">$500</p>
-              <p className="text-sm text-gray-600">
-                {t("creatorDashboard.earnings.comparison.traditionalDesc")}
-              </p>
-            </div>
-            <div className="p-5 bg-white rounded-lg border border-cyan-300">
-              <p className="text-sm text-gray-600 mb-1">
-                {t("creatorDashboard.earnings.comparison.likeleeModel")}
-              </p>
-              <p className="text-3xl font-bold text-[#32C8D1]">
-                {t("creatorDashboard.earnings.comparison.likeleeAmount")}
-              </p>
-              <p className="text-sm text-gray-600">
-                {t("creatorDashboard.earnings.comparison.likeleeDesc")}
-              </p>
-            </div>
-          </div>
-        </Card>
 
         {/* Earnings by Campaign */}
         <Card className="p-6 bg-white border border-gray-200">
