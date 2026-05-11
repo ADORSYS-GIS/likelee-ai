@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -63,8 +64,145 @@ export function CatalogBuilderWizard({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const { t: baseT } = useTranslation("agency");
+  const t = (key: string, options?: Record<string, unknown>) => {
+    const aliases: Record<string, string> = {
+      "agencyDashboard.catalogs.wizard.steps.source":
+        "agencyDashboard.catalogs.builder.steps.selectRequest",
+      "agencyDashboard.catalogs.wizard.steps.details":
+        "agencyDashboard.catalogs.builder.steps.info",
+      "agencyDashboard.catalogs.wizard.steps.assets":
+        "agencyDashboard.catalogs.builder.steps.assets",
+      "agencyDashboard.catalogs.wizard.steps.voice":
+        "agencyDashboard.catalogs.builder.steps.voice",
+      "agencyDashboard.catalogs.wizard.steps.send":
+        "agencyDashboard.catalogs.builder.steps.review",
+      "agencyDashboard.catalogs.wizard.title":
+        "agencyDashboard.catalogs.builder.title",
+      "agencyDashboard.catalogs.wizard.description":
+        "agencyDashboard.catalogs.builder.description",
+      "agencyDashboard.catalogs.wizard.info.catalogTitle":
+        "agencyDashboard.catalogs.builder.fields.catalogTitle",
+      "agencyDashboard.catalogs.wizard.info.catalogTitlePlaceholder":
+        "agencyDashboard.catalogs.builder.placeholders.catalogTitleDetailed",
+      "agencyDashboard.catalogs.wizard.info.notes":
+        "agencyDashboard.catalogs.builder.fields.notesOptional",
+      "agencyDashboard.catalogs.wizard.info.notesPlaceholder":
+        "agencyDashboard.catalogs.builder.placeholders.notesDetailed",
+      "agencyDashboard.catalogs.wizard.info.catalogExpiration":
+        "agencyDashboard.catalogs.builder.fields.catalogExpiration",
+      "agencyDashboard.catalogs.wizard.info.expirationHelp":
+        "agencyDashboard.catalogs.builder.expirationHelpDetailed",
+      "agencyDashboard.catalogs.wizard.selectRequest.description":
+        "agencyDashboard.catalogs.builder.selectRequestDescriptionDetailed",
+      "agencyDashboard.catalogs.wizard.selectRequest.noRequests":
+        "agencyDashboard.catalogs.builder.empty.noSignedRequestsDetailed",
+      "agencyDashboard.catalogs.wizard.selectRequest.unnamedClient":
+        "agencyDashboard.catalogs.builder.empty.unnamedClient",
+      "agencyDashboard.catalogs.wizard.selectRequest.contractSigned":
+        "agencyDashboard.catalogs.builder.selectRequestEligibleDetailed",
+      "agencyDashboard.catalogs.wizard.selectRequest.paidOn":
+        "agencyDashboard.catalogs.wizard.selectRequest.paidOn",
+      "agencyDashboard.catalogs.wizard.selectRequest.unpaidWarning":
+        "agencyDashboard.catalogs.builder.unpaidRequestHelpDetailed",
+      "agencyDashboard.catalogs.wizard.assets.loading":
+        "agencyDashboard.catalogs.builder.loadingAssets",
+      "agencyDashboard.catalogs.wizard.assets.noTalents":
+        "agencyDashboard.catalogs.builder.empty.noTalentsAssetsDetailed",
+      "agencyDashboard.catalogs.wizard.assets.selected":
+        "agencyDashboard.catalogs.builder.selectedCount",
+      "agencyDashboard.catalogs.wizard.assets.noAssets":
+        "agencyDashboard.catalogs.builder.empty.noAssetsForTalentDetailed",
+      "agencyDashboard.catalogs.wizard.assets.upload":
+        "agencyDashboard.catalogs.builder.actions.upload",
+      "agencyDashboard.catalogs.wizard.voice.noTalents":
+        "agencyDashboard.catalogs.builder.empty.noTalentsVoiceDetailed",
+      "agencyDashboard.catalogs.wizard.voice.selected":
+        "agencyDashboard.catalogs.builder.selectedCount",
+      "agencyDashboard.catalogs.wizard.voice.uploadNew":
+        "agencyDashboard.catalogs.builder.actions.uploadNewRecording",
+      "agencyDashboard.catalogs.wizard.voice.recording":
+        "agencyDashboard.catalogs.builder.defaults.recording",
+      "agencyDashboard.catalogs.wizard.review.title":
+        "agencyDashboard.catalogs.preview.fields.title",
+      "agencyDashboard.catalogs.wizard.review.client":
+        "agencyDashboard.catalogs.preview.fields.client",
+      "agencyDashboard.catalogs.wizard.review.sendTo":
+        "agencyDashboard.catalogs.builder.review.sendTo",
+      "agencyDashboard.catalogs.wizard.review.talents":
+        "agencyDashboard.catalogs.builder.review.talents",
+      "agencyDashboard.catalogs.wizard.review.assets":
+        "agencyDashboard.catalogs.preview.fields.assets",
+      "agencyDashboard.catalogs.wizard.review.recordings":
+        "agencyDashboard.catalogs.builder.review.recordings",
+      "agencyDashboard.catalogs.wizard.review.linkedRequest":
+        "agencyDashboard.catalogs.builder.review.linkedRequest",
+      "agencyDashboard.catalogs.wizard.review.yes":
+        "agencyDashboard.catalogs.builder.review.yes",
+      "agencyDashboard.catalogs.wizard.review.no":
+        "agencyDashboard.catalogs.builder.review.no",
+      "agencyDashboard.catalogs.wizard.review.emailNotice":
+        "agencyDashboard.catalogs.builder.review.emailNotice",
+      "agencyDashboard.catalogs.wizard.review.noEmailWarning":
+        "agencyDashboard.catalogs.builder.review.noClientEmail",
+      "agencyDashboard.catalogs.wizard.actions.cancel":
+        "agencyDashboard.catalogs.actions.cancel",
+      "agencyDashboard.catalogs.wizard.actions.back":
+        "agencyDashboard.catalogs.builder.actions.back",
+      "agencyDashboard.catalogs.wizard.actions.next":
+        "agencyDashboard.catalogs.builder.actions.next",
+      "agencyDashboard.catalogs.wizard.actions.creating":
+        "agencyDashboard.catalogs.builder.actions.creating",
+      "agencyDashboard.catalogs.wizard.actions.createAndSend":
+        "agencyDashboard.catalogs.builder.actions.createAndSend",
+      "agencyDashboard.catalogs.toasts.assetUploaded":
+        "agencyDashboard.catalogs.builder.toasts.assetUploaded",
+      "agencyDashboard.catalogs.toasts.recordingUploaded":
+        "agencyDashboard.catalogs.builder.toasts.recordingUploaded",
+      "agencyDashboard.catalogs.toasts.catalogCreated":
+        "agencyDashboard.catalogs.builder.toasts.catalogCreated",
+      "agencyDashboard.catalogs.toasts.catalogSentTo":
+        "agencyDashboard.catalogs.builder.toasts.catalogSentTo",
+      "agencyDashboard.catalogs.toasts.catalogCreatedCopyLink":
+        "agencyDashboard.catalogs.builder.toasts.catalogCreatedShare",
+      "agencyDashboard.catalogs.toasts.failedToCreateCatalog":
+        "agencyDashboard.catalogs.builder.toasts.createFailed",
+    };
+    if (
+      key === "agencyDashboard.catalogs.wizard.assets.selected" ||
+      key === "agencyDashboard.catalogs.wizard.voice.selected"
+    ) {
+      return baseT(key, { defaultValue: "selected", ...options });
+    }
+    if (key === "agencyDashboard.catalogs.wizard.selectRequest.paidOn") {
+      return baseT(key, { defaultValue: "Paid on", ...options });
+    }
+    return baseT(aliases[key] || key, options);
+  };
   const { toast } = useToast();
   const [step, setStep] = useState<Step>("select-request");
+  const STEPS_TRANSLATED = [
+    {
+      id: "select-request" as Step,
+      label: t("agencyDashboard.catalogs.wizard.steps.source"),
+    },
+    {
+      id: "info" as Step,
+      label: t("agencyDashboard.catalogs.wizard.steps.details"),
+    },
+    {
+      id: "assets" as Step,
+      label: t("agencyDashboard.catalogs.wizard.steps.assets"),
+    },
+    {
+      id: "voice" as Step,
+      label: t("agencyDashboard.catalogs.wizard.steps.voice"),
+    },
+    {
+      id: "review" as Step,
+      label: t("agencyDashboard.catalogs.wizard.steps.send"),
+    },
+  ];
   const [sourceId, setSourceId] = useState<string>("");
   const [form, setForm] = useState<FormState>({
     title: "",
@@ -167,11 +305,13 @@ export function CatalogBuilderWizard({
         ...prev,
         [talentId]: (res as any)?.data ?? res ?? [],
       }));
-      toast({ title: "Asset uploaded successfully" });
+      toast({ title: t("agencyDashboard.catalogs.toasts.assetUploaded") });
     } catch (e: any) {
       toast({
-        title: "Upload failed",
-        description: e.message || "Something went wrong",
+        title: t("agencyDashboard.catalogs.builder.toasts.uploadFailed"),
+        description:
+          e.message ||
+          t("agencyDashboard.catalogs.builder.toasts.genericError"),
         variant: "destructive",
       });
     } finally {
@@ -217,11 +357,13 @@ export function CatalogBuilderWizard({
         ...prev,
         [talentId]: recs,
       }));
-      toast({ title: "Recording uploaded successfully" });
+      toast({ title: t("agencyDashboard.catalogs.toasts.recordingUploaded") });
     } catch (e: any) {
       toast({
-        title: "Upload failed",
-        description: e.message || "Something went wrong",
+        title: t("agencyDashboard.catalogs.builder.toasts.uploadFailed"),
+        description:
+          e.message ||
+          t("agencyDashboard.catalogs.builder.toasts.genericError"),
         variant: "destructive",
       });
     } finally {
@@ -235,16 +377,16 @@ export function CatalogBuilderWizard({
     onSuccess: (res: any) => {
       const email = form.client_email.trim();
       toast({
-        title: "Catalog created!",
+        title: t("agencyDashboard.catalogs.toasts.catalogCreated"),
         description: email
-          ? `Catalog sent to ${email}.`
-          : "Catalog created. Copy the link to share.",
+          ? t("agencyDashboard.catalogs.toasts.catalogSentTo", { email })
+          : t("agencyDashboard.catalogs.toasts.catalogCreatedCopyLink"),
       });
       onCreated();
     },
     onError: (e: any) => {
       toast({
-        title: "Failed to create catalog",
+        title: t("agencyDashboard.catalogs.toasts.failedToCreateCatalog"),
         description: String(e?.message || e),
         variant: "destructive" as any,
       });
@@ -345,16 +487,16 @@ export function CatalogBuilderWizard({
   };
 
   // -------------------------------- Step nav ---------------------------------
-  const stepIndex = STEPS.findIndex((s) => s.id === step);
+  const stepIndex = STEPS_TRANSLATED.findIndex((s) => s.id === step);
   const goNext = async () => {
     if (step === "select-request") {
       await loadTalentData(selectedTalents);
     }
-    const next = STEPS[stepIndex + 1];
+    const next = STEPS_TRANSLATED[stepIndex + 1];
     if (next) setStep(next.id);
   };
   const goPrev = () => {
-    const prev = STEPS[stepIndex - 1];
+    const prev = STEPS_TRANSLATED[stepIndex - 1];
     if (prev) setStep(prev.id);
   };
 
@@ -371,16 +513,16 @@ export function CatalogBuilderWizard({
       <DialogContent className="max-w-4xl w-full h-[min(92vh,860px)] rounded-2xl p-0 overflow-hidden flex flex-col">
         <DialogHeader className="shrink-0 px-6 pt-6 pb-0">
           <DialogTitle className="text-xl font-bold text-gray-900">
-            Create Asset Catalog
+            {t("agencyDashboard.catalogs.wizard.title")}
           </DialogTitle>
           <DialogDescription className="text-gray-500 font-medium">
-            Bundle approved assets and voice recordings for client delivery.
+            {t("agencyDashboard.catalogs.wizard.description")}
           </DialogDescription>
         </DialogHeader>
 
         {/* Step indicator */}
         <div className="shrink-0 flex items-center gap-1 px-6 pt-4">
-          {STEPS.map((s, i) => (
+          {STEPS_TRANSLATED.map((s, i) => (
             <React.Fragment key={s.id}>
               <div
                 className={`flex items-center gap-1.5 text-xs font-semibold ${
@@ -404,7 +546,7 @@ export function CatalogBuilderWizard({
                 </div>
                 <span className="hidden sm:inline">{s.label}</span>
               </div>
-              {i < STEPS.length - 1 && (
+              {i < STEPS_TRANSLATED.length - 1 && (
                 <div className="flex-1 h-px bg-gray-200 mx-1" />
               )}
             </React.Fragment>
@@ -418,10 +560,13 @@ export function CatalogBuilderWizard({
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <Label>
-                  Catalog Title <span className="text-red-500">*</span>
+                  {t("agencyDashboard.catalogs.wizard.info.catalogTitle")}{" "}
+                  <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  placeholder="e.g. Spring Campaign – Voice Pack"
+                  placeholder={t(
+                    "agencyDashboard.catalogs.wizard.info.catalogTitlePlaceholder",
+                  )}
                   value={form.title}
                   onChange={(e) =>
                     setForm((p) => ({ ...p, title: e.target.value }))
@@ -429,9 +574,11 @@ export function CatalogBuilderWizard({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Notes (optional)</Label>
+                <Label>{t("agencyDashboard.catalogs.wizard.info.notes")}</Label>
                 <Textarea
-                  placeholder="Internal notes about this catalog..."
+                  placeholder={t(
+                    "agencyDashboard.catalogs.wizard.info.notesPlaceholder",
+                  )}
                   value={form.notes}
                   onChange={(e) =>
                     setForm((p) => ({ ...p, notes: e.target.value }))
@@ -441,7 +588,8 @@ export function CatalogBuilderWizard({
               </div>
               <div className="space-y-1.5">
                 <Label>
-                  Catalog Expiration <span className="text-red-500">*</span>
+                  {t("agencyDashboard.catalogs.wizard.info.catalogExpiration")}{" "}
+                  <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   type="datetime-local"
@@ -451,7 +599,7 @@ export function CatalogBuilderWizard({
                   }
                 />
                 <p className="text-[10px] text-gray-400">
-                  Public link will become inaccessible after this date/time.
+                  {t("agencyDashboard.catalogs.wizard.info.expirationHelp")}
                 </p>
               </div>
             </div>
@@ -461,9 +609,7 @@ export function CatalogBuilderWizard({
           {step === "select-request" && (
             <div className="space-y-3">
               <p className="text-sm text-gray-600 font-medium">
-                Select a signed licensing request to link this catalog to. Paid
-                and unpaid requests are both allowed. We will show the payment
-                status so you can decide whether to send the catalog yet.
+                {t("agencyDashboard.catalogs.wizard.selectRequest.description")}
               </p>
               {eligibleQuery.isLoading ? (
                 <div className="flex items-center justify-center py-10">
@@ -471,8 +617,9 @@ export function CatalogBuilderWizard({
                 </div>
               ) : eligibleRequests.length === 0 ? (
                 <div className="p-6 border border-dashed border-gray-200 rounded-xl text-center text-sm text-gray-400">
-                  No signed licensing requests available. You can still create a
-                  catalog without linking a request.
+                  {t(
+                    "agencyDashboard.catalogs.wizard.selectRequest.noRequests",
+                  )}
                 </div>
               ) : (
                 eligibleRequests.map((req: any) => {
@@ -493,7 +640,10 @@ export function CatalogBuilderWizard({
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <p className="font-semibold text-gray-900 text-sm">
-                            {req.client_name || "Unnamed Client"}
+                            {req.client_name ||
+                              t(
+                                "agencyDashboard.catalogs.wizard.selectRequest.unnamedClient",
+                              )}
                           </p>
                           <p className="text-xs text-gray-500 mt-0.5">
                             {req.client_email}
@@ -510,7 +660,9 @@ export function CatalogBuilderWizard({
                               }
                             >
                               ${(req.total_amount_cents / 100).toFixed(2)}{" "}
-                              {isPaid ? "Paid" : "Unpaid"}
+                              {isPaid
+                                ? t("agencyDashboard.catalogs.status.paid")
+                                : t("agencyDashboard.catalogs.status.unpaid")}
                             </Badge>
                           )}
                           {!req.total_amount_cents && (
@@ -522,7 +674,9 @@ export function CatalogBuilderWizard({
                                   : "bg-amber-50 text-amber-700"
                               }
                             >
-                              {isPaid ? "Paid" : "Unpaid"}
+                              {isPaid
+                                ? t("agencyDashboard.catalogs.status.paid")
+                                : t("agencyDashboard.catalogs.status.unpaid")}
                             </Badge>
                           )}
                           {selected && (
@@ -534,11 +688,15 @@ export function CatalogBuilderWizard({
                       </div>
                       <div className="mt-1.5 space-y-1">
                         <p className="text-[11px] text-gray-400">
-                          Contract signed and eligible for catalog delivery.
+                          {t(
+                            "agencyDashboard.catalogs.wizard.selectRequest.contractSigned",
+                          )}
                         </p>
                         {req.paid_at ? (
                           <p className="text-[11px] text-green-600">
-                            Paid{" "}
+                            {t(
+                              "agencyDashboard.catalogs.wizard.selectRequest.paidOn",
+                            )}{" "}
                             {new Date(req.paid_at).toLocaleDateString("en-US", {
                               month: "short",
                               day: "numeric",
@@ -547,8 +705,9 @@ export function CatalogBuilderWizard({
                           </p>
                         ) : (
                           <p className="text-[11px] text-amber-600">
-                            Unpaid request. You can still create the catalog,
-                            but payment has not been recorded yet.
+                            {t(
+                              "agencyDashboard.catalogs.wizard.selectRequest.unpaidWarning",
+                            )}
                           </p>
                         )}
                       </div>
@@ -566,13 +725,12 @@ export function CatalogBuilderWizard({
                 <div className="flex items-center justify-center py-10">
                   <Loader2 className="w-5 h-5 animate-spin text-indigo-500" />
                   <span className="ml-2 text-sm text-gray-500">
-                    Loading assets…
+                    {t("agencyDashboard.catalogs.wizard.assets.loading")}
                   </span>
                 </div>
               ) : selectedTalents.length === 0 ? (
                 <div className="p-6 border border-dashed border-gray-200 rounded-xl text-center text-sm text-gray-400">
-                  No talents linked. Go back and select a source request — or
-                  skip to the Voice step.
+                  {t("agencyDashboard.catalogs.wizard.assets.noTalents")}
                 </div>
               ) : (
                 selectedTalents.map((talent) => {
@@ -586,13 +744,16 @@ export function CatalogBuilderWizard({
                           {talent.name}
                         </p>
                         <Badge variant="secondary" className="text-[10px]">
-                          {selectedAssets.length} selected
+                          {selectedAssets.length}{" "}
+                          {t("agencyDashboard.catalogs.wizard.assets.selected")}
                         </Badge>
                       </div>
                       {assets.length === 0 ? (
                         <div className="flex items-center gap-2">
                           <p className="text-xs text-gray-400 ml-6">
-                            No assets found for this talent.
+                            {t(
+                              "agencyDashboard.catalogs.wizard.assets.noAssets",
+                            )}
                           </p>
                           <label className="cursor-pointer">
                             <input
@@ -609,7 +770,9 @@ export function CatalogBuilderWizard({
                               ) : (
                                 <UploadCloud className="w-3.5 h-3.5" />
                               )}
-                              Upload
+                              {t(
+                                "agencyDashboard.catalogs.wizard.assets.upload",
+                              )}
                             </div>
                           </label>
                         </div>
@@ -630,7 +793,9 @@ export function CatalogBuilderWizard({
                               <UploadCloud className="w-6 h-6 mb-1 text-gray-400 group-hover:text-indigo-500" />
                             )}
                             <span className="text-[10px] font-semibold">
-                              Upload
+                              {t(
+                                "agencyDashboard.catalogs.wizard.assets.upload",
+                              )}
                             </span>
                           </label>
                           {assets.map((asset: any) => {
@@ -706,7 +871,7 @@ export function CatalogBuilderWizard({
                 </div>
               ) : selectedTalents.length === 0 ? (
                 <div className="p-6 border border-dashed border-gray-200 rounded-xl text-center text-sm text-gray-400">
-                  No talents linked. Go back and select a source request.
+                  {t("agencyDashboard.catalogs.wizard.voice.noTalents")}
                 </div>
               ) : (
                 selectedTalents.map((talent) => {
@@ -721,13 +886,16 @@ export function CatalogBuilderWizard({
                           {talent.name}
                         </p>
                         <Badge variant="secondary" className="text-[10px]">
-                          {selectedRecs.length} selected
+                          {selectedRecs.length}{" "}
+                          {t("agencyDashboard.catalogs.wizard.voice.selected")}
                         </Badge>
                       </div>
                       {recordings.length === 0 ? (
                         <div className="flex items-center gap-2">
                           <p className="text-xs text-gray-400 ml-6">
-                            No voice recordings uploaded by this talent yet.
+                            {t(
+                              "agencyDashboard.catalogs.builder.empty.noVoiceForTalentDetailed",
+                            )}
                           </p>
                           <label className="cursor-pointer">
                             <input
@@ -746,7 +914,9 @@ export function CatalogBuilderWizard({
                               ) : (
                                 <UploadCloud className="w-3.5 h-3.5" />
                               )}
-                              Upload
+                              {t(
+                                "agencyDashboard.catalogs.builder.actions.upload",
+                              )}
                             </div>
                           </label>
                         </div>
@@ -771,7 +941,9 @@ export function CatalogBuilderWizard({
                               )}
                             </div>
                             <span className="text-sm font-semibold">
-                              Upload New Recording
+                              {t(
+                                "agencyDashboard.catalogs.wizard.voice.uploadNew",
+                              )}
                             </span>
                           </label>
                           {recordings.map((rec: any) => {
@@ -806,7 +978,10 @@ export function CatalogBuilderWizard({
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-semibold text-gray-900 capitalize">
-                                    {rec.emotion_tag ?? "Recording"}
+                                    {rec.emotion_tag ??
+                                      t(
+                                        "agencyDashboard.catalogs.wizard.voice.recording",
+                                      )}
                                   </p>
                                   <p className="text-[11px] text-gray-400 truncate mb-2">
                                     {rec.mime_type ?? "audio"}
@@ -844,31 +1019,41 @@ export function CatalogBuilderWizard({
             <div className="space-y-4">
               <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-500 font-medium">Title</span>
+                  <span className="text-gray-500 font-medium">
+                    {t("agencyDashboard.catalogs.wizard.review.title")}
+                  </span>
                   <span className="font-semibold text-gray-900">
                     {form.title}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500 font-medium">Client</span>
+                  <span className="text-gray-500 font-medium">
+                    {t("agencyDashboard.catalogs.wizard.review.client")}
+                  </span>
                   <span className="font-semibold text-gray-900">
                     {form.client_name || "—"}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500 font-medium">Send to</span>
+                  <span className="text-gray-500 font-medium">
+                    {t("agencyDashboard.catalogs.wizard.review.sendTo")}
+                  </span>
                   <span className="font-semibold text-gray-900">
                     {form.client_email || "—"}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500 font-medium">Talents</span>
+                  <span className="text-gray-500 font-medium">
+                    {t("agencyDashboard.catalogs.wizard.review.talents")}
+                  </span>
                   <span className="font-semibold text-gray-900">
                     {selectedTalents.length}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500 font-medium">Assets</span>
+                  <span className="text-gray-500 font-medium">
+                    {t("agencyDashboard.catalogs.wizard.review.assets")}
+                  </span>
                   <span className="font-semibold text-gray-900">
                     {Object.values(form.items).reduce(
                       (sum, item) => sum + item.asset_ids.length,
@@ -877,7 +1062,9 @@ export function CatalogBuilderWizard({
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500 font-medium">Recordings</span>
+                  <span className="text-gray-500 font-medium">
+                    {t("agencyDashboard.catalogs.wizard.review.recordings")}
+                  </span>
                   <span className="font-semibold text-gray-900">
                     {Object.values(form.items).reduce(
                       (sum, item) => sum + item.recording_ids.length,
@@ -887,23 +1074,25 @@ export function CatalogBuilderWizard({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500 font-medium">
-                    Linked Request
+                    {t("agencyDashboard.catalogs.wizard.review.linkedRequest")}
                   </span>
                   <span className="font-semibold text-gray-900">
-                    {form.licensing_request_id ? "Yes" : "No"}
+                    {form.licensing_request_id
+                      ? t("agencyDashboard.catalogs.wizard.review.yes")
+                      : t("agencyDashboard.catalogs.wizard.review.no")}
                   </span>
                 </div>
               </div>
               {form.client_email ? (
                 <div className="p-3 bg-green-50 border border-green-100 rounded-xl text-sm font-medium text-green-800 flex items-center gap-2">
                   <Send className="w-4 h-4" />
-                  The catalog link will be emailed to{" "}
-                  <strong>{form.client_email}</strong>.
+                  {t("agencyDashboard.catalogs.wizard.review.emailNotice", {
+                    email: form.client_email,
+                  })}
                 </div>
               ) : (
                 <div className="p-3 bg-amber-50 border border-amber-100 rounded-xl text-sm font-medium text-amber-800">
-                  No client email set — you'll need to copy and share the link
-                  manually.
+                  {t("agencyDashboard.catalogs.wizard.review.noEmailWarning")}
                 </div>
               )}
             </div>
@@ -918,10 +1107,11 @@ export function CatalogBuilderWizard({
             className="h-10 px-5 rounded-xl font-semibold"
           >
             {stepIndex === 0 ? (
-              "Cancel"
+              t("agencyDashboard.catalogs.wizard.actions.cancel")
             ) : (
               <>
-                <ChevronLeft className="w-4 h-4 mr-1" /> Back
+                <ChevronLeft className="w-4 h-4 mr-1" />{" "}
+                {t("agencyDashboard.catalogs.wizard.actions.back")}
               </>
             )}
           </Button>
@@ -932,7 +1122,8 @@ export function CatalogBuilderWizard({
               disabled={!canNext()}
               className="h-10 px-5 rounded-xl font-bold bg-indigo-600 hover:bg-indigo-700"
             >
-              Next <ChevronRight className="w-4 h-4 ml-1" />
+              {t("agencyDashboard.catalogs.wizard.actions.next")}{" "}
+              <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           ) : (
             <Button
@@ -942,11 +1133,13 @@ export function CatalogBuilderWizard({
             >
               {createMutation.isPending ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Creating…
+                  <Loader2 className="w-4 h-4 animate-spin" />{" "}
+                  {t("agencyDashboard.catalogs.wizard.actions.creating")}
                 </>
               ) : (
                 <>
-                  <Send className="w-4 h-4" /> Create & Send
+                  <Send className="w-4 h-4" />{" "}
+                  {t("agencyDashboard.catalogs.wizard.actions.createAndSend")}
                 </>
               )}
             </Button>

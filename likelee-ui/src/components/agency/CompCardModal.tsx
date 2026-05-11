@@ -21,6 +21,7 @@ import {
   renderNodeToJpegDataUrl,
   renderNodeToPdfBlob,
 } from "@/lib/compCardEngine";
+import { useTranslation } from "react-i18next";
 
 interface CompCardModalProps {
   open: boolean;
@@ -41,6 +42,7 @@ const CompCardModal = ({
   agencyWebsite,
   logoUrl,
 }: CompCardModalProps) => {
+  const { t } = useTranslation("agency");
   const [selectedTemplate, setSelectedTemplate] = useState("classic");
   const [selectedTalentIds, setSelectedTalentIds] = useState<string[]>([]);
   const [selectedExportFormat, setSelectedExportFormat] = useState<
@@ -107,9 +109,13 @@ const CompCardModal = ({
       if (!session) {
         await supabase.auth.signOut();
         toast({
-          title: "Not signed in",
-          description:
-            "Please sign in again, then retry sharing the comp card.",
+          title: t("agencyDashboard.compCard.share.notSignedInTitle", {
+            defaultValue: "Not signed in",
+          }),
+          description: t("agencyDashboard.compCard.share.signInAgain", {
+            defaultValue:
+              "Please sign in again, then retry sharing the comp card.",
+          }),
           variant: "destructive",
         });
         throw new Error("Not authenticated");
@@ -127,9 +133,13 @@ const CompCardModal = ({
         ) {
           await supabase.auth.signOut();
           toast({
-            title: "Session expired",
-            description:
-              "Please sign in again, then retry sharing the comp card.",
+            title: t("agencyDashboard.compCard.share.sessionExpiredTitle", {
+              defaultValue: "Session expired",
+            }),
+            description: t("agencyDashboard.compCard.share.signInAgain", {
+              defaultValue:
+                "Please sign in again, then retry sharing the comp card.",
+            }),
             variant: "destructive",
           });
           throw new Error("Session expired");
@@ -182,26 +192,44 @@ const CompCardModal = ({
           ? JSON.stringify(first.detail)
           : String(first?.error || "send_failed");
         toast({
-          title: "Email not sent",
+          title: t("agencyDashboard.roster.reminder.emailNotSentTitle", {
+            defaultValue: "Email not sent",
+          }),
           description: detail,
           variant: "destructive",
         });
       } else if (failed.length > 0) {
         toast({
-          title: "Partially sent",
-          description: `${sent} sent, ${failed.length} failed.`,
+          title: t("agencyDashboard.compCard.share.partiallySent", {
+            defaultValue: "Partially sent",
+          }),
+          description: t("agencyDashboard.compCard.share.partialDescription", {
+            defaultValue: "{{sent}} sent, {{failed}} failed.",
+            sent,
+            failed: failed.length,
+          }),
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Sent",
-          description: "Comp card link sent to selected clients.",
+          title: t("agencyDashboard.compCard.share.sent", {
+            defaultValue: "Sent",
+          }),
+          description: t("agencyDashboard.compCard.share.success"),
         });
       }
     } catch (err: any) {
-      const msg = String(err?.message || err || "Failed to share comp card");
+      const msg = String(
+        err?.message ||
+          err ||
+          t("agencyDashboard.compCard.share.failed", {
+            defaultValue: "Failed to share comp card",
+          }),
+      );
       toast({
-        title: "Share failed",
+        title: t("agencyDashboard.compCard.share.shareFailed", {
+          defaultValue: "Share failed",
+        }),
         description: msg,
         variant: "destructive",
       });
@@ -358,10 +386,10 @@ const CompCardModal = ({
       <DialogContent className="max-w-[96vw] lg:max-w-5xl h-[92vh] lg:h-[80vh] flex flex-col p-0 overflow-hidden">
         <DialogHeader className="p-4 sm:p-6 pb-2">
           <DialogTitle className="text-2xl font-bold">
-            Comp Card Generator
+            {t("agencyDashboard.compCard.title")}
           </DialogTitle>
           <DialogDescription>
-            Create, export, and share comp cards with selected clients.
+            {t("agencyDashboard.compCard.description")}
           </DialogDescription>
         </DialogHeader>
 
@@ -371,7 +399,7 @@ const CompCardModal = ({
             {/* Template Selection */}
             <div className="space-y-3">
               <label className="text-sm font-bold text-gray-900">
-                Choose Template
+                {t("agencyDashboard.compCard.template.label")}
               </label>
               <div className="grid grid-cols-1 gap-3">
                 <div
@@ -388,10 +416,10 @@ const CompCardModal = ({
                     </div>
                     <div>
                       <p className="font-bold text-sm text-gray-900">
-                        Classic Layout
+                        {t("agencyDashboard.compCard.template.classic")}
                       </p>
                       <p className="text-xs text-gray-500">
-                        Traditional comp card with 5 photos
+                        {t("agencyDashboard.compCard.template.classicDesc")}
                       </p>
                     </div>
                   </div>
@@ -411,10 +439,10 @@ const CompCardModal = ({
                     </div>
                     <div>
                       <p className="font-bold text-sm text-gray-900">
-                        Modern Layout
+                        {t("agencyDashboard.compCard.template.modern")}
                       </p>
                       <p className="text-xs text-gray-500">
-                        Clean, contemporary design
+                        {t("agencyDashboard.compCard.template.modernDesc")}
                       </p>
                     </div>
                   </div>
@@ -434,10 +462,10 @@ const CompCardModal = ({
                     </div>
                     <div>
                       <p className="font-bold text-sm text-gray-900">
-                        Minimal Layout
+                        {t("agencyDashboard.compCard.template.minimal")}
                       </p>
                       <p className="text-xs text-gray-500">
-                        Simple, elegant style
+                        {t("agencyDashboard.compCard.template.minimalDesc")}
                       </p>
                     </div>
                   </div>
@@ -449,7 +477,7 @@ const CompCardModal = ({
             <div className="space-y-3 flex-1">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-bold text-gray-900">
-                  Select Talent
+                  {t("agencyDashboard.compCard.talent.label")}
                 </label>
               </div>
 
@@ -477,7 +505,7 @@ const CompCardModal = ({
                   ))}
                   {talents.length === 0 && (
                     <p className="text-center text-sm text-gray-500 py-4">
-                      No active talent found.
+                      {t("agencyDashboard.compCard.talent.noTalent")}
                     </p>
                   )}
                 </div>
@@ -487,12 +515,14 @@ const CompCardModal = ({
             {selectedCount > 0 ? (
               <div className="mt-auto space-y-3">
                 <div className="border border-purple-200 bg-purple-50 text-purple-700 font-bold text-sm rounded-lg px-3 py-2">
-                  {selectedCount} talent selected
+                  {t("agencyDashboard.compCard.talent.selected", {
+                    count: selectedCount,
+                  })}
                 </div>
 
                 <div className="space-y-2">
                   <div className="text-sm font-bold text-gray-900">
-                    Export format
+                    {t("agencyDashboard.compCard.export.label")}
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div
@@ -509,7 +539,7 @@ const CompCardModal = ({
                             PDF
                           </div>
                           <div className="text-xs text-gray-500">
-                            Print-ready
+                            {t("agencyDashboard.compCard.export.pdfDesc")}
                           </div>
                         </div>
                         {selectedExportFormat === "pdf" && (
@@ -533,7 +563,9 @@ const CompCardModal = ({
                           <div className="text-sm font-bold text-gray-900">
                             JPEG
                           </div>
-                          <div className="text-xs text-gray-500">Digital</div>
+                          <div className="text-xs text-gray-500">
+                            {t("agencyDashboard.compCard.export.jpegDesc")}
+                          </div>
                         </div>
                         {selectedExportFormat === "jpeg" && (
                           <div className="w-7 h-7 rounded-full bg-purple-600 flex items-center justify-center">
@@ -551,13 +583,11 @@ const CompCardModal = ({
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold h-12 rounded-xl shadow-lg shadow-purple-100"
                 >
                   {selectedExportFormat === "pdf"
-                    ? "Export 1 as PDF"
-                    : "Export 1 as JPEG"}
+                    ? t("agencyDashboard.compCard.export.exportPdf")
+                    : t("agencyDashboard.compCard.export.exportJpeg")}
                 </Button>
                 <div className="text-xs text-gray-500 leading-snug">
-                  Export downloads to your computer (your browser may ask where
-                  to save). Share will upload the selected format and email a
-                  link to the client.
+                  {t("agencyDashboard.compCard.export.description")}
                 </div>
                 <Button
                   onClick={() => setShareOpen(true)}
@@ -565,12 +595,12 @@ const CompCardModal = ({
                   variant="outline"
                   className="w-full font-bold h-12 rounded-xl"
                 >
-                  Share
+                  {t("agencyDashboard.compCard.export.share")}
                 </Button>
               </div>
             ) : (
               <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold h-12 rounded-xl mt-auto shadow-lg shadow-purple-100">
-                Generate Comp Cards
+                {t("agencyDashboard.compCard.export.generate")}
               </Button>
             )}
           </div>
@@ -578,7 +608,9 @@ const CompCardModal = ({
           {/* Right Panel: Preview */}
           <div className="w-full lg:flex-1 bg-gray-50 p-4 sm:p-6 lg:p-8 flex flex-col items-center justify-center overflow-y-auto">
             <div className="flex justify-between w-full max-w-md mb-3 sm:mb-4">
-              <h3 className="font-bold text-gray-500 text-sm">Preview</h3>
+              <h3 className="font-bold text-gray-500 text-sm">
+                {t("agencyDashboard.compCard.preview")}
+              </h3>
             </div>
 
             {previewTalentComputed ? (
@@ -844,7 +876,11 @@ const CompCardModal = ({
               </div>
             ) : (
               <div className="text-center text-gray-400">
-                <p>Select a talent to preview</p>
+                <p>
+                  {t("agencyDashboard.compCard.talent.selectToPreview", {
+                    defaultValue: "Select a talent to preview",
+                  })}
+                </p>
               </div>
             )}
           </div>
@@ -905,6 +941,7 @@ const ShareCompCardDialog = ({
   canSend: boolean;
   sending: boolean;
 }) => {
+  const { t } = useTranslation("agency");
   const filtered = useMemo(() => {
     const q = clientSearch.trim().toLowerCase();
     const arr = Array.isArray(clients) ? clients : [];
@@ -921,29 +958,31 @@ const ShareCompCardDialog = ({
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">
-            Share Comp Card
+            {t("agencyDashboard.compCard.share.title")}
           </DialogTitle>
           <DialogDescription>
-            Select clients and send the comp card link.
+            {t("agencyDashboard.compCard.share.description")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-bold text-gray-900">
-              Select clients
+              {t("agencyDashboard.compCard.share.selectClients")}
             </label>
             <Input
               value={clientSearch}
               onChange={(e) => setClientSearch(e.target.value)}
-              placeholder="Search by name or email"
+              placeholder={t(
+                "agencyDashboard.compCard.share.searchPlaceholder",
+              )}
             />
             <div className="rounded-xl border border-gray-200">
               <ScrollArea className="h-56 p-2">
                 <div className="space-y-1">
                   {clientsLoading ? (
                     <div className="p-3 text-sm text-gray-500">
-                      Loading clients...
+                      {t("agencyDashboard.compCard.share.loading")}
                     </div>
                   ) : filtered.length > 0 ? (
                     filtered.map((c: any) => {
@@ -976,7 +1015,7 @@ const ShareCompCardDialog = ({
                     })
                   ) : (
                     <div className="p-3 text-sm text-gray-500">
-                      No clients found.
+                      {t("agencyDashboard.compCard.share.noClients")}
                     </div>
                   )}
                 </div>
@@ -986,21 +1025,27 @@ const ShareCompCardDialog = ({
 
           <div className="space-y-2">
             <label className="text-sm font-bold text-gray-900">
-              Subject (optional)
+              {t("agencyDashboard.compCard.share.subject")}
             </label>
             <Input
               value={shareSubject}
               onChange={(e) => setShareSubject(e.target.value)}
-              placeholder="Comp Card from Likelee"
+              placeholder={t(
+                "agencyDashboard.compCard.share.subjectPlaceholder",
+              )}
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-bold text-gray-900">Message</label>
+            <label className="text-sm font-bold text-gray-900">
+              {t("agencyDashboard.compCard.share.message")}
+            </label>
             <Textarea
               value={shareMessage}
               onChange={(e) => setShareMessage(e.target.value)}
-              placeholder='Write a custom message e.g. "I have a talent suitable for the job..."'
+              placeholder={t(
+                "agencyDashboard.compCard.share.messagePlaceholder",
+              )}
               className="min-h-[120px]"
             />
           </div>
@@ -1011,14 +1056,16 @@ const ShareCompCardDialog = ({
               onClick={() => onOpenChange(false)}
               disabled={sending}
             >
-              Cancel
+              {t("agencyDashboard.compCard.share.cancel")}
             </Button>
             <Button
               onClick={onSend}
               disabled={!canSend || sending}
               className="font-bold"
             >
-              {sending ? "Sending..." : "Send"}
+              {sending
+                ? t("agencyDashboard.compCard.share.sending")
+                : t("agencyDashboard.compCard.share.send")}
             </Button>
           </div>
         </div>

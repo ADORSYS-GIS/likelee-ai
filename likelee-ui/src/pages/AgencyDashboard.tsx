@@ -13739,7 +13739,7 @@ export const RosterView = ({
           <div className="flex flex-col items-center justify-center py-20 bg-gray-50">
             <Shield className="w-16 h-16 text-gray-300 mb-4" />
             <p className="text-gray-500 font-medium">
-              License management coming soon
+              {t("agencyDashboard.licenses.comingSoon")}
             </p>
           </div>
         )}
@@ -20794,7 +20794,7 @@ export default function AgencyDashboard() {
               "Campaigns",
             ],
             disabled: !irlAddonEntitlement,
-            disabledReason: "Requires IRL Booking add-on",
+            disabledReason: t("agencyDashboard.navigation.irlBookingRequired"),
           },
           { id: "payouts", label: "Payouts", icon: DollarSign },
           {
@@ -21530,7 +21530,9 @@ export default function AgencyDashboard() {
               {irlAddonLocked ? (
                 <>
                   <Crown className="w-4 h-4 mr-2 text-amber-600" />
-                  Add IRL Booking
+                  {t("agencyDashboard.navigation.addIrlBooking", {
+                    defaultValue: "IRL-Buchung hinzufügen",
+                  })}
                 </>
               ) : (
                 <>
@@ -21947,8 +21949,19 @@ export default function AgencyDashboard() {
                   const message = supportMessage.trim();
                   if (!subject || !message) {
                     toast({
-                      title: "Missing details",
-                      description: "Please add a subject and message.",
+                      title: t(
+                        "agencyDashboard.support.toasts.missingDetails",
+                        {
+                          defaultValue: "Fehlende Angaben",
+                        },
+                      ),
+                      description: t(
+                        "agencyDashboard.support.toasts.missingDetailsDescription",
+                        {
+                          defaultValue:
+                            "Bitte fügen Sie einen Betreff und eine Nachricht hinzu.",
+                        },
+                      ),
                       variant: "destructive" as any,
                     });
                     return;
@@ -21969,17 +21982,34 @@ export default function AgencyDashboard() {
                     });
 
                     toast({
-                      title: "Message sent",
-                      description: "Support will get back to you shortly.",
+                      title: t("agencyDashboard.support.toasts.messageSent", {
+                        defaultValue: "Nachricht gesendet",
+                      }),
+                      description: t(
+                        "agencyDashboard.support.toasts.messageSentDescription",
+                        {
+                          defaultValue:
+                            "Der Support meldet sich in Kürze bei Ihnen.",
+                        },
+                      ),
                     });
                     setShowSupportDialog(false);
                     setSupportSubject("");
                     setSupportMessage("");
                   } catch (e: any) {
                     toast({
-                      title: "Failed to send",
+                      title: t("agencyDashboard.support.toasts.failedToSend", {
+                        defaultValue: "Senden fehlgeschlagen",
+                      }),
                       description:
-                        e?.message || "Could not send your message to support.",
+                        e?.message ||
+                        t(
+                          "agencyDashboard.support.toasts.failedToSendDescription",
+                          {
+                            defaultValue:
+                              "Ihre Nachricht an den Support konnte nicht gesendet werden.",
+                          },
+                        ),
                       variant: "destructive" as any,
                     });
                   } finally {
@@ -21988,7 +22018,9 @@ export default function AgencyDashboard() {
                 }}
                 disabled={supportSending}
               >
-                {supportSending ? "Sending..." : "Send"}
+                {supportSending
+                  ? t("agencyDashboard.roster.states.sending")
+                  : t("agencyDashboard.roster.actions.send")}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -22018,7 +22050,9 @@ export default function AgencyDashboard() {
                                   ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-white ring-amber-200"
                                   : "bg-white text-gray-900 ring-gray-200"
                         }`}
-                        title="Current plan"
+                        title={t(
+                          "agencyDashboard.dashboard.banner.currentPlan",
+                        )}
                       >
                         {agencyTrialActive ? (
                           <span className="inline-flex items-center gap-2">
@@ -22470,7 +22504,11 @@ export default function AgencyDashboard() {
               {(kycEmbedLoading || !kycSessionUrl) && (
                 <div className="absolute inset-0 z-10 bg-white flex flex-col items-center justify-center gap-3">
                   <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
-                  <p className="text-sm text-gray-700">Loading verification…</p>
+                  <p className="text-sm text-gray-700">
+                    {t("agencyDashboard.kyc.loadingVerification", {
+                      defaultValue: "Verifizierung wird geladen…",
+                    })}
+                  </p>
                 </div>
               )}
               <div id="veriff-kyc-embedded-agency" className="w-full h-full" />

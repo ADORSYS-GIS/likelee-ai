@@ -14,6 +14,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { parseBackendError } from "@/utils/errorParser";
 import * as crmApi from "@/api/crm";
+import { useTranslation } from "react-i18next";
 
 const AddContactModal = ({
   clientId,
@@ -24,6 +25,7 @@ const AddContactModal = ({
   isOpen: boolean;
   onClose: () => void;
 }) => {
+  const { t } = useTranslation("agency");
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
@@ -40,7 +42,12 @@ const AddContactModal = ({
       queryClient.invalidateQueries({
         queryKey: ["client-contacts", clientId],
       });
-      toast({ title: "Success", description: "Contact added successfully" });
+      toast({
+        title: t("agencyDashboard.clientCRM.toasts.successTitle"),
+        description: t(
+          "agencyDashboard.clientCRM.modal.profile.addContact.toasts.created",
+        ),
+      });
       onClose();
       setFormData({
         name: "",
@@ -52,8 +59,10 @@ const AddContactModal = ({
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: parseBackendError(error) || "Failed to add contact",
+        title: t("agencyDashboard.clientCRM.toasts.errorTitle"),
+        description:
+          parseBackendError(error) ||
+          t("agencyDashboard.clientCRM.modal.profile.addContact.toasts.failed"),
         variant: "destructive",
       });
     },
@@ -63,32 +72,44 @@ const AddContactModal = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px] rounded-2xl">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold">Add Contact</DialogTitle>
+          <DialogTitle className="text-xl font-bold">
+            {t("agencyDashboard.clientCRM.modal.profile.addContact.title")}
+          </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label className="font-bold">Full Name *</Label>
+            <Label className="font-bold">
+              {t("agencyDashboard.clientCRM.modal.profile.addContact.fullName")}
+            </Label>
             <Input
               value={formData.name}
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
-              placeholder="John Doe"
+              placeholder={t(
+                "agencyDashboard.clientCRM.modal.profile.addContact.placeholders.fullName",
+              )}
             />
           </div>
           <div className="space-y-2">
-            <Label className="font-bold">Role</Label>
+            <Label className="font-bold">
+              {t("agencyDashboard.clientCRM.modal.profile.addContact.role")}
+            </Label>
             <Input
               value={formData.role}
               onChange={(e) =>
                 setFormData({ ...formData, role: e.target.value })
               }
-              placeholder="Casting Director"
+              placeholder={t(
+                "agencyDashboard.clientCRM.modal.profile.addContact.placeholders.role",
+              )}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="font-bold">Email</Label>
+              <Label className="font-bold">
+                {t("agencyDashboard.clientCRM.modal.profile.addContact.email")}
+              </Label>
               <Input
                 value={formData.email}
                 onChange={(e) =>
@@ -98,7 +119,9 @@ const AddContactModal = ({
               />
             </div>
             <div className="space-y-2">
-              <Label className="font-bold">Phone</Label>
+              <Label className="font-bold">
+                {t("agencyDashboard.clientCRM.modal.profile.addContact.phone")}
+              </Label>
               <Input
                 value={formData.phone}
                 onChange={(e) =>
@@ -117,20 +140,22 @@ const AddContactModal = ({
               }
             />
             <Label htmlFor="is_primary" className="font-bold">
-              Primary Contact
+              {t("agencyDashboard.clientCRM.modal.profile.addContact.primary")}
             </Label>
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            Cancel
+            {t("agencyDashboard.clientCRM.actions.cancel")}
           </Button>
           <Button
             onClick={() => mutation.mutate(formData)}
             disabled={mutation.isPending}
             className="bg-indigo-600 hover:bg-indigo-700 text-white"
           >
-            {mutation.isPending ? "Adding..." : "Add Contact"}
+            {mutation.isPending
+              ? t("agencyDashboard.clientCRM.modal.addClient.actions.adding")
+              : t("agencyDashboard.clientCRM.modal.profile.actions.addContact")}
           </Button>
         </DialogFooter>
       </DialogContent>

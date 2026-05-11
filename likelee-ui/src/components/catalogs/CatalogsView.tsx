@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import {
   Plus,
   Copy,
@@ -38,7 +39,22 @@ export function CatalogsView({
 }: {
   isSportsAgency?: boolean;
 }) {
-  const entityPluralTitle = isSportsAgency ? "Athletes" : "Talents";
+  const { t: baseT } = useTranslation("agency");
+  const t = (key: string, options?: Record<string, unknown>) => {
+    const aliases: Record<string, string> = {
+      "agencyDashboard.catalogs.header.title": "agencyDashboard.catalogs.title",
+      "agencyDashboard.catalogs.header.subtitle":
+        "agencyDashboard.catalogs.subtitle",
+      "agencyDashboard.catalogs.emptyState.title":
+        "agencyDashboard.catalogs.empty.title",
+      "agencyDashboard.catalogs.emptyState.description":
+        "agencyDashboard.catalogs.empty.description",
+    };
+    return baseT(aliases[key] || key, options);
+  };
+  const entityPluralTitle = isSportsAgency
+    ? t("agencyDashboard.catalogs.previewModal.fields.athletes")
+    : t("agencyDashboard.catalogs.previewModal.fields.talents");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showBuilder, setShowBuilder] = useState(false);
@@ -56,13 +72,13 @@ export function CatalogsView({
   const deleteMutation = useMutation({
     mutationFn: (id: string) => catalogApi.remove(id),
     onSuccess: () => {
-      toast({ title: "Catalog deleted" });
+      toast({ title: t("agencyDashboard.catalogs.toasts.catalogDeleted") });
       queryClient.invalidateQueries({ queryKey: ["agency-catalogs"] });
       setDeleteId(null);
     },
     onError: (e: any) => {
       toast({
-        title: "Failed to delete catalog",
+        title: t("agencyDashboard.catalogs.toasts.failedToDelete"),
         description: String(e?.message || e),
         variant: "destructive" as any,
       });
@@ -72,7 +88,7 @@ export function CatalogsView({
   const copyLink = (token: string) => {
     const url = `${window.location.origin}/share/catalog/${token}`;
     navigator.clipboard.writeText(url);
-    toast({ title: "Link copied to clipboard!" });
+    toast({ title: t("agencyDashboard.catalogs.toasts.linkCopied") });
   };
 
   const catalogs: any[] = Array.isArray(catalogsQuery.data)
@@ -90,10 +106,11 @@ export function CatalogsView({
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Asset Catalogs</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            {t("agencyDashboard.catalogs.header.title")}
+          </h2>
           <p className="text-gray-500 font-medium text-sm mt-0.5">
-            Deliver licensed assets and voice recordings to clients after
-            payment.
+            {t("agencyDashboard.catalogs.header.subtitle")}
           </p>
         </div>
         <Button
@@ -101,20 +118,23 @@ export function CatalogsView({
           onClick={() => setShowBuilder(true)}
         >
           <Plus className="w-4 h-4" />
-          New Catalog
+          {t("agencyDashboard.catalogs.actions.newCatalog")}
         </Button>
       </div>
 
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {[
-          { label: "Total Catalogs", value: catalogs.length },
           {
-            label: "Sent",
+            label: t("agencyDashboard.catalogs.stats.totalCatalogs"),
+            value: catalogs.length,
+          },
+          {
+            label: t("agencyDashboard.catalogs.stats.sent"),
             value: catalogs.filter((c: any) => c.sent_at).length,
           },
           {
-            label: "Pending Delivery",
+            label: t("agencyDashboard.catalogs.stats.pendingDelivery"),
             value: catalogs.filter((c: any) => !c.sent_at).length,
           },
         ].map((stat) => (
@@ -141,18 +161,17 @@ export function CatalogsView({
             <Archive className="w-8 h-8 text-indigo-400" />
           </div>
           <h3 className="text-lg font-bold text-gray-900 mb-1">
-            No catalogs yet
+            {t("agencyDashboard.catalogs.emptyState.title")}
           </h3>
           <p className="text-sm text-gray-500 font-medium mb-6">
-            After a licensing payment clears, create a catalog to deliver the
-            assets and recordings to your client.
+            {t("agencyDashboard.catalogs.emptyState.description")}
           </p>
           <Button
             onClick={() => setShowBuilder(true)}
             className="rounded-xl font-bold"
           >
             <Plus className="w-4 h-4 mr-2" />
-            Create Catalog
+            {t("agencyDashboard.catalogs.actions.createCatalog")}
           </Button>
         </Card>
       ) : (
@@ -192,7 +211,7 @@ export function CatalogsView({
                         )}
                       </div>
                       <p className="text-xs text-gray-400 mt-0.5">
-                        Created{" "}
+                        {t("agencyDashboard.catalogs.card.created")}{" "}
                         {new Date(catalog.created_at).toLocaleDateString(
                           "en-US",
                           {
@@ -203,9 +222,9 @@ export function CatalogsView({
                         )}
                         {catalog.expires_at && (
                           <>
-                            {" • "}
+                            {" - "}
                             <span className="text-orange-500 font-medium">
-                              Expires{" "}
+                              {t("agencyDashboard.catalogs.card.expires")}{" "}
                               {new Date(
                                 catalog.expires_at,
                               ).toLocaleDateString()}
@@ -240,10 +259,10 @@ export function CatalogsView({
                       }
                     >
                       {isExpired
-                        ? "Expired"
+                        ? t("agencyDashboard.catalogs.status.expired")
                         : catalog.sent_at
-                          ? "Sent"
-                          : "Draft"}
+                          ? t("agencyDashboard.catalogs.status.sent")
+                          : t("agencyDashboard.catalogs.status.draft")}
                     </Badge>
                     <Button
                       size="sm"
@@ -255,7 +274,7 @@ export function CatalogsView({
                       }}
                     >
                       <Copy className="w-3.5 h-3.5" />
-                      Copy Link
+                      {t("agencyDashboard.catalogs.actions.copyLink")}
                     </Button>
                     <Button
                       size="sm"
@@ -295,20 +314,25 @@ export function CatalogsView({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Catalog?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t("agencyDashboard.catalogs.deleteModal.title")}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently remove the catalog and its share link. This
-              cannot be undone.
+              {t("agencyDashboard.catalogs.deleteModal.description")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>
+              {t("agencyDashboard.catalogs.deleteModal.cancel")}
+            </AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700 font-bold"
               onClick={() => deleteId && deleteMutation.mutate(deleteId)}
               disabled={deleteMutation.isPending}
             >
-              {deleteMutation.isPending ? "Deleting…" : "Delete"}
+              {deleteMutation.isPending
+                ? t("agencyDashboard.catalogs.deleteModal.deleting")
+                : t("agencyDashboard.catalogs.deleteModal.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -323,10 +347,10 @@ export function CatalogsView({
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
               <Library className="w-5 h-5 text-indigo-600" />
-              Catalog Preview
+              {t("agencyDashboard.catalogs.previewModal.title")}
             </DialogTitle>
             <DialogDescription>
-              Summary of the distribution settings for this catalog.
+              {t("agencyDashboard.catalogs.previewModal.description")}
             </DialogDescription>
           </DialogHeader>
 
@@ -354,7 +378,9 @@ export function CatalogsView({
                   <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-3 text-sm">
                     <div className="flex justify-between items-start">
                       <span className="text-gray-500 font-medium shrink-0">
-                        Title
+                        {t(
+                          "agencyDashboard.catalogs.previewModal.fields.title",
+                        )}
                       </span>
                       <span className="font-bold text-gray-900 text-right uppercase tracking-tight">
                         {previewCatalog.title}
@@ -362,7 +388,9 @@ export function CatalogsView({
                     </div>
                     <div className="flex justify-between items-start">
                       <span className="text-gray-500 font-medium shrink-0">
-                        Client
+                        {t(
+                          "agencyDashboard.catalogs.previewModal.fields.client",
+                        )}
                       </span>
                       <span className="font-semibold text-gray-900 text-right">
                         {previewCatalog.client_name || "—"}
@@ -370,7 +398,9 @@ export function CatalogsView({
                     </div>
                     <div className="flex justify-between items-start">
                       <span className="text-gray-500 font-medium shrink-0">
-                        Recipient
+                        {t(
+                          "agencyDashboard.catalogs.previewModal.fields.recipient",
+                        )}
                       </span>
                       <span className="font-semibold text-gray-900 text-right">
                         {previewCatalog.client_email || "—"}
@@ -379,14 +409,18 @@ export function CatalogsView({
                     {previewCatalog.licensing_request_id && (
                       <div className="flex justify-between items-start">
                         <span className="text-gray-500 font-medium shrink-0">
-                          Payment
+                          {t(
+                            "agencyDashboard.catalogs.previewModal.fields.payment",
+                          )}
                         </span>
                         <span
                           className={`font-bold text-right ${
                             isPaid ? "text-emerald-600" : "text-amber-600"
                           }`}
                         >
-                          {isPaid ? "Paid" : "Unpaid"}
+                          {isPaid
+                            ? t("agencyDashboard.catalogs.status.paid")
+                            : t("agencyDashboard.catalogs.status.unpaid")}
                         </span>
                       </div>
                     )}
@@ -403,7 +437,9 @@ export function CatalogsView({
                       </div>
                       <div className="flex flex-col">
                         <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-                          Assets
+                          {t(
+                            "agencyDashboard.catalogs.previewModal.fields.assets",
+                          )}
                         </span>
                         <span className="font-bold text-gray-900">
                           {assetCount}
@@ -411,7 +447,9 @@ export function CatalogsView({
                       </div>
                       <div className="flex flex-col">
                         <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-                          Voice
+                          {t(
+                            "agencyDashboard.catalogs.previewModal.fields.voice",
+                          )}
                         </span>
                         <span className="font-bold text-gray-900">
                           {recordingCount}
@@ -423,21 +461,25 @@ export function CatalogsView({
 
                     <div className="flex justify-between">
                       <span className="text-gray-500 font-medium">
-                        Linked Receipt
+                        {t(
+                          "agencyDashboard.catalogs.previewModal.fields.linkedReceipt",
+                        )}
                       </span>
                       <span
                         className={`font-bold ${isExpired ? "text-red-600" : previewCatalog.licensing_request_id ? "text-green-600" : "text-gray-400"}`}
                       >
                         {isExpired
-                          ? "Expired"
+                          ? t("agencyDashboard.catalogs.status.expired")
                           : previewCatalog.licensing_request_id
-                            ? "Active"
-                            : "No"}
+                            ? t("agencyDashboard.catalogs.status.active")
+                            : t("agencyDashboard.catalogs.status.no")}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500 font-medium">
-                        Created On
+                        {t(
+                          "agencyDashboard.catalogs.previewModal.fields.createdOn",
+                        )}
                       </span>
                       <span className="font-semibold text-gray-900">
                         {new Date(previewCatalog.created_at).toLocaleString()}
@@ -445,12 +487,16 @@ export function CatalogsView({
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500 font-medium text-orange-600">
-                        Expiration
+                        {t(
+                          "agencyDashboard.catalogs.previewModal.fields.expiration",
+                        )}
                       </span>
                       <span className="font-bold text-orange-600">
                         {previewCatalog.expires_at
                           ? new Date(previewCatalog.expires_at).toLocaleString()
-                          : "Mandatory (Missing)"}
+                          : t(
+                              "agencyDashboard.catalogs.previewModal.fields.mandatoryMissing",
+                            )}
                       </span>
                     </div>
                   </div>
@@ -460,7 +506,7 @@ export function CatalogsView({
               {previewCatalog.notes && (
                 <div className="space-y-1.5">
                   <span className="text-xs font-black uppercase tracking-widest text-gray-400">
-                    Internal Notes
+                    {t("agencyDashboard.catalogs.previewModal.internalNotes")}
                   </span>
                   <div className="p-4 bg-white border border-gray-100 rounded-xl text-sm text-gray-600 italic">
                     “{previewCatalog.notes}”
@@ -474,7 +520,7 @@ export function CatalogsView({
                   onClick={() => setPreviewCatalog(null)}
                   className="rounded-xl font-bold"
                 >
-                  Close
+                  {t("agencyDashboard.catalogs.previewModal.close")}
                 </Button>
                 <Button
                   onClick={() => {
@@ -484,7 +530,7 @@ export function CatalogsView({
                   className="bg-indigo-600 hover:bg-indigo-700 rounded-xl font-bold flex items-center gap-2"
                 >
                   <Copy className="w-4 h-4" />
-                  Copy Link
+                  {t("agencyDashboard.catalogs.previewModal.copyLink")}
                 </Button>
               </div>
             </div>

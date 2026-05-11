@@ -16,6 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useTranslation } from "react-i18next";
 
 interface TemplateCardProps {
   template: any;
@@ -32,6 +33,7 @@ export function TemplateCard({
   onDelete,
   isSportsAgency = false,
 }: TemplateCardProps) {
+  const { t } = useTranslation("agency");
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const talentCount = template.items?.length || 0;
   const coverImage = template.cover_image_url;
@@ -113,7 +115,8 @@ export function TemplateCard({
                     }}
                     className="font-bold text-xs uppercase tracking-wider cursor-pointer flex items-center"
                   >
-                    <Pencil className="w-4 h-4 mr-2" /> Edit
+                    <Pencil className="w-4 h-4 mr-2" />{" "}
+                    {t("agencyDashboard.packages.templateCard.edit")}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={(e) => {
@@ -122,7 +125,8 @@ export function TemplateCard({
                     }}
                     className="font-bold text-xs uppercase tracking-wider text-red-600 cursor-pointer flex items-center"
                   >
-                    <Trash2 className="w-4 h-4 mr-2" /> Delete
+                    <Trash2 className="w-4 h-4 mr-2" />{" "}
+                    {t("agencyDashboard.packages.templateCard.delete")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -138,7 +142,7 @@ export function TemplateCard({
             }}
           >
             <Send className="w-4 h-4 mr-2" />
-            Send to Client
+            {t("agencyDashboard.packages.templateCard.sendToClient")}
           </Button>
         </div>
       </Card>

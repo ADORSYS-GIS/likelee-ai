@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -78,6 +79,7 @@ import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
 import { useTeamAccess } from "@/features/team/useTeamAccess";
 
 export function AgencyDeliverablesView() {
+  const { t } = useTranslation("agency");
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { hasPermission } = useTeamAccess("agency");
@@ -240,7 +242,7 @@ export function AgencyDeliverablesView() {
       status === "contract_sent" || status === "contract_fully_signed";
     if (locked) {
       toast({
-        title: "Assignments locked",
+        title: t("agencyDashboard.deliverables.toasts.assignmentsLocked"),
         description:
           status === "contract_fully_signed"
             ? "Contract is already signed and you can’t change assigned talents."
@@ -260,8 +262,8 @@ export function AgencyDeliverablesView() {
       }
       await loadAssignments(offerId);
       toast({
-        title: "Talent unassigned",
-        description: "Talent was removed from this offer.",
+        title: t("agencyDashboard.deliverables.toasts.talentUnassigned"),
+        description: t("agencyDashboard.deliverables.toasts.talentRemoved"),
       });
       setUnassignDialog({
         open: false,
@@ -274,8 +276,10 @@ export function AgencyDeliverablesView() {
       });
     } catch (err: any) {
       toast({
-        title: "Unassign failed",
-        description: err?.message || "Please try again.",
+        title: t("agencyDashboard.deliverables.toasts.unassignFailed"),
+        description:
+          err?.message ||
+          t("agencyDashboard.deliverables.toasts.pleaseTryAgain"),
         variant: "destructive",
       });
       setUnassignDialog((prev) => ({ ...prev, submitting: false }));
@@ -474,10 +478,14 @@ export function AgencyDeliverablesView() {
 
   const deliverableStatusLabel = (statusRaw: unknown) => {
     const status = String(statusRaw || "submitted").toLowerCase();
-    if (status === "draft") return "Draft";
-    if (status === "brand_review") return "Sent to Brand";
-    if (status === "brand_approved") return "Brand Approved";
-    if (status === "submitted") return "New";
+    if (status === "draft")
+      return t("agencyDashboard.deliverables.statusLabels.draft");
+    if (status === "brand_review")
+      return t("agencyDashboard.deliverables.statusLabels.sentToBrand");
+    if (status === "brand_approved")
+      return t("agencyDashboard.deliverables.statusLabels.brandApproved");
+    if (status === "submitted")
+      return t("agencyDashboard.deliverables.statusLabels.new");
     return status.replace(/_/g, " ");
   };
 
@@ -486,11 +494,16 @@ export function AgencyDeliverablesView() {
       .toLowerCase()
       .trim();
     if (!status) return "";
-    if (status === "contract_fully_signed") return "Contract Signed";
-    if (status === "contract_sent") return "Contract Sent";
-    if (status === "sent") return "Sent";
-    if (status === "accepted") return "Accepted";
-    if (status === "open") return "Open";
+    if (status === "contract_fully_signed")
+      return t("agencyDashboard.deliverables.statusLabels.contractSigned");
+    if (status === "contract_sent")
+      return t("agencyDashboard.deliverables.statusLabels.contractSent");
+    if (status === "sent")
+      return t("agencyDashboard.deliverables.statusLabels.sent");
+    if (status === "accepted")
+      return t("agencyDashboard.deliverables.statusLabels.accepted");
+    if (status === "open")
+      return t("agencyDashboard.deliverables.statusLabels.open");
     return status.replace(/_/g, " ");
   };
 
@@ -554,7 +567,7 @@ export function AgencyDeliverablesView() {
         const caption =
           String(deliverable?.caption || "").trim() ||
           String(deliverable?.meta?.original_name || "").trim() ||
-          "Deliverable";
+          t("agencyDashboard.deliverables.deliverableCard.deliverable");
         const type = deliverableIsImage(deliverable)
           ? "image"
           : deliverableIsVideo(deliverable)
@@ -624,7 +637,8 @@ export function AgencyDeliverablesView() {
       statusValue === "changes_requested";
     const isDraft = statusValue === "draft";
     const canDelete =
-      options?.layout === "agency" &&
+      options?.layout ===
+        t("agencyDashboard.deliverables.payoutStatus.agency") &&
       (statusValue === "draft" || statusValue === "changes_requested");
     return (
       <Card
@@ -641,7 +655,10 @@ export function AgencyDeliverablesView() {
           {assetUrl && deliverableIsImage(deliverable) ? (
             <img
               src={resolvedUrl}
-              alt={caption || "Deliverable"}
+              alt={
+                caption ||
+                t("agencyDashboard.deliverables.deliverableCard.deliverable")
+              }
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             />
           ) : assetUrl && deliverableIsVideo(deliverable) ? (
@@ -695,7 +712,7 @@ export function AgencyDeliverablesView() {
             </Badge>
             {(agencyFeedback || brandFeedback) && (
               <Badge className="rounded-full border-0 bg-amber-500 text-white">
-                Feedback
+                {t("agencyDashboard.deliverables.deliverableCard.feedback")}
               </Badge>
             )}
           </div>
@@ -703,18 +720,28 @@ export function AgencyDeliverablesView() {
         <div className="p-4 space-y-3">
           <p className="text-xs text-gray-700 font-medium leading-relaxed line-clamp-2">
             {caption || (
-              <span className="text-gray-300 italic">No caption</span>
+              <span className="text-gray-300 italic">
+                {t("agencyDashboard.deliverables.deliverableCard.noCaption")}
+              </span>
             )}
           </p>
 
           {agencyFeedback && (
             <div className="p-2 bg-amber-50 border border-amber-100 text-[10px] text-amber-800 rounded-xl">
-              <strong>Your Feedback:</strong> {agencyFeedback}
+              <strong>
+                {t("agencyDashboard.deliverables.deliverableCard.yourFeedback")}
+              </strong>{" "}
+              {agencyFeedback}
             </div>
           )}
           {brandFeedback && (
             <div className="p-2 bg-blue-50 border border-blue-100 text-[10px] text-blue-800 rounded-xl">
-              <strong>Brand Feedback:</strong> {brandFeedback}
+              <strong>
+                {t(
+                  "agencyDashboard.deliverables.deliverableCard.brandFeedback",
+                )}
+              </strong>{" "}
+              {brandFeedback}
             </div>
           )}
 
@@ -741,13 +768,19 @@ export function AgencyDeliverablesView() {
                           }}
                           disabled={isFinalized || !canApproveDeliverables}
                         >
-                          Approve
+                          {t(
+                            "agencyDashboard.deliverables.deliverableCard.approve",
+                          )}
                         </Button>
                       </span>
                     </TooltipTrigger>
                     {!canApproveDeliverables && (
                       <TooltipContent>
-                        <p>Your role cannot approve deliverables</p>
+                        <p>
+                          {t(
+                            "agencyDashboard.deliverables.permissionCannotApprove",
+                          )}
+                        </p>
                       </TooltipContent>
                     )}
                   </Tooltip>
@@ -776,13 +809,19 @@ export function AgencyDeliverablesView() {
                         }}
                         disabled={isFinalized || !canApproveDeliverables}
                       >
-                        Revise
+                        {t(
+                          "agencyDashboard.deliverables.deliverableCard.revise",
+                        )}
                       </Button>
                     </span>
                   </TooltipTrigger>
                   {!canApproveDeliverables && (
                     <TooltipContent>
-                      <p>Your role cannot revise deliverables</p>
+                      <p>
+                        {t(
+                          "agencyDashboard.deliverables.permissionCannotRevise",
+                        )}
+                      </p>
                     </TooltipContent>
                   )}
                 </Tooltip>
@@ -808,13 +847,19 @@ export function AgencyDeliverablesView() {
                         }}
                         disabled={isFinalized || !canApproveDeliverables}
                       >
-                        Reject
+                        {t(
+                          "agencyDashboard.deliverables.deliverableCard.reject",
+                        )}
                       </Button>
                     </span>
                   </TooltipTrigger>
                   {!canApproveDeliverables && (
                     <TooltipContent>
-                      <p>Your role cannot reject deliverables</p>
+                      <p>
+                        {t(
+                          "agencyDashboard.deliverables.permissionCannotReject",
+                        )}
+                      </p>
                     </TooltipContent>
                   )}
                 </Tooltip>
@@ -822,7 +867,11 @@ export function AgencyDeliverablesView() {
             </div>
           )}
 
-          {options?.layout === "agency" && options?.offerId && isDraft && null}
+          {options?.layout ===
+            t("agencyDashboard.deliverables.payoutStatus.agency") &&
+            options?.offerId &&
+            isDraft &&
+            null}
         </div>
       </Card>
     );
@@ -867,8 +916,10 @@ export function AgencyDeliverablesView() {
       const result: any = await retryOfferTransfers(offerId);
       if (result?.nothing_to_retry) {
         toast({
-          title: "Nothing to retry",
-          description: "All transfers are already successful.",
+          title: t("agencyDashboard.deliverables.toasts.nothingToRetry"),
+          description: t(
+            "agencyDashboard.deliverables.toasts.allTransfersSuccessful",
+          ),
         });
       } else {
         // Show professional result modal
@@ -891,15 +942,18 @@ export function AgencyDeliverablesView() {
       const code = body?.code;
       if (code === "escrow_not_released") {
         toast({
-          title: "Not yet available",
-          description:
-            "Transfers can only be retried after the brand approves the deliverables.",
+          title: t("agencyDashboard.deliverables.toasts.notYetAvailable"),
+          description: t(
+            "agencyDashboard.deliverables.toasts.retryAfterApproval",
+          ),
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Retry failed",
-          description: err?.message || "Please try again.",
+          title: t("agencyDashboard.deliverables.toasts.retryFailed"),
+          description:
+            err?.message ||
+            t("agencyDashboard.deliverables.toasts.pleaseTryAgain"),
           variant: "destructive",
         });
       }
@@ -913,7 +967,7 @@ export function AgencyDeliverablesView() {
     if (assignSubmitting) return;
     if (assignmentLockedForOffer) {
       toast({
-        title: "Assignments locked",
+        title: t("agencyDashboard.deliverables.toasts.assignmentsLocked"),
         description:
           "You can change assigned talents before the contract is sent. This offer is already sent, so assignments can’t be changed.",
         variant: "warning",
@@ -933,7 +987,7 @@ export function AgencyDeliverablesView() {
       setAssignDialog({ open: false, offerId: "" });
       setAssignSelectedIds([]);
       setAssignSearch("");
-      toast({ title: "Talent assigned" });
+      toast({ title: t("agencyDashboard.deliverables.toasts.talentAssigned") });
     } catch (e: any) {
       const msg = String(e?.message || "");
       const isLockedAssignmentError =
@@ -941,11 +995,11 @@ export function AgencyDeliverablesView() {
         msg.includes("cannot_change_assignments_after_payment_started");
       toast({
         title: isLockedAssignmentError
-          ? "Assignments locked"
-          : "Assignment failed",
+          ? t("agencyDashboard.deliverables.toasts.assignmentsLocked")
+          : t("agencyDashboard.deliverables.toasts.assignmentFailed"),
         description: isLockedAssignmentError
           ? "This offer is already in progress, so talent assignments can’t be changed anymore."
-          : msg || "Please try again.",
+          : msg || t("agencyDashboard.deliverables.toasts.pleaseTryAgain"),
         variant: isLockedAssignmentError ? "warning" : "destructive",
       });
     } finally {
@@ -980,12 +1034,16 @@ export function AgencyDeliverablesView() {
         file: null,
         sending: false,
       });
-      toast({ title: "Asset request sent" });
+      toast({
+        title: t("agencyDashboard.deliverables.requestAssetModal.sendRequest"),
+      });
       await listOfferAssetRequests(requestDialog.offerId);
     } catch (e: any) {
       toast({
-        title: "Request failed",
-        description: e?.message || "Please try again.",
+        title: t("agencyDashboard.deliverables.requestAssetModal.sendRequest"),
+        description:
+          e?.message ||
+          t("agencyDashboard.deliverables.requestAssetModal.sending"),
         variant: "destructive",
       });
       setRequestDialog((prev) => ({ ...prev, sending: false }));
@@ -1023,11 +1081,14 @@ export function AgencyDeliverablesView() {
         assetRequestId: undefined,
         sending: false,
       });
-      toast({ title: "Deliverables uploaded" });
+      toast({
+        title: t("agencyDashboard.deliverables.toasts.deliverablesUploaded"),
+      });
     } catch (e: any) {
       toast({
-        title: "Upload failed",
-        description: e?.message || "Please try again.",
+        title: t("agencyDashboard.deliverables.toasts.uploadFailed"),
+        description:
+          e?.message || t("agencyDashboard.deliverables.toasts.pleaseTryAgain"),
         variant: "destructive",
       });
       setUploadDialog((prev) => ({ ...prev, sending: false }));
@@ -1038,8 +1099,10 @@ export function AgencyDeliverablesView() {
     if (!offerId) return;
     if (!canApproveDeliverables) {
       toast({
-        title: "Permission required",
-        description: "Your role cannot submit deliverables for approval.",
+        title: t("agencyDashboard.deliverables.toasts.permissionRequired"),
+        description: t(
+          "agencyDashboard.deliverables.toasts.cannotSubmitDeliverables",
+        ),
         variant: "destructive",
       });
       return;
@@ -1077,11 +1140,14 @@ export function AgencyDeliverablesView() {
     try {
       await submitAllDraftDeliverables(offerId);
       await loadDeliverables(offerId);
-      toast({ title: "Submitted to brand" });
+      toast({
+        title: t("agencyDashboard.deliverables.toasts.submittedToBrand"),
+      });
     } catch (e: any) {
       toast({
-        title: "Submit failed",
-        description: e?.message || "Please try again.",
+        title: t("agencyDashboard.deliverables.toasts.submitFailed"),
+        description:
+          e?.message || t("agencyDashboard.deliverables.toasts.pleaseTryAgain"),
         variant: "destructive",
       });
     } finally {
@@ -1094,8 +1160,10 @@ export function AgencyDeliverablesView() {
     if (reviewDialog.submitting) return;
     if (!canApproveDeliverables) {
       toast({
-        title: "Permission required",
-        description: "Your role cannot review deliverables.",
+        title: t("agencyDashboard.deliverables.toasts.permissionRequired"),
+        description: t(
+          "agencyDashboard.deliverables.toasts.cannotReviewDeliverables",
+        ),
         variant: "destructive",
       });
       return;
@@ -1119,11 +1187,14 @@ export function AgencyDeliverablesView() {
         note: "",
         submitting: false,
       });
-      toast({ title: "Review submitted" });
+      toast({
+        title: t("agencyDashboard.deliverables.toasts.reviewSubmitted"),
+      });
     } catch (e: any) {
       toast({
-        title: "Review failed",
-        description: e?.message || "Please try again.",
+        title: t("agencyDashboard.deliverables.toasts.reviewFailed"),
+        description:
+          e?.message || t("agencyDashboard.deliverables.toasts.pleaseTryAgain"),
         variant: "destructive",
       });
       setReviewDialog((prev) => ({ ...prev, submitting: false }));
@@ -1145,11 +1216,14 @@ export function AgencyDeliverablesView() {
         deliverableId: "",
         submitting: false,
       });
-      toast({ title: "Deliverable deleted" });
+      toast({
+        title: t("agencyDashboard.deliverables.toasts.deliverableDeleted"),
+      });
     } catch (e: any) {
       toast({
-        title: "Delete failed",
-        description: e?.message || "Please try again.",
+        title: t("agencyDashboard.deliverables.toasts.deleteFailed"),
+        description:
+          e?.message || t("agencyDashboard.deliverables.toasts.pleaseTryAgain"),
         variant: "destructive",
       });
       setDeleteDialog((prev) => ({ ...prev, submitting: false }));
@@ -1174,10 +1248,11 @@ export function AgencyDeliverablesView() {
         <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
           <Eye className="w-5 h-5 text-amber-600" />
           <div>
-            <p className="font-bold text-amber-800">View Only Mode</p>
+            <p className="font-bold text-amber-800">
+              {t("agencyDashboard.deliverables.viewOnlyMode")}
+            </p>
             <p className="text-sm text-amber-700">
-              Your role allows viewing deliverables but not approving or
-              managing them.
+              {t("agencyDashboard.deliverables.viewOnlyDescription")}
             </p>
           </div>
         </div>
@@ -1186,11 +1261,10 @@ export function AgencyDeliverablesView() {
         <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-400">
-              Offer Deliverables
+              {t("agencyDashboard.deliverables.title")}
             </h2>
             <p className="mt-2 text-gray-400 text-sm">
-              Assign talents, request assets, and review deliverables for brand
-              offers.
+              {t("agencyDashboard.deliverables.description")}
             </p>
           </div>
           <Button
@@ -1203,7 +1277,7 @@ export function AgencyDeliverablesView() {
             }}
           >
             <RefreshCw className="w-4 h-4 mr-2" />
-            Collapse All
+            {t("agencyDashboard.deliverables.collapseAll")}
           </Button>
         </div>
         <div className="absolute top-0 right-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl" />
@@ -1211,7 +1285,9 @@ export function AgencyDeliverablesView() {
 
       {offers.length === 0 ? (
         <Card className="p-12 text-center border-dashed border-2 bg-white/50 rounded-2xl">
-          <p className="text-gray-500 text-sm">No brand offers available.</p>
+          <p className="text-gray-500 text-sm">
+            {t("agencyDashboard.deliverables.noBrandOffers")}
+          </p>
         </Card>
       ) : (
         offers.map((offer, idx) => {
@@ -1245,12 +1321,14 @@ export function AgencyDeliverablesView() {
           const creatorDeliverables = deliverables.filter(
             (d: any) =>
               deliverableMatchesSelection(d) &&
-              String(d?.submitted_by_role || "") !== "agency",
+              String(d?.submitted_by_role || "") !==
+                t("agencyDashboard.deliverables.payoutStatus.agency"),
           );
           const agencyDeliverables = deliverables.filter(
             (d: any) =>
               deliverableMatchesSelection(d) &&
-              String(d?.submitted_by_role || "") === "agency",
+              String(d?.submitted_by_role || "") ===
+                t("agencyDashboard.deliverables.payoutStatus.agency"),
           );
           const hasDraftAgencyDeliverables = agencyDeliverables.some(
             (d: any) => String(d?.status || "").toLowerCase() === "draft",
@@ -1259,7 +1337,8 @@ export function AgencyDeliverablesView() {
           // not just those matching the currently selected talent.
           const hasAnyDraftAgencyDeliverables = deliverables.some(
             (d: any) =>
-              String(d?.submitted_by_role || "") === "agency" &&
+              String(d?.submitted_by_role || "") ===
+                t("agencyDashboard.deliverables.payoutStatus.agency") &&
               String(d?.status || "").toLowerCase() === "draft",
           );
           const isOfferPaid =
@@ -1311,11 +1390,12 @@ export function AgencyDeliverablesView() {
                       <h3 className="text-lg font-bold text-gray-900">
                         {offer?.offer_title ||
                           offer?.brand_campaigns?.name ||
-                          "Offer"}
+                          t("agencyDashboard.deliverables.offerCard.offer")}
                       </h3>
                       <div className="mt-0.5 flex flex-wrap items-center gap-2">
                         <span className="text-xs text-gray-400 break-words">
-                          {offer?.brands?.company_name || "Brand"}
+                          {offer?.brands?.company_name ||
+                            t("agencyDashboard.deliverables.offerCard.brand")}
                         </span>
                         <span className="hidden sm:block w-1 h-1 rounded-full bg-gray-300" />
                         <Badge
@@ -1327,13 +1407,21 @@ export function AgencyDeliverablesView() {
                         <Badge
                           className={`text-[10px] py-0 ${isOfferSigned ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-700"}`}
                         >
-                          {isOfferSigned ? "Signed" : "Not signed"}
+                          {isOfferSigned
+                            ? t("agencyDashboard.deliverables.offerCard.signed")
+                            : t(
+                                "agencyDashboard.deliverables.offerCard.notSigned",
+                              )}
                         </Badge>
                         {isOfferSigned ? (
                           <Badge
                             className={`text-[10px] py-0 ${isOfferPaid ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}
                           >
-                            {isOfferPaid ? "Paid" : "Awaiting Payment"}
+                            {isOfferPaid
+                              ? t("agencyDashboard.deliverables.offerCard.paid")
+                              : t(
+                                  "agencyDashboard.deliverables.offerCard.awaitingPayment",
+                                )}
                           </Badge>
                         ) : null}
                       </div>
@@ -1349,7 +1437,41 @@ export function AgencyDeliverablesView() {
                         openOffer(offerId);
                       }}
                     >
-                      {expanded ? "Hide" : "Open"}
+                      {expanded
+                        ? t("agencyDashboard.deliverables.offerCard.hide")
+                        : t("agencyDashboard.deliverables.offerCard.open")}
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="border-0 bg-gradient-to-r from-gray-900 to-slate-800 text-white hover:from-gray-800 hover:to-slate-700"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (offerAssignmentsLocked) {
+                          toast({
+                            title: t(
+                              "agencyDashboard.deliverables.toasts.assignmentsLocked",
+                            ),
+                            description: t(
+                              "agencyDashboard.deliverables.toasts.assignmentsLockedDescription",
+                              {
+                                defaultValue:
+                                  "You can change assigned talents before the contract is sent. This offer is already sent, so assignments cannot be changed.",
+                              },
+                            ),
+                            variant: "warning",
+                          });
+                          return;
+                        }
+                        setAssignDialog({ open: true, offerId });
+                      }}
+                      disabled={offerAssignmentsLocked}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      {assignments.length === 0
+                        ? t(
+                            "agencyDashboard.deliverables.offerCard.assignTalent",
+                          )
+                        : t("agencyDashboard.deliverables.offerCard.addTalent")}
                     </Button>
                   </div>
                 </div>
@@ -1358,9 +1480,10 @@ export function AgencyDeliverablesView() {
                 {offer?.status === "contract_fully_signed" && !isOfferPaid && (
                   <div className="mx-5 mb-3 flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
                     <span className="text-amber-700 text-xs font-semibold">
-                      ⏳ Brand payment is still pending. You can upload and
-                      submit deliverables now, but you’ll need to confirm the
-                      unpaid status before submitting.
+                      {t("agencyDashboard.deliverables.paymentPendingBanner", {
+                        defaultValue:
+                          "Brand payment is still pending. You can upload and submit deliverables now, but you'll need to confirm the unpaid status before submitting.",
+                      })}
                     </span>
                   </div>
                 )}
@@ -1373,7 +1496,11 @@ export function AgencyDeliverablesView() {
                     const isLoading = loadingTransferStatus[offerId];
                     const isRetrying = retryingTransfers[offerId];
                     const hasFailedTransfers = ts?.recipients?.some(
-                      (r: any) => r.transfer_status === "failed",
+                      (r: any) =>
+                        r.transfer_status ===
+                        t(
+                          "agencyDashboard.deliverables.retryTransferDialog.failed",
+                        ),
                     );
                     const allSucceeded =
                       ts?.recipients?.length > 0 &&
@@ -1387,7 +1514,10 @@ export function AgencyDeliverablesView() {
                           <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                         );
                       if (
-                        r.transfer_status === "failed" ||
+                        r.transfer_status ===
+                          t(
+                            "agencyDashboard.deliverables.retryTransferDialog.failed",
+                          ) ||
                         r.transfer_status === "pending_retry"
                       )
                         return (
@@ -1399,12 +1529,33 @@ export function AgencyDeliverablesView() {
                     };
 
                     const statusLabel = (r: any) => {
-                      if (r.transfer_status === "created") return "transferred";
+                      if (r.transfer_status === "created")
+                        return t(
+                          "agencyDashboard.deliverables.retryTransferDialog.transferred",
+                        );
                       if (r.transfer_status === "pending_retry")
-                        return "retrying\u2026";
-                      if (r.transfer_status === "failed") return "failed";
-                      if (r.transfer_status === "reversed") return "reversed";
-                      return "not attempted";
+                        return t(
+                          "agencyDashboard.deliverables.payoutStatus.retrying",
+                          { defaultValue: "retrying..." },
+                        );
+                      if (
+                        r.transfer_status ===
+                        t(
+                          "agencyDashboard.deliverables.retryTransferDialog.failed",
+                        )
+                      )
+                        return t(
+                          "agencyDashboard.deliverables.retryTransferDialog.failed",
+                        );
+                      if (r.transfer_status === "reversed")
+                        return t(
+                          "agencyDashboard.deliverables.payoutStatus.reversed",
+                          { defaultValue: "reversed" },
+                        );
+                      return t(
+                        "agencyDashboard.deliverables.payoutStatus.notAttempted",
+                        { defaultValue: "not attempted" },
+                      );
                     };
 
                     const friendlyReason = (reason: string) => {
@@ -1414,18 +1565,44 @@ export function AgencyDeliverablesView() {
                           "insufficient_capabilities_for_transfer",
                         )
                       )
-                        return "Stripe account not fully set up \u2014 transfers not enabled.";
+                        return t(
+                          "agencyDashboard.deliverables.payoutStatus.stripeTransfersNotEnabled",
+                          {
+                            defaultValue:
+                              "Stripe account not fully set up - transfers not enabled.",
+                          },
+                        );
                       if (reason.includes("transfers_not_allowed"))
-                        return "Transfers not allowed on this Stripe account.";
+                        return t(
+                          "agencyDashboard.deliverables.retryTransferDialog.transfersNotAllowed",
+                        );
                       if (reason.includes("payouts_not_allowed"))
-                        return "Payouts not allowed on this Stripe account.";
+                        return t(
+                          "agencyDashboard.deliverables.payoutStatus.payoutsNotAllowed",
+                          {
+                            defaultValue:
+                              "Payouts not allowed on this Stripe account.",
+                          },
+                        );
                       if (reason.includes("balance_insufficient"))
-                        return "Platform balance insufficient \u2014 contact support.";
+                        return t(
+                          "agencyDashboard.deliverables.payoutStatus.platformBalanceInsufficient",
+                          {
+                            defaultValue:
+                              "Platform balance insufficient - contact support.",
+                          },
+                        );
                       if (
                         reason.includes("no_stripe_account") ||
                         reason.includes("No Stripe Connect")
                       )
-                        return "No Stripe account connected. Ask them to complete Stripe onboarding.";
+                        return t(
+                          "agencyDashboard.deliverables.payoutStatus.noStripeConnected",
+                          {
+                            defaultValue:
+                              "No Stripe account connected. Ask them to complete Stripe onboarding.",
+                          },
+                        );
                       return reason.length > 120
                         ? reason.slice(0, 120) + "\u2026"
                         : reason;
@@ -1437,16 +1614,25 @@ export function AgencyDeliverablesView() {
                         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/60">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-bold text-gray-800">
-                              Payout Status
+                              {t(
+                                "agencyDashboard.deliverables.payoutStatus.title",
+                                { defaultValue: "Payout Status" },
+                              )}
                             </span>
                             {allSucceeded && (
                               <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                                all transferred
+                                {t(
+                                  "agencyDashboard.deliverables.payoutStatus.allTransferred",
+                                  { defaultValue: "all transferred" },
+                                )}
                               </span>
                             )}
                             {hasFailedTransfers && (
                               <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-                                action required
+                                {t(
+                                  "agencyDashboard.deliverables.payoutStatus.actionRequired",
+                                  { defaultValue: "action required" },
+                                )}
                               </span>
                             )}
                           </div>
@@ -1461,7 +1647,10 @@ export function AgencyDeliverablesView() {
                               <RefreshCw
                                 className={`w-3 h-3 mr-1 ${isLoading ? "animate-spin" : ""}`}
                               />
-                              Refresh
+                              {t(
+                                "agencyDashboard.deliverables.payoutStatus.refresh",
+                                { defaultValue: "Refresh" },
+                              )}
                             </Button>
                             {hasFailedTransfers && (
                               <Button
@@ -1475,7 +1664,10 @@ export function AgencyDeliverablesView() {
                                 ) : (
                                   <RotateCcw className="w-3 h-3" />
                                 )}
-                                Retry failed
+                                {t(
+                                  "agencyDashboard.deliverables.payoutStatus.retryFailed",
+                                  { defaultValue: "Retry failed" },
+                                )}
                               </Button>
                             )}
                           </div>
@@ -1486,12 +1678,21 @@ export function AgencyDeliverablesView() {
                           <div className="flex items-center justify-center py-6 gap-2 text-gray-400">
                             <Loader2 className="w-4 h-4 animate-spin" />
                             <span className="text-xs">
-                              Loading payout status\u2026
+                              {t(
+                                "agencyDashboard.deliverables.payoutStatus.loading",
+                                { defaultValue: "Loading payout status..." },
+                              )}
                             </span>
                           </div>
                         ) : !ts ? (
                           <div className="px-4 py-4 text-xs text-gray-400 text-center">
-                            Click refresh to load payout status.
+                            {t(
+                              "agencyDashboard.deliverables.payoutStatus.clickRefresh",
+                              {
+                                defaultValue:
+                                  "Click refresh to load payout status.",
+                              },
+                            )}
                           </div>
                         ) : (
                           <div className="divide-y divide-gray-100">
@@ -1509,46 +1710,81 @@ export function AgencyDeliverablesView() {
                                           {r.name}
                                         </span>
                                         <span className="text-[10px] text-gray-400 uppercase tracking-wide font-medium">
-                                          {r.recipient_type === "agency"
-                                            ? "agency"
-                                            : "talent"}
+                                          {r.recipient_type ===
+                                          t(
+                                            "agencyDashboard.deliverables.payoutStatus.agency",
+                                          )
+                                            ? t(
+                                                "agencyDashboard.deliverables.payoutStatus.agency",
+                                              )
+                                            : t(
+                                                "agencyDashboard.deliverables.payoutStatus.talent",
+                                              )}
                                         </span>
                                       </div>
                                       {/* Stripe health */}
                                       <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                         {!r.stripe_connected ? (
                                           <span className="text-[10px] text-red-600 font-semibold">
-                                            No Stripe account
+                                            {t(
+                                              "agencyDashboard.deliverables.payoutStatus.noStripeAccount",
+                                              {
+                                                defaultValue:
+                                                  "No Stripe account",
+                                              },
+                                            )}
                                           </span>
                                         ) : !r.stripe_transfers_enabled ? (
                                           <span className="text-[10px] text-amber-600 font-semibold">
-                                            Transfers not enabled
+                                            {t(
+                                              "agencyDashboard.deliverables.payoutStatus.transfersNotEnabled",
+                                              {
+                                                defaultValue:
+                                                  "Transfers not enabled",
+                                              },
+                                            )}
                                           </span>
                                         ) : (
                                           <span className="text-[10px] text-emerald-600 font-semibold">
-                                            Stripe ready
+                                            {t(
+                                              "agencyDashboard.deliverables.payoutStatus.stripeReady",
+                                              { defaultValue: "Stripe ready" },
+                                            )}
                                           </span>
                                         )}
                                         {r.retry_count > 0 && (
                                           <span className="text-[10px] text-gray-400">
                                             {r.retry_count}{" "}
                                             {r.retry_count === 1
-                                              ? "retry"
-                                              : "retries"}
+                                              ? t(
+                                                  "agencyDashboard.deliverables.payoutStatus.retry",
+                                                )
+                                              : t(
+                                                  "agencyDashboard.deliverables.payoutStatus.retries",
+                                                )}
                                           </span>
                                         )}
                                       </div>
-                                      {r.transfer_status === "failed" &&
+                                      {r.transfer_status ===
+                                        t(
+                                          "agencyDashboard.deliverables.retryTransferDialog.failed",
+                                        ) &&
                                         r.failure_reason && (
                                           <p className="text-[11px] text-amber-700 mt-1 leading-snug">
                                             {friendlyReason(r.failure_reason)}
                                           </p>
                                         )}
                                       {/* Fix Stripe account CTA */}
-                                      {r.transfer_status === "failed" &&
+                                      {r.transfer_status ===
+                                        t(
+                                          "agencyDashboard.deliverables.retryTransferDialog.failed",
+                                        ) &&
                                         !r.stripe_transfers_enabled && (
                                           <>
-                                            {r.recipient_type === "agency" ? (
+                                            {r.recipient_type ===
+                                            t(
+                                              "agencyDashboard.deliverables.payoutStatus.agency",
+                                            ) ? (
                                               // Agency = this user's own account → navigate to payouts
                                               <button
                                                 className="mt-1.5 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline underline-offset-2 flex items-center gap-1"
@@ -1559,15 +1795,25 @@ export function AgencyDeliverablesView() {
                                                 }
                                               >
                                                 <ArrowRight className="w-3 h-3" />
-                                                Fix your Stripe account
+                                                {t(
+                                                  "agencyDashboard.deliverables.payoutStatus.fixStripeAccount",
+                                                  {
+                                                    defaultValue:
+                                                      "Fix your Stripe account",
+                                                  },
+                                                )}
                                               </button>
                                             ) : (
                                               // Creator = talent's account → agency can't fix it, show guidance + message button
                                               <div className="mt-1.5 flex items-center gap-2 flex-wrap">
                                                 <p className="text-[11px] text-gray-500 leading-snug">
-                                                  Ask this talent to complete
-                                                  their Stripe onboarding in
-                                                  their portal.
+                                                  {t(
+                                                    "agencyDashboard.deliverables.payoutStatus.askTalentStripe",
+                                                    {
+                                                      defaultValue:
+                                                        "Ask this talent to complete their Stripe onboarding in their portal.",
+                                                    },
+                                                  )}
                                                 </p>
                                                 <button
                                                   className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline underline-offset-2 flex items-center gap-1 flex-shrink-0"
@@ -1578,7 +1824,13 @@ export function AgencyDeliverablesView() {
                                                   }
                                                 >
                                                   <Mail className="w-3 h-3" />
-                                                  Message talent
+                                                  {t(
+                                                    "agencyDashboard.deliverables.payoutStatus.messageTalent",
+                                                    {
+                                                      defaultValue:
+                                                        "Message talent",
+                                                    },
+                                                  )}
                                                 </button>
                                               </div>
                                             )}
@@ -1595,7 +1847,10 @@ export function AgencyDeliverablesView() {
                                       className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${
                                         r.transfer_status === "created"
                                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                          : r.transfer_status === "failed"
+                                          : r.transfer_status ===
+                                              t(
+                                                "agencyDashboard.deliverables.retryTransferDialog.failed",
+                                              )
                                             ? "bg-amber-50 text-amber-700 border-amber-200"
                                             : r.transfer_status ===
                                                 "pending_retry"
@@ -1627,11 +1882,17 @@ export function AgencyDeliverablesView() {
                       <div className="p-4 space-y-4 bg-gray-50/50">
                         {loadingAssignments[offerId] ? (
                           <p className="text-xs text-gray-500">
-                            Loading assignments...
+                            {t(
+                              "agencyDashboard.deliverables.assignTalent.loadingAssignments",
+                              { defaultValue: "Loading assignments..." },
+                            )}
                           </p>
                         ) : assignments.length === 0 ? (
                           <p className="text-xs text-gray-500">
-                            No talents assigned yet.
+                            {t(
+                              "agencyDashboard.deliverables.assignTalent.noAssigned",
+                              { defaultValue: "No talents assigned yet." },
+                            )}
                           </p>
                         ) : (
                           <div className="space-y-2">
@@ -1668,10 +1929,15 @@ export function AgencyDeliverablesView() {
                                         {talent?.stage_name ||
                                           talent?.full_name ||
                                           talent?.full_legal_name ||
-                                          "Talent"}
+                                          t(
+                                            "agencyDashboard.deliverables.assignTalent.talentFallback",
+                                          )}
                                       </p>
                                       <p className="text-xs text-gray-500">
-                                        Assigned
+                                        {t(
+                                          "agencyDashboard.deliverables.assignTalent.assigned",
+                                          { defaultValue: "Assigned" },
+                                        )}
                                       </p>
                                     </div>
                                   </div>
@@ -1681,7 +1947,10 @@ export function AgencyDeliverablesView() {
                                         size="icon"
                                         variant="outline"
                                         className="h-8 w-8 border-red-200 text-red-600 hover:bg-red-50"
-                                        title="Unassign talent"
+                                        title={t(
+                                          "agencyDashboard.deliverables.assignTalent.unassignTalent",
+                                          { defaultValue: "Unassign talent" },
+                                        )}
                                         onClick={async (e) => {
                                           e.stopPropagation();
                                           if (!assignment?.id) return;
@@ -1689,7 +1958,9 @@ export function AgencyDeliverablesView() {
                                             talent?.stage_name ||
                                               talent?.full_name ||
                                               talent?.full_legal_name ||
-                                              "Talent",
+                                              t(
+                                                "agencyDashboard.deliverables.assignTalent.talentFallback",
+                                              ),
                                           );
                                           setUnassignDialog({
                                             open: true,
@@ -1744,7 +2015,10 @@ export function AgencyDeliverablesView() {
                                         })
                                       }
                                     >
-                                      Request Asset
+                                      {t(
+                                        "agencyDashboard.deliverables.requestAssetModal.requestAsset",
+                                        { defaultValue: "Request Asset" },
+                                      )}
                                     </Button>
                                   </div>
                                 </div>
@@ -1758,7 +2032,7 @@ export function AgencyDeliverablesView() {
                             <div className="flex items-center justify-between">
                               <div>
                                 <p className="text-sm font-semibold text-gray-900">
-                                  Deliverables
+                                  {t("agencyDashboard.deliverables.title")}
                                 </p>
                                 <p className="text-xs text-gray-500">
                                   {selectedAssignment?.creators?.full_name ||
@@ -1766,7 +2040,9 @@ export function AgencyDeliverablesView() {
                                       ?.stage_name ||
                                     selectedAssignment?.agency_users
                                       ?.full_legal_name ||
-                                    "Talent"}
+                                    t(
+                                      "agencyDashboard.deliverables.assignTalent.talentFallback",
+                                    )}
                                 </p>
                               </div>
                               <div className="flex items-center gap-2">
@@ -1784,7 +2060,10 @@ export function AgencyDeliverablesView() {
                                   {submittingDrafts[offerId] ? (
                                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
                                   ) : null}
-                                  Submit to Brand
+                                  {t(
+                                    "agencyDashboard.deliverables.submitToBrand",
+                                    { defaultValue: "Submit to Brand" },
+                                  )}
                                 </Button>
                                 <Button
                                   size="sm"
@@ -1800,24 +2079,36 @@ export function AgencyDeliverablesView() {
                                     })
                                   }
                                 >
-                                  <Upload className="w-4 h-4 mr-2" /> Upload
+                                  <Upload className="w-4 h-4 mr-2" />{" "}
+                                  {t("agencyDashboard.deliverables.upload", {
+                                    defaultValue: "Upload",
+                                  })}
                                 </Button>
                               </div>
                             </div>
 
                             {loadingDeliverables[offerId] ? (
                               <p className="text-xs text-gray-500">
-                                Loading deliverables...
+                                {t(
+                                  "agencyDashboard.deliverables.loadingDeliverables",
+                                  { defaultValue: "Loading deliverables..." },
+                                )}
                               </p>
                             ) : (
                               <div className="space-y-6">
                                 <div className="border border-gray-200 rounded-2xl p-4 bg-white">
                                   <p className="text-sm font-semibold text-gray-900 mb-3">
-                                    Creator uploads
+                                    {t(
+                                      "agencyDashboard.deliverables.creatorUploads",
+                                      { defaultValue: "Creator uploads" },
+                                    )}
                                   </p>
                                   {creatorDeliverables.length === 0 ? (
                                     <p className="text-xs text-gray-400">
-                                      None yet.
+                                      {t(
+                                        "agencyDashboard.deliverables.noneYet",
+                                        { defaultValue: "None yet." },
+                                      )}
                                     </p>
                                   ) : (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
@@ -1838,11 +2129,17 @@ export function AgencyDeliverablesView() {
                                 </div>
                                 <div className="border border-gray-200 rounded-2xl p-4 bg-white">
                                   <p className="text-sm font-semibold text-gray-900 mb-3">
-                                    Agency uploads
+                                    {t(
+                                      "agencyDashboard.deliverables.agencyUploads",
+                                      { defaultValue: "Agency uploads" },
+                                    )}
                                   </p>
                                   {agencyDeliverables.length === 0 ? (
                                     <p className="text-xs text-gray-400">
-                                      None yet.
+                                      {t(
+                                        "agencyDashboard.deliverables.noneYet",
+                                        { defaultValue: "None yet." },
+                                      )}
                                     </p>
                                   ) : (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
@@ -1850,7 +2147,9 @@ export function AgencyDeliverablesView() {
                                         (d: any, idx: number) =>
                                           renderDeliverableCard(d, {
                                             offerId,
-                                            layout: "agency",
+                                            layout: t(
+                                              "agencyDashboard.deliverables.payoutStatus.agency",
+                                            ),
                                             galleryItems: buildGalleryItems(
                                               agencyDeliverables,
                                               offerId,
@@ -1888,26 +2187,32 @@ export function AgencyDeliverablesView() {
         <DialogContent className="w-[96vw] max-w-[96vw] sm:max-w-2xl rounded-2xl sm:rounded-[3rem] p-4 sm:p-10 border-none bg-white/95 backdrop-blur-xl shadow-2xl max-h-[90vh] overflow-hidden">
           <DialogHeader className="mb-8">
             <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight">
-              Assign Talent
+              {t("agencyDashboard.deliverables.assignTalent.title")}
             </DialogTitle>
             <p className="text-sm text-gray-500 font-medium mt-1">
-              Select one or more talents from your roster to assign to this
-              offer.
+              {t("agencyDashboard.deliverables.assignTalent.description", {
+                defaultValue:
+                  "Select one or more talents from your roster to assign to this offer.",
+              })}
             </p>
           </DialogHeader>
 
           <Alert className="mb-6 bg-blue-50 border-blue-200 rounded-xl">
             <AlertDescription className="text-sm text-blue-900 font-medium">
-              You can change assigned talents any time before the contract is
-              sent. Once you send the contract, assignments are locked.
+              {t("agencyDashboard.deliverables.assignTalent.lockHint", {
+                defaultValue:
+                  "You can change assigned talents any time before the contract is sent. Once you send the contract, assignments are locked.",
+              })}
             </AlertDescription>
           </Alert>
 
           {assignmentLockedForOffer ? (
             <Alert className="mb-6 bg-amber-50 border-amber-200 rounded-xl">
               <AlertDescription className="text-sm text-amber-900 font-semibold">
-                This offer’s contract has already been sent. Talent assignments
-                are locked.
+                {t("agencyDashboard.deliverables.assignTalent.lockedWarning", {
+                  defaultValue:
+                    "This offer's contract has already been sent. Talent assignments are locked.",
+                })}
               </AlertDescription>
             </Alert>
           ) : null}
@@ -1915,7 +2220,9 @@ export function AgencyDeliverablesView() {
           <div className="relative mb-8">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
-              placeholder="Filter by name or email..."
+              placeholder={t(
+                "agencyDashboard.deliverables.assignTalent.filterPlaceholder",
+              )}
               value={assignSearch}
               onChange={(e) => setAssignSearch(e.target.value)}
               className="h-12 pl-10 bg-gray-100 border-none rounded-xl"
@@ -1927,10 +2234,18 @@ export function AgencyDeliverablesView() {
               <div className="h-[420px] flex flex-col items-center justify-center text-center">
                 <Loader2 className="w-10 h-10 animate-spin text-gray-300 mb-4" />
                 <p className="text-sm font-bold text-gray-500">
-                  Loading talents…
+                  {t(
+                    "agencyDashboard.deliverables.assignTalent.loadingTalents",
+                    {
+                      defaultValue: "Loading talents...",
+                    },
+                  )}
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  Fetching your agency roster.
+                  {t(
+                    "agencyDashboard.deliverables.assignTalent.fetchingRoster",
+                    { defaultValue: "Fetching your agency roster." },
+                  )}
                 </p>
               </div>
             ) : (
@@ -1949,7 +2264,9 @@ export function AgencyDeliverablesView() {
                     talent?.stage_name ||
                     talent?.name ||
                     talent?.full_legal_name ||
-                    "Talent";
+                    t(
+                      "agencyDashboard.deliverables.assignTalent.talentFallback",
+                    );
                   return (
                     <Card
                       key={
@@ -2159,25 +2476,38 @@ export function AgencyDeliverablesView() {
                       {r.name}
                     </span>
                     <span className="text-[10px] text-gray-400 uppercase tracking-wide font-medium flex-shrink-0">
-                      {r.recipient_type === "agency" ? "agency" : "talent"}
+                      {r.recipient_type ===
+                      t("agencyDashboard.deliverables.payoutStatus.agency")
+                        ? t("agencyDashboard.deliverables.payoutStatus.agency")
+                        : t("agencyDashboard.deliverables.payoutStatus.talent")}
                     </span>
                   </div>
-                  {r.result === "failed" && r.failure_reason && (
-                    <p className="text-[11px] text-amber-700 mt-0.5 leading-snug">
-                      {r.failure_reason.includes(
-                        "insufficient_capabilities_for_transfer",
-                      )
-                        ? "Stripe account not fully set up — transfers not enabled."
-                        : r.failure_reason.includes("transfers_not_allowed")
-                          ? "Transfers not allowed on this Stripe account."
-                          : r.failure_reason.includes("no_stripe_account") ||
-                              r.failure_reason.includes("No Stripe Connect")
-                            ? "No Stripe account connected."
-                            : r.failure_reason.length > 100
-                              ? r.failure_reason.slice(0, 100) + "\u2026"
-                              : r.failure_reason}
-                    </p>
-                  )}
+                  {r.result ===
+                    t(
+                      "agencyDashboard.deliverables.retryTransferDialog.failed",
+                    ) &&
+                    r.failure_reason && (
+                      <p className="text-[11px] text-amber-700 mt-0.5 leading-snug">
+                        {r.failure_reason.includes(
+                          "insufficient_capabilities_for_transfer",
+                        )
+                          ? t(
+                              "agencyDashboard.deliverables.retryTransferDialog.stripeNotSetup",
+                            )
+                          : r.failure_reason.includes("transfers_not_allowed")
+                            ? t(
+                                "agencyDashboard.deliverables.retryTransferDialog.transfersNotAllowed",
+                              )
+                            : r.failure_reason.includes("no_stripe_account") ||
+                                r.failure_reason.includes("No Stripe Connect")
+                              ? t(
+                                  "agencyDashboard.deliverables.retryTransferDialog.noStripeConnected",
+                                )
+                              : r.failure_reason.length > 100
+                                ? r.failure_reason.slice(0, 100) + "\u2026"
+                                : r.failure_reason}
+                      </p>
+                    )}
                   {r.result === "skipped_no_account" && (
                     <p className="text-[11px] text-gray-500 mt-0.5">
                       No Stripe account connected yet.
@@ -2198,10 +2528,16 @@ export function AgencyDeliverablesView() {
                     }`}
                   >
                     {r.result === "succeeded"
-                      ? "transferred"
+                      ? t(
+                          "agencyDashboard.deliverables.retryTransferDialog.transferred",
+                        )
                       : r.result === "skipped_no_account"
-                        ? "no account"
-                        : "failed"}
+                        ? t(
+                            "agencyDashboard.deliverables.retryTransferDialog.noAccount",
+                          )
+                        : t(
+                            "agencyDashboard.deliverables.retryTransferDialog.failed",
+                          )}
                   </span>
                 </div>
               </div>
@@ -2211,15 +2547,23 @@ export function AgencyDeliverablesView() {
           {/* Footer */}
           <div className="px-6 py-4 bg-gray-50/60 border-t border-gray-100 space-y-3">
             {retryResultDialog.results.some(
-              (r) => r.result === "failed" || r.result === "skipped_no_account",
+              (r) =>
+                r.result ===
+                  t(
+                    "agencyDashboard.deliverables.retryTransferDialog.failed",
+                  ) || r.result === "skipped_no_account",
             ) && (
               <div className="space-y-1.5">
                 {/* Agency-specific guidance */}
                 {retryResultDialog.results.some(
                   (r) =>
-                    (r.result === "failed" ||
+                    (r.result ===
+                      t(
+                        "agencyDashboard.deliverables.retryTransferDialog.failed",
+                      ) ||
                       r.result === "skipped_no_account") &&
-                    r.recipient_type === "agency",
+                    r.recipient_type ===
+                      t("agencyDashboard.deliverables.payoutStatus.agency"),
                 ) && (
                   <p className="text-xs text-gray-500 leading-relaxed">
                     Your Stripe account needs attention. Complete your Stripe
@@ -2229,7 +2573,10 @@ export function AgencyDeliverablesView() {
                 {/* Creator-specific guidance */}
                 {retryResultDialog.results.some(
                   (r) =>
-                    (r.result === "failed" ||
+                    (r.result ===
+                      t(
+                        "agencyDashboard.deliverables.retryTransferDialog.failed",
+                      ) ||
                       r.result === "skipped_no_account") &&
                     r.recipient_type === "creator",
                 ) && (
@@ -2243,7 +2590,10 @@ export function AgencyDeliverablesView() {
                       {retryResultDialog.results
                         .filter(
                           (r) =>
-                            (r.result === "failed" ||
+                            (r.result ===
+                              t(
+                                "agencyDashboard.deliverables.retryTransferDialog.failed",
+                              ) ||
                               r.result === "skipped_no_account") &&
                             r.recipient_type === "creator",
                         )
@@ -2273,9 +2623,13 @@ export function AgencyDeliverablesView() {
             <div className="flex gap-2">
               {retryResultDialog.results.some(
                 (r) =>
-                  (r.result === "failed" ||
+                  (r.result ===
+                    t(
+                      "agencyDashboard.deliverables.retryTransferDialog.failed",
+                    ) ||
                     r.result === "skipped_no_account") &&
-                  r.recipient_type === "agency",
+                  r.recipient_type ===
+                    t("agencyDashboard.deliverables.payoutStatus.agency"),
               ) && (
                 <Button
                   size="sm"
@@ -2392,7 +2746,11 @@ export function AgencyDeliverablesView() {
                     confirm_unpaid: true,
                   });
                   await loadDeliverables(offerId);
-                  toast({ title: "Submitted to brand" });
+                  toast({
+                    title: t(
+                      "agencyDashboard.deliverables.toasts.submittedToBrand",
+                    ),
+                  });
                   setUnpaidSubmitDialog({
                     open: false,
                     offerId: "",
@@ -2400,8 +2758,12 @@ export function AgencyDeliverablesView() {
                   });
                 } catch (e: any) {
                   toast({
-                    title: "Submit failed",
-                    description: e?.message || "Please try again.",
+                    title: t(
+                      "agencyDashboard.deliverables.toasts.submitFailed",
+                    ),
+                    description:
+                      e?.message ||
+                      t("agencyDashboard.deliverables.toasts.pleaseTryAgain"),
                     variant: "destructive",
                   });
                   setUnpaidSubmitDialog((prev) => ({
@@ -2473,7 +2835,9 @@ export function AgencyDeliverablesView() {
               disabled={unassignDialog.submitting}
               onClick={confirmUnassign}
             >
-              {unassignDialog.submitting ? "Unassigning..." : "Unassign"}
+              {unassignDialog.submitting
+                ? t("agencyDashboard.deliverables.unassignTalent.unassigning")
+                : t("agencyDashboard.deliverables.unassignTalent.unassign")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -2530,10 +2894,15 @@ export function AgencyDeliverablesView() {
                             requestTalent?.full_name ||
                             requestTalent?.name ||
                             requestTalent?.full_legal_name ||
-                            "Talent"}
+                            t(
+                              "agencyDashboard.deliverables.assignTalent.talentFallback",
+                            )}
                         </div>
                         <div className="text-xs text-gray-500 truncate">
-                          {requestTalent?.email || "Selected talent"}
+                          {requestTalent?.email ||
+                            t(
+                              "agencyDashboard.deliverables.requestAssetModal.selectedTalent",
+                            )}
                         </div>
                       </div>
                     </div>
@@ -2543,7 +2912,9 @@ export function AgencyDeliverablesView() {
                       Title
                     </label>
                     <Input
-                      placeholder="Short title (e.g., Product shots for May)"
+                      placeholder={t(
+                        "agencyDashboard.deliverables.requestAssetModal.titlePlaceholder",
+                      )}
                       value={requestDialog.title}
                       onChange={(e) =>
                         setRequestDialog((prev) => ({
@@ -2559,7 +2930,9 @@ export function AgencyDeliverablesView() {
                       Details
                     </label>
                     <Textarea
-                      placeholder="Describe exactly what you need, delivery format, and deadline."
+                      placeholder={t(
+                        "agencyDashboard.deliverables.requestAssetModal.detailsPlaceholder",
+                      )}
                       value={requestDialog.message}
                       onChange={(e) =>
                         setRequestDialog((prev) => ({
@@ -2595,7 +2968,10 @@ export function AgencyDeliverablesView() {
                         Choose File
                       </label>
                       <span className="text-xs text-gray-500 truncate">
-                        {requestDialog.file?.name || "No file selected"}
+                        {requestDialog.file?.name ||
+                          t(
+                            "agencyDashboard.deliverables.requestAssetModal.noFileSelected",
+                          )}
                       </span>
                     </div>
                   </div>
@@ -2609,7 +2985,9 @@ export function AgencyDeliverablesView() {
                     {requestDialog.sending ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                      "Send Request"
+                      t(
+                        "agencyDashboard.deliverables.requestAssetModal.sendRequest",
+                      )
                     )}
                   </Button>
                 </div>
@@ -2632,7 +3010,9 @@ export function AgencyDeliverablesView() {
           </DialogHeader>
           <div className="space-y-4">
             <Input
-              placeholder="Caption"
+              placeholder={t(
+                "agencyDashboard.deliverables.uploadDeliverableModal.captionPlaceholder",
+              )}
               value={uploadDialog.caption}
               onChange={(e) =>
                 setUploadDialog((prev) => ({
@@ -2666,7 +3046,9 @@ export function AgencyDeliverablesView() {
               <span className="text-xs text-gray-500 truncate">
                 {uploadDialog.files?.length
                   ? `${uploadDialog.files.length} file(s) selected`
-                  : "No files selected"}
+                  : t(
+                      "agencyDashboard.deliverables.uploadDeliverableModal.noFilesSelected",
+                    )}
               </span>
             </div>
             <Button
@@ -2707,10 +3089,16 @@ export function AgencyDeliverablesView() {
               </DialogTitle>
               <p className="text-gray-400 text-sm">
                 {reviewDialog.action === "final_approve"
-                  ? "Mark this deliverable as approved after brand sign-off."
+                  ? t(
+                      "agencyDashboard.deliverables.reviewModal.approveDescription",
+                    )
                   : reviewDialog.action === "reject"
-                    ? "Reject this deliverable and notify the creator."
-                    : "Request revisions from the creator."}
+                    ? t(
+                        "agencyDashboard.deliverables.reviewModal.rejectDescription",
+                      )
+                    : t(
+                        "agencyDashboard.deliverables.reviewModal.requestChangesDescription",
+                      )}
               </p>
             </DialogHeader>
           </div>
@@ -2719,14 +3107,20 @@ export function AgencyDeliverablesView() {
             <div className="space-y-3">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
                 {reviewDialog.action === "final_approve"
-                  ? "Optional note for the creator."
-                  : "Feedback for creator"}
+                  ? t(
+                      "agencyDashboard.deliverables.reviewModal.optionalNoteLabel",
+                    )
+                  : t("agencyDashboard.deliverables.reviewModal.feedbackLabel")}
               </label>
               <Textarea
                 placeholder={
                   reviewDialog.action === "final_approve"
-                    ? "Optional note for the creator."
-                    : "What exactly should be changed?"
+                    ? t(
+                        "agencyDashboard.deliverables.reviewModal.optionalNoteLabel",
+                      )
+                    : t(
+                        "agencyDashboard.deliverables.reviewModal.feedbackPlaceholder",
+                      )
                 }
                 className="min-h-[150px] resize-none rounded-none border-gray-200 bg-gray-50 focus:bg-white focus:ring-black/5 transition-all text-sm leading-relaxed"
                 value={reviewDialog.note}
@@ -2761,11 +3155,13 @@ export function AgencyDeliverablesView() {
                 {reviewDialog.submitting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : reviewDialog.action === "final_approve" ? (
-                  "Approve"
+                  t("agencyDashboard.deliverables.deliverableCard.approve")
                 ) : reviewDialog.action === "reject" ? (
-                  "Reject"
+                  t("agencyDashboard.deliverables.deliverableCard.reject")
                 ) : (
-                  "Send Feedback"
+                  t(
+                    "agencyDashboard.deliverables.reviewModal.sendFeedbackAction",
+                  )
                 )}
               </Button>
             </div>
@@ -2807,7 +3203,7 @@ export function AgencyDeliverablesView() {
                 {deleteDialog.submitting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  "Delete"
+                  t("agencyDashboard.deliverables.delete")
                 )}
               </Button>
             </div>

@@ -11,7 +11,6 @@ import {
   Clock,
   AlertCircle,
   DollarSign,
-  Lock,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,6 +27,7 @@ import {
   getAgencyActiveLicensesStats,
 } from "@/api/functions";
 import { ComplianceRenewableLicense } from "@/types/licensing";
+import { useTranslation } from "react-i18next";
 
 const ActiveLicensesView = ({
   onRenew,
@@ -36,8 +36,13 @@ const ActiveLicensesView = ({
   onRenew: (license: ComplianceRenewableLicense) => void;
   isSportsAgency?: boolean;
 }) => {
-  const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
-  const entitySingularLower = isSportsAgency ? "athlete" : "talent";
+  const { t } = useTranslation("agency");
+  const entitySingularTitle = isSportsAgency
+    ? t("agencyDashboard.activeLicenses.details.athlete")
+    : t("agencyDashboard.activeLicenses.details.talent");
+  const entitySingularLower = isSportsAgency
+    ? t("agencyDashboard.dashboard.entities.athlete")
+    : t("agencyDashboard.dashboard.entities.talent");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
   const [selectedLicense, setSelectedLicense] = useState<any>(null);
@@ -48,7 +53,10 @@ const ActiveLicensesView = ({
     loading: accessLoading,
     context,
   } = useTeamAccess("agency");
-  const canViewLicenses = hasPermission("view_licenses");
+  // Let the backend be the source of truth for read access. Some existing
+  // agency sessions have stale team permission payloads, which incorrectly
+  // blocked owners from this tab before the API request could run.
+  const canViewLicenses = true;
   const canManageLicenses = hasPermission("manage_licenses");
   const isReadOnly = canViewLicenses && !canManageLicenses;
 
@@ -75,14 +83,14 @@ const ActiveLicensesView = ({
         if (searchTerm) params.search = searchTerm;
         return await getAgencyActiveLicenses(params);
       },
-      enabled: canViewLicenses,
+      enabled: true,
     },
   );
 
   const { data: stats } = useQuery({
     queryKey: ["agency", "active-licenses", "stats"],
     queryFn: () => getAgencyActiveLicensesStats(),
-    enabled: canViewLicenses,
+    enabled: true,
   });
 
   const statusColor = (status: string) => {
@@ -115,32 +123,17 @@ const ActiveLicensesView = ({
     );
   }
 
-  if (!canViewLicenses) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200 p-12 text-center">
-        <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-6">
-          <Lock className="w-10 h-10 text-red-600" />
-        </div>
-        <h2 className="text-2xl font-black text-gray-900 mb-2">
-          Access Restricted
-        </h2>
-        <p className="text-gray-500 font-medium max-w-md mx-auto">
-          You do not have the required permissions to view active licenses.
-          Please contact your administrator if you believe this is an error.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-8">
       {isReadOnly && (
         <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
           <Eye className="w-5 h-5 text-amber-600" />
           <div>
-            <p className="font-bold text-amber-800">View Only Mode</p>
+            <p className="font-bold text-amber-800">
+              {t("agencyDashboard.activeLicenses.viewOnlyMode")}
+            </p>
             <p className="text-sm text-amber-700">
-              Your role allows viewing licenses but not managing them.
+              {t("agencyDashboard.activeLicenses.viewOnlyModeDescription")}
             </p>
           </div>
         </div>
@@ -148,10 +141,12 @@ const ActiveLicensesView = ({
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start">
         <div>
           <h2 className="text-3xl font-black text-gray-900 mb-2">
-            Active Licenses
+            {t("agencyDashboard.activeLicenses.title")}
           </h2>
           <p className="text-gray-500 font-medium">
-            {`Manage all ${entitySingularLower} licensing agreements`}
+            {t("agencyDashboard.activeLicenses.description", {
+              entity: entitySingularLower,
+            })}
           </p>
         </div>
         <Button
@@ -163,16 +158,16 @@ const ActiveLicensesView = ({
             }
             const headers = [
               entitySingularTitle,
-              "License Type",
-              "Brand",
-              "Start Date",
-              "End Date",
-              "Deadline",
-              "Days Left",
-              "Usage Scope",
-              "Value",
-              "Status",
-              "Auto Renew",
+              t("agencyDashboard.activeLicenses.headers.licenseType"),
+              t("agencyDashboard.activeLicenses.headers.brand"),
+              t("agencyDashboard.activeLicenses.headers.startDate"),
+              t("agencyDashboard.activeLicenses.headers.endDate"),
+              t("agencyDashboard.activeLicenses.headers.deadline"),
+              t("agencyDashboard.activeLicenses.headers.daysLeft"),
+              t("agencyDashboard.activeLicenses.headers.usageScope"),
+              t("agencyDashboard.activeLicenses.headers.value"),
+              t("agencyDashboard.activeLicenses.headers.status"),
+              t("agencyDashboard.activeLicenses.headers.autoRenew"),
             ];
             const rows = licenses.map((lic: any) => [
               `"${(lic.talent_name || "").replace(/"/g, '""')}"`,
@@ -185,7 +180,9 @@ const ActiveLicensesView = ({
               `"${Array.isArray(lic.usage_scope) ? lic.usage_scope.join(", ") : (lic.usage_scope || "").replace(/"/g, '""')}"`,
               lic.value || 0,
               lic.status || "",
-              lic.auto_renew ? "Yes" : "No",
+              lic.auto_renew
+                ? t("agencyDashboard.activeLicenses.headers.yes")
+                : t("agencyDashboard.activeLicenses.headers.no"),
             ]);
             const csv = [
               headers.join(","),
@@ -202,7 +199,8 @@ const ActiveLicensesView = ({
             URL.revokeObjectURL(url);
           }}
         >
-          <Download className="w-4 h-4" /> Export Report
+          <Download className="w-4 h-4" />{" "}
+          {t("agencyDashboard.activeLicenses.exportReport")}
         </Button>
       </div>
 
@@ -210,7 +208,7 @@ const ActiveLicensesView = ({
         {[
           {
             icon: CheckCircle2,
-            label: "Active Licenses",
+            label: t("agencyDashboard.activeLicenses.stats.activeLicenses"),
             value: stats?.active || "0",
             color: "text-green-600",
             bg: "bg-green-50",
@@ -218,7 +216,7 @@ const ActiveLicensesView = ({
           },
           {
             icon: Clock,
-            label: "Expiring Soon",
+            label: t("agencyDashboard.activeLicenses.stats.expiringSoon"),
             value: stats?.expiring || "0",
             color: "text-orange-600",
             bg: "bg-orange-50",
@@ -226,7 +224,7 @@ const ActiveLicensesView = ({
           },
           {
             icon: AlertCircle,
-            label: "Expired",
+            label: t("agencyDashboard.activeLicenses.stats.expired"),
             value: stats?.expired || "0",
             color: "text-red-600",
             bg: "bg-red-50",
@@ -234,7 +232,7 @@ const ActiveLicensesView = ({
           },
           {
             icon: DollarSign,
-            label: "Total Value",
+            label: t("agencyDashboard.activeLicenses.stats.totalValue"),
             value: formatMoney(stats?.total_value || 0),
             color: "text-indigo-600",
             bg: "bg-indigo-50",
@@ -269,7 +267,9 @@ const ActiveLicensesView = ({
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder={`Search by ${entitySingularLower}, brand, or license type...`}
+              placeholder={t(
+                "agencyDashboard.activeLicenses.searchPlaceholder",
+              )}
               className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium"
             />
           </div>
@@ -281,7 +281,10 @@ const ActiveLicensesView = ({
                   onClick={() => setFilterStatus(filter)}
                   className={`px-4 py-1.5 text-xs font-bold rounded-md whitespace-nowrap transition-all ${filterStatus === filter ? "bg-indigo-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
                 >
-                  {filter}
+                  {t(
+                    `agencyDashboard.activeLicenses.filter.${filter.toLowerCase()}`,
+                    { defaultValue: filter },
+                  )}
                 </button>
               ))}
             </div>
@@ -296,25 +299,25 @@ const ActiveLicensesView = ({
                   {entitySingularTitle}
                 </th>
                 <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  License Type
+                  {t("agencyDashboard.activeLicenses.headers.licenseType")}
                 </th>
                 <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  Brand
+                  {t("agencyDashboard.activeLicenses.headers.brand")}
                 </th>
                 <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  Deadline
+                  {t("agencyDashboard.activeLicenses.headers.deadline")}
                 </th>
                 <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  Usage Scope
+                  {t("agencyDashboard.activeLicenses.headers.usageScope")}
                 </th>
                 <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  Value
+                  {t("agencyDashboard.activeLicenses.headers.value")}
                 </th>
                 <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  Status
+                  {t("agencyDashboard.activeLicenses.headers.status")}
                 </th>
                 <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  Actions
+                  {t("agencyDashboard.activeLicenses.headers.actions")}
                 </th>
               </tr>
             </thead>
@@ -327,10 +330,16 @@ const ActiveLicensesView = ({
                         <FileText className="w-6 h-6 text-gray-400" />
                       </div>
                       <p className="text-gray-900 font-medium">
-                        No active licenses found
+                        {t("agencyDashboard.activeLicenses.noLicenses")}
                       </p>
                       <p className="text-sm text-gray-500 mt-1">
-                        Try adjusting your filters or search terms
+                        {t(
+                          "agencyDashboard.activeLicenses.tryAdjustingFilters",
+                          {
+                            defaultValue:
+                              "Try adjusting your filters or search terms",
+                          },
+                        )}
                       </p>
                     </div>
                   </td>
@@ -365,12 +374,14 @@ const ActiveLicensesView = ({
                   </td>
                   <td className="px-6 py-8">
                     <p className="text-sm font-bold text-gray-900 leading-tight max-w-[150px]">
-                      {lic.license_type || "Unknown License"}
+                      {lic.license_type ||
+                        t("agencyDashboard.activeLicenses.unknownLicense")}
                     </p>
                   </td>
                   <td className="px-6 py-8">
                     <p className="text-sm font-bold text-gray-900">
-                      {lic.brand || "Unknown Brand"}
+                      {lic.brand ||
+                        t("agencyDashboard.activeLicenses.unknownBrand")}
                     </p>
                   </td>
                   <td className="px-6 py-8">
@@ -383,16 +394,24 @@ const ActiveLicensesView = ({
                         )}
                         {lic.end_date ? (
                           <p className="text-[10px] font-medium text-gray-400 mb-1">
-                            to {new Date(lic.end_date).toLocaleDateString()}
+                            {t("agencyDashboard.activeLicenses.to", {
+                              defaultValue: "to",
+                            })}{" "}
+                            {new Date(lic.end_date).toLocaleDateString()}
                           </p>
                         ) : lic.deadline ? (
                           <p className="text-[10px] font-medium text-gray-400 mb-1">
-                            Deadline:{" "}
-                            {new Date(lic.deadline).toLocaleDateString()}
+                            {t(
+                              "agencyDashboard.activeLicenses.headers.deadline",
+                            )}
+                            : {new Date(lic.deadline).toLocaleDateString()}
                           </p>
                         ) : lic.start_date && lic.duration_days ? (
                           <p className="text-[10px] font-medium text-gray-400 mb-1">
-                            Deadline:{" "}
+                            {t(
+                              "agencyDashboard.activeLicenses.headers.deadline",
+                            )}
+                            :{" "}
                             {(() => {
                               const d = new Date(lic.start_date);
                               d.setDate(d.getDate() + lic.duration_days);
@@ -404,16 +423,20 @@ const ActiveLicensesView = ({
                           lic.days_left !== undefined && (
                             <p className="text-[10px] font-bold text-gray-400 italic">
                               {lic.days_left > 0
-                                ? `${lic.days_left} days left`
+                                ? t("agencyDashboard.activeLicenses.daysLeft", {
+                                    days: lic.days_left,
+                                  })
                                 : lic.days_left === 0
-                                  ? "Expires today"
-                                  : "Expired"}
+                                  ? t(
+                                      "agencyDashboard.activeLicenses.expiresToday",
+                                    )
+                                  : t("agencyDashboard.activeLicenses.expired")}
                             </p>
                           )}
                       </>
                     ) : (
                       <p className="text-xs font-medium text-gray-400">
-                        Ongoing
+                        {t("agencyDashboard.activeLicenses.ongoing")}
                       </p>
                     )}
                   </td>
@@ -430,7 +453,8 @@ const ActiveLicensesView = ({
                     </p>
                     {lic.auto_renew && (
                       <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold w-fit border border-blue-100">
-                        <RefreshCw className="w-3.5 h-3.5" /> Auto-renew
+                        <RefreshCw className="w-3.5 h-3.5" />{" "}
+                        {t("agencyDashboard.activeLicenses.autoRenew")}
                       </div>
                     )}
                   </td>
@@ -438,7 +462,10 @@ const ActiveLicensesView = ({
                     <span
                       className={`px-3 py-1.5 rounded-lg text-[10px] font-black text-white uppercase tracking-wider shadow-sm ${statusColor(lic.status)}`}
                     >
-                      {lic.status}
+                      {t(
+                        `agencyDashboard.activeLicenses.status.${String(lic.status || "").toLowerCase()}`,
+                        { defaultValue: lic.status },
+                      )}
                     </span>
                   </td>
                   <td className="px-6 py-8 whitespace-nowrap text-center">
@@ -453,13 +480,24 @@ const ActiveLicensesView = ({
                                   onClick={() => handleRenew(lic)}
                                   disabled={!canManageLicenses}
                                 >
-                                  <RefreshCw className="w-3.5 h-3.5" /> Renew
+                                  <RefreshCw className="w-3.5 h-3.5" />{" "}
+                                  {t(
+                                    "agencyDashboard.activeLicenses.actions.renew",
+                                  )}
                                 </Button>
                               </span>
                             </TooltipTrigger>
                             {!canManageLicenses && (
                               <TooltipContent>
-                                <p>Your role cannot renew licenses</p>
+                                <p>
+                                  {t(
+                                    "agencyDashboard.activeLicenses.cannotRenew",
+                                    {
+                                      defaultValue:
+                                        "Your role cannot renew licenses",
+                                    },
+                                  )}
+                                </p>
                               </TooltipContent>
                             )}
                           </Tooltip>

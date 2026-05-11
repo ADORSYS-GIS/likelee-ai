@@ -38,6 +38,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 import { createAgencyTalent, scrapeInstagramProfile } from "@/api/functions";
 import { supabase } from "@/lib/supabase";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/auth/AuthProvider";
 import { DobInput } from "@/components/ui/DobInput";
 
@@ -66,6 +67,7 @@ const skinTones = [
 ];
 
 export default function AddTalent() {
+  const { t } = useTranslation("agency");
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -96,6 +98,7 @@ export default function AddTalent() {
     phone: "",
     birthdate: "",
     role_types: [],
+    engagement_rate: 0,
 
     // Physical Attributes
     gender: "",
@@ -331,8 +334,10 @@ export default function AddTalent() {
 
       if (!isAtLeast18(formData.birthdate)) {
         toast({
-          title: "Invalid date of birth",
-          description: `${entityTitle} must be at least 18 years old.`,
+          title: t("agencyDashboard.addTalent.toast.invalidDob"),
+          description: t("agencyDashboard.addTalent.toast.mustBe18", {
+            entityTitle,
+          }),
           variant: "destructive",
         });
         return;
@@ -382,8 +387,15 @@ export default function AddTalent() {
         } catch (e: any) {
           console.error("Photo upload failed:", e);
           toast({
-            title: "Upload failed",
-            description: `Could not upload photos. ${entityTitle} will be created without photos.`,
+            title: t("agencyDashboard.roster.upload.errorTitle"),
+            description: t(
+              "agencyDashboard.addTalent.toast.photosUploadFailedDesc",
+              {
+                defaultValue:
+                  "Could not upload photos. {{entityTitle}} will be created without photos.",
+                entityTitle,
+              },
+            ),
             variant: "destructive",
           });
         }
@@ -431,8 +443,13 @@ export default function AddTalent() {
           const msg = e?.message || String(e);
           console.error("Hero media upload failed:", msg, e);
           toast({
-            title: "⚠️ Hero media upload failed",
-            description: `Could not upload hero video/image: ${msg}. Check browser console for details.`,
+            title: t("agencyDashboard.addTalent.toast.heroUploadFailed"),
+            description: t(
+              "agencyDashboard.addTalent.toast.heroUploadFailedDesc",
+              {
+                msg,
+              },
+            ),
             variant: "destructive",
           });
         }
@@ -473,8 +490,13 @@ export default function AddTalent() {
           const msg = e?.message || String(e);
           console.error("Voice sample upload failed:", msg, e);
           toast({
-            title: "⚠️ Voice sample upload failed",
-            description: `Could not upload voice sample: ${msg}. Check browser console for details.`,
+            title: t("agencyDashboard.addTalent.toast.voiceUploadFailed"),
+            description: t(
+              "agencyDashboard.addTalent.toast.voiceUploadFailedDesc",
+              {
+                msg,
+              },
+            ),
             variant: "destructive",
           });
         }
@@ -570,8 +592,10 @@ export default function AddTalent() {
       }
 
       toast({
-        title: "Success",
-        description: `${entityTitle} added successfully!`,
+        title: t("agencyDashboard.addTalent.toast.success"),
+        description: t("agencyDashboard.addTalent.toast.addedSuccessfully", {
+          entityTitle,
+        }),
       });
       {
         const rosterSubTab = isSportsAgency ? "All Athletes" : "All Talent";
@@ -605,8 +629,10 @@ export default function AddTalent() {
         });
       } else {
         toast({
-          title: "Error",
-          description: `Failed to create ${entityLower}. Please try again.`,
+          title: t("agencyDashboard.addTalent.toast.error"),
+          description: t("agencyDashboard.addTalent.toast.failedToCreate", {
+            entityLower,
+          }),
           variant: "destructive",
         });
       }
@@ -648,14 +674,16 @@ export default function AddTalent() {
             className="mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            {`Back to All ${entityTitlePlural}`}
+            {t("agencyDashboard.addTalent.backToAll", {
+              entityTitlePlural,
+            })}
           </Button>
 
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {`Add New ${entityTitle}`}
+            {t("agencyDashboard.addTalent.title", { entityTitle })}
           </h1>
           <p className="text-gray-600">
-            {`Add a new ${entityLower} to your agency roster`}
+            {t("agencyDashboard.addTalent.subtitle", { entityLower })}
           </p>
         </div>
 
@@ -671,7 +699,9 @@ export default function AddTalent() {
                 >
                   1
                 </div>
-                <span className="font-medium">Basic Info</span>
+                <span className="font-medium">
+                  {t("agencyDashboard.addTalent.steps.basicInfo")}
+                </span>
               </div>
               <div
                 className={`flex items-center gap-2 ${step >= 2 ? "text-indigo-600" : "text-gray-400"}`}
@@ -681,7 +711,9 @@ export default function AddTalent() {
                 >
                   2
                 </div>
-                <span className="font-medium">Attributes</span>
+                <span className="font-medium">
+                  {t("agencyDashboard.addTalent.steps.attributes")}
+                </span>
               </div>
               <div
                 className={`flex items-center gap-2 ${step >= 3 ? "text-indigo-600" : "text-gray-400"}`}
@@ -691,7 +723,9 @@ export default function AddTalent() {
                 >
                   3
                 </div>
-                <span className="font-medium">Media & Social</span>
+                <span className="font-medium">
+                  {t("agencyDashboard.addTalent.steps.mediaSocial")}
+                </span>
               </div>
             </div>
           </div>
@@ -704,10 +738,10 @@ export default function AddTalent() {
             <div className="space-y-6">
               <div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  Basic Information
+                  {t("agencyDashboard.addTalent.basicInfo.title")}
                 </h3>
                 <p className="text-gray-600">
-                  Let's start with the essential details
+                  {t("agencyDashboard.addTalent.basicInfo.description")}
                 </p>
               </div>
 
@@ -717,7 +751,8 @@ export default function AddTalent() {
                     htmlFor="full_name"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    Full Legal Name <span className="text-red-500">*</span>
+                    {t("agencyDashboard.addTalent.basicInfo.fullName")}{" "}
+                    <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="full_name"
@@ -736,7 +771,7 @@ export default function AddTalent() {
                     htmlFor="stage_name"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    Stage Name
+                    {t("agencyDashboard.addTalent.basicInfo.stageName")}
                   </Label>
                   <Input
                     id="stage_name"
@@ -755,7 +790,8 @@ export default function AddTalent() {
                     htmlFor="email"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    Email Address <span className="text-red-500">*</span>
+                    {t("agencyDashboard.addTalent.basicInfo.email")}{" "}
+                    <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="email"
@@ -774,7 +810,7 @@ export default function AddTalent() {
                     htmlFor="phone"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    Phone Number
+                    {t("agencyDashboard.addTalent.basicInfo.phone")}
                   </Label>
                   <Input
                     id="phone"
@@ -794,7 +830,8 @@ export default function AddTalent() {
                   htmlFor="birthdate"
                   className="text-sm font-medium text-gray-700 mb-2 block"
                 >
-                  Date of Birth <span className="text-red-500">*</span>
+                  {t("agencyDashboard.addTalent.basicInfo.dateOfBirth")}{" "}
+                  <span className="text-red-500">*</span>
                 </Label>
                 <DobInput
                   value={formData.birthdate}
@@ -812,7 +849,7 @@ export default function AddTalent() {
                     htmlFor="city"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    City
+                    {t("agencyDashboard.addTalent.mediaSocial.city")}
                   </Label>
                   <Input
                     id="city"
@@ -830,7 +867,7 @@ export default function AddTalent() {
                     htmlFor="state"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    State / Province
+                    {t("agencyDashboard.addTalent.mediaSocial.state")}
                   </Label>
                   <Input
                     id="state"
@@ -848,7 +885,7 @@ export default function AddTalent() {
                     htmlFor="country"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    Country
+                    {t("agencyDashboard.addTalent.mediaSocial.country")}
                   </Label>
                   <Input
                     id="country"
@@ -866,7 +903,7 @@ export default function AddTalent() {
                       htmlFor="organization"
                       className="text-sm font-medium text-gray-700 mb-2 block"
                     >
-                      Organization
+                      {t("agencyDashboard.addTalent.mediaSocial.organization")}
                     </Label>
                     <Input
                       id="organization"
@@ -888,7 +925,7 @@ export default function AddTalent() {
                       htmlFor="sports"
                       className="text-sm font-medium text-gray-700 mb-2 block"
                     >
-                      Sports (comma separated)
+                      {t("agencyDashboard.addTalent.mediaSocial.sports")}
                     </Label>
                     <Input
                       id="sports"
@@ -908,7 +945,7 @@ export default function AddTalent() {
                   htmlFor="bio"
                   className="text-sm font-medium text-gray-700 mb-2 block"
                 >
-                  Bio / Notes
+                  {t("agencyDashboard.addTalent.mediaSocial.bio")}
                 </Label>
                 <Textarea
                   id="bio"
@@ -927,7 +964,7 @@ export default function AddTalent() {
                     htmlFor="licensing_rate_monthly_usd"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    Licensing Rate (USD/month){" "}
+                    {t("agencyDashboard.addTalent.basicInfo.licensingRate")}{" "}
                     <span className="text-red-500">*</span>
                   </Label>
                   <Input
@@ -951,11 +988,16 @@ export default function AddTalent() {
                     <div className="flex items-center justify-between gap-4">
                       <div className="min-w-0">
                         <Label className="text-sm font-medium text-gray-900">
-                          Open to negotiations
+                          {t(
+                            "agencyDashboard.addTalent.mediaSocial.acceptNegotiations",
+                          )}
                         </Label>
                         <p className="mt-0.5 text-xs text-gray-600">
-                          Allow brands to propose custom rates for this{" "}
-                          {entityLower}.
+                          {t("agencyDashboard.addTalent.negotiationHelp", {
+                            defaultValue:
+                              "Allow brands to propose custom rates for this {{entityLower}}.",
+                            entityLower,
+                          })}
                         </p>
                       </div>
                       <Switch
@@ -978,7 +1020,7 @@ export default function AddTalent() {
                 disabled={!canProceedStep1}
                 className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white disabled:bg-gray-400"
               >
-                Continue to Attributes
+                {t("agencyDashboard.addTalent.buttons.continue")}
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </div>
@@ -989,41 +1031,65 @@ export default function AddTalent() {
             <div className="space-y-6">
               <div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  Physical Attributes
+                  {t("agencyDashboard.addTalent.attributes.title")}
                 </h3>
                 <p className="text-gray-600">
-                  Help brands find the right match
+                  {t("agencyDashboard.addTalent.attributes.description")}
                 </p>
               </div>
 
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                  Gender Identity <span className="text-red-500">*</span>
+                  {t("agencyDashboard.addTalent.attributes.gender")}{" "}
+                  <span className="text-red-500">*</span>
                 </Label>
                 <div className="grid md:grid-cols-3 gap-3">
                   {[
-                    "Female",
-                    "Male",
-                    "Non-binary",
-                    "Gender fluid",
-                    "Prefer not to say",
+                    {
+                      key: "female",
+                      label: t(
+                        "agencyDashboard.addTalent.genderOptions.female",
+                      ),
+                    },
+                    {
+                      key: "male",
+                      label: t("agencyDashboard.addTalent.genderOptions.male"),
+                    },
+                    {
+                      key: "nonBinary",
+                      label: t(
+                        "agencyDashboard.addTalent.genderOptions.nonBinary",
+                      ),
+                    },
+                    {
+                      key: "genderFluid",
+                      label: t(
+                        "agencyDashboard.addTalent.genderOptions.genderFluid",
+                      ),
+                    },
+                    {
+                      key: "preferNotToSay",
+                      label: t(
+                        "agencyDashboard.addTalent.genderOptions.preferNotToSay",
+                      ),
+                    },
                   ].map((option) => (
                     <Card
-                      key={option}
+                      key={option.key}
                       onClick={() =>
-                        setFormData({ ...formData, gender: option })
+                        setFormData({ ...formData, gender: option.label })
                       }
                       className={`p-4 cursor-pointer transition-all ${
-                        formData.gender === option
+                        formData.gender === option.label
                           ? "border-2 border-indigo-600 bg-indigo-50"
                           : "border-2 border-gray-200 hover:border-gray-300"
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-medium text-gray-900">
-                          {option}
+                          {option.label}
                         </span>
-                        {formData.gender === option && (
+                        {formData.gender === option.label && (
                           <CheckCircle2 className="w-5 h-5 text-indigo-600" />
                         )}
                       </div>
@@ -1034,8 +1100,8 @@ export default function AddTalent() {
 
               <div>
                 <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                  Race / Ethnicity <span className="text-red-500">*</span>{" "}
-                  (Select all that apply)
+                  {t("agencyDashboard.addTalent.attributes.ethnicity")}{" "}
+                  <span className="text-red-500">*</span>
                 </Label>
                 <div className="grid md:grid-cols-2 gap-3">
                   {ethnicities.map((ethnicity) => (
@@ -1063,8 +1129,8 @@ export default function AddTalent() {
 
               <div>
                 <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                  Role Type <span className="text-red-500">*</span> (Select all
-                  that apply)
+                  {t("agencyDashboard.addTalent.attributes.roleCategories")}{" "}
+                  <span className="text-red-500">*</span>
                 </Label>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {roleCategories.map((category) => {
@@ -1083,7 +1149,9 @@ export default function AddTalent() {
                       >
                         <div className="w-full flex items-center justify-between">
                           <span className="font-semibold text-gray-900">
-                            {category}
+                            {t(
+                              `agencyDashboard.addTalent.roleCategories.${category.toLowerCase()}`,
+                            )}
                           </span>
                           {selected && (
                             <CheckCircle2 className="w-5 h-5 text-indigo-600" />
@@ -1101,7 +1169,7 @@ export default function AddTalent() {
                     htmlFor="hair_color"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    Hair Color
+                    {t("agencyDashboard.addTalent.attributes.hairColor")}
                   </Label>
                   <Select
                     value={formData.hair_color}
@@ -1110,7 +1178,11 @@ export default function AddTalent() {
                     }
                   >
                     <SelectTrigger className="border-2 border-gray-300">
-                      <SelectValue placeholder="Select" />
+                      <SelectValue
+                        placeholder={t(
+                          "agencyDashboard.addTalent.attributes.selectRoles",
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {hairColors.map((color) => (
@@ -1127,7 +1199,7 @@ export default function AddTalent() {
                     htmlFor="eye_color"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    Eye Color
+                    {t("agencyDashboard.addTalent.attributes.eyeColor")}
                   </Label>
                   <Select
                     value={formData.eye_color}
@@ -1136,7 +1208,11 @@ export default function AddTalent() {
                     }
                   >
                     <SelectTrigger className="border-2 border-gray-300">
-                      <SelectValue placeholder="Select" />
+                      <SelectValue
+                        placeholder={t(
+                          "agencyDashboard.addTalent.attributes.selectRoles",
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {eyeColors.map((color) => (
@@ -1153,7 +1229,7 @@ export default function AddTalent() {
                     htmlFor="skin_tone"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    Skin Tone
+                    {t("agencyDashboard.addTalent.attributes.skinTone")}
                   </Label>
                   <Select
                     value={formData.skin_tone}
@@ -1162,7 +1238,11 @@ export default function AddTalent() {
                     }
                   >
                     <SelectTrigger className="border-2 border-gray-300">
-                      <SelectValue placeholder="Select" />
+                      <SelectValue
+                        placeholder={t(
+                          "agencyDashboard.addTalent.attributes.selectRoles",
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {skinTones.map((tone) => (
@@ -1181,7 +1261,7 @@ export default function AddTalent() {
                     htmlFor="tattoos"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    Tattoos
+                    {t("agencyDashboard.addTalent.attributes.tattoos")}
                   </Label>
                   <Select
                     value={formData.tattoos}
@@ -1190,12 +1270,24 @@ export default function AddTalent() {
                     }
                   >
                     <SelectTrigger className="border-2 border-gray-300">
-                      <SelectValue placeholder="Select" />
+                      <SelectValue
+                        placeholder={t(
+                          "agencyDashboard.addTalent.attributes.selectRoles",
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="unknown">Unknown</SelectItem>
-                      <SelectItem value="yes">Has tattoos</SelectItem>
-                      <SelectItem value="no">No tattoos</SelectItem>
+                      <SelectItem value="unknown">
+                        {t(
+                          "agencyDashboard.addTalent.attributes.preferNotToSay",
+                        )}
+                      </SelectItem>
+                      <SelectItem value="yes">
+                        {t("agencyDashboard.addTalent.attributes.yes")}
+                      </SelectItem>
+                      <SelectItem value="no">
+                        {t("agencyDashboard.addTalent.attributes.no")}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1205,7 +1297,7 @@ export default function AddTalent() {
                     htmlFor="piercings"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    Piercings
+                    {t("agencyDashboard.addTalent.attributes.piercings")}
                   </Label>
                   <Select
                     value={formData.piercings}
@@ -1214,12 +1306,24 @@ export default function AddTalent() {
                     }
                   >
                     <SelectTrigger className="border-2 border-gray-300">
-                      <SelectValue placeholder="Select" />
+                      <SelectValue
+                        placeholder={t(
+                          "agencyDashboard.addTalent.attributes.selectRoles",
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="unknown">Unknown</SelectItem>
-                      <SelectItem value="yes">Has piercings</SelectItem>
-                      <SelectItem value="no">No piercings</SelectItem>
+                      <SelectItem value="unknown">
+                        {t(
+                          "agencyDashboard.addTalent.attributes.preferNotToSay",
+                        )}
+                      </SelectItem>
+                      <SelectItem value="yes">
+                        {t("agencyDashboard.addTalent.attributes.yes")}
+                      </SelectItem>
+                      <SelectItem value="no">
+                        {t("agencyDashboard.addTalent.attributes.no")}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1227,7 +1331,7 @@ export default function AddTalent() {
 
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                  Height
+                  {t("agencyDashboard.addTalent.attributes.height")}
                 </Label>
                 <div className="flex gap-4">
                   <div className="flex-1">
@@ -1246,7 +1350,7 @@ export default function AddTalent() {
                       max="8"
                     />
                     <span className="text-xs text-gray-500 mt-1 block">
-                      Feet
+                      {t("agencyDashboard.addTalent.attributes.feet")}
                     </span>
                   </div>
                   <div className="flex-1">
@@ -1265,7 +1369,7 @@ export default function AddTalent() {
                       max="11"
                     />
                     <span className="text-xs text-gray-500 mt-1 block">
-                      Inches
+                      {t("agencyDashboard.addTalent.attributes.inches")}
                     </span>
                   </div>
                 </div>
@@ -1273,7 +1377,7 @@ export default function AddTalent() {
 
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                  Measurements (in)
+                  {t("agencyDashboard.compCard.attributes.measurements")}
                 </Label>
                 <div className="grid md:grid-cols-3 gap-4">
                   <div>
@@ -1291,7 +1395,7 @@ export default function AddTalent() {
                       min="0"
                     />
                     <span className="text-xs text-gray-500 mt-1 block">
-                      Bust
+                      {t("agencyDashboard.addTalent.attributes.bust")}
                     </span>
                   </div>
                   <div>
@@ -1309,7 +1413,7 @@ export default function AddTalent() {
                       min="0"
                     />
                     <span className="text-xs text-gray-500 mt-1 block">
-                      Waist
+                      {t("agencyDashboard.addTalent.attributes.waist")}
                     </span>
                   </div>
                   <div>
@@ -1327,7 +1431,7 @@ export default function AddTalent() {
                       min="0"
                     />
                     <span className="text-xs text-gray-500 mt-1 block">
-                      Hips
+                      {t("agencyDashboard.addTalent.attributes.hips")}
                     </span>
                   </div>
                 </div>
@@ -1338,7 +1442,7 @@ export default function AddTalent() {
                   htmlFor="special_skills"
                   className="text-sm font-medium text-gray-700 mb-2 block"
                 >
-                  Special Skills / Tags (separated by comma)
+                  {t("agencyDashboard.addTalent.mediaSocial.specialSkills")}
                 </Label>
                 <Input
                   id="special_skills"
@@ -1358,14 +1462,14 @@ export default function AddTalent() {
                   className="flex-1 h-12 border-2 border-gray-300"
                 >
                   <ArrowLeft className="w-5 h-5 mr-2" />
-                  Back
+                  {t("agencyDashboard.addTalent.buttons.back")}
                 </Button>
                 <Button
                   onClick={() => setStep(3)}
                   disabled={!canProceedStep2}
                   className="flex-1 h-12 bg-indigo-600 hover:bg-indigo-700 text-white disabled:bg-gray-400"
                 >
-                  Continue to Media
+                  {t("agencyDashboard.addTalent.buttons.continue")}
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </div>
@@ -1377,17 +1481,17 @@ export default function AddTalent() {
             <div className="space-y-6">
               <div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  Media & Social
+                  {t("agencyDashboard.addTalent.mediaSocial.title")}
                 </h3>
                 <p className="text-gray-600">
-                  Upload hero media and connect social accounts
+                  {t("agencyDashboard.addTalent.mediaSocial.description")}
                 </p>
               </div>
 
               {/* Hero Media */}
               <div>
                 <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                  Hero Media (Image or Video)
+                  {t("agencyDashboard.addTalent.mediaSocial.heroMedia")}
                 </Label>
                 {!formData.hero_media ? (
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-indigo-400 transition-colors">
@@ -1410,7 +1514,9 @@ export default function AddTalent() {
                         <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                       )}
                       <p className="text-gray-700 font-medium mb-1">
-                        {uploading ? "Uploading..." : "Click to upload"}
+                        {uploading
+                          ? t("agencyDashboard.roster.states.uploading")
+                          : t("agencyDashboard.roster.upload.dragDrop")}
                       </p>
                       <p className="text-sm text-gray-500">
                         Video (MP4, MOV) or Image (JPG, PNG)
@@ -1449,7 +1555,8 @@ export default function AddTalent() {
               {/* Photo Gallery */}
               <div>
                 <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                  Photo Gallery ({formData.photos.length}/10)
+                  {t("agencyDashboard.talentSideModal.photoGallery")} (
+                  {formData.photos.length}/10)
                 </Label>
                 <input
                   ref={photoInputRef}
@@ -1473,7 +1580,11 @@ export default function AddTalent() {
                         <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                       )}
                       <p className="text-gray-700 font-medium mb-1">
-                        {uploading ? "Uploading..." : "Click to upload photos"}
+                        {uploading
+                          ? t("agencyDashboard.roster.states.uploading")
+                          : t(
+                              "agencyDashboard.addTalent.mediaSocial.uploadPhotos",
+                            )}
                       </p>
                       <p className="text-sm text-gray-500">
                         JPG or PNG, multiple files accepted
@@ -1501,8 +1612,12 @@ export default function AddTalent() {
                               }`}
                             >
                               {profilePhotoIndex === index
-                                ? "Profile"
-                                : "Set as profile"}
+                                ? t("agencyDashboard.addTalent.profile", {
+                                    defaultValue: "Profile",
+                                  })
+                                : t("agencyDashboard.addTalent.setAsProfile", {
+                                    defaultValue: "Set as profile",
+                                  })}
                             </button>
                           )}
                           <Button
@@ -1524,7 +1639,9 @@ export default function AddTalent() {
                         disabled={uploading}
                       >
                         <Upload className="w-4 h-4 mr-2" />
-                        Add More Photos
+                        {t("agencyDashboard.addTalent.addMorePhotos", {
+                          defaultValue: "Add More Photos",
+                        })}
                       </Button>
                     )}
                   </div>
@@ -1534,7 +1651,7 @@ export default function AddTalent() {
               {/* Voice Sample */}
               <div>
                 <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                  Voice Sample (Optional)
+                  {t("agencyDashboard.addTalent.mediaSocial.voiceSample")}
                 </Label>
                 {!formData.voice_sample ? (
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-indigo-400 transition-colors">
@@ -1558,8 +1675,10 @@ export default function AddTalent() {
                       )}
                       <p className="text-gray-700 font-medium mb-1">
                         {uploadingVoice
-                          ? "Uploading..."
-                          : "Click to upload voice sample"}
+                          ? t("agencyDashboard.roster.states.uploading")
+                          : t(
+                              "agencyDashboard.addTalent.mediaSocial.uploadVoice",
+                            )}
                       </p>
                       <p className="text-sm text-gray-500">
                         MP3, WAV, or other audio format
@@ -1599,7 +1718,7 @@ export default function AddTalent() {
               {/* Instagram Connection */}
               <div>
                 <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                  Instagram Account
+                  {t("agencyDashboard.addTalent.mediaSocial.instagram")}
                 </Label>
                 <div className="flex gap-2">
                   <div className="relative flex-1">
@@ -1631,19 +1750,20 @@ export default function AddTalent() {
                     {fetchingInstagram ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Syncing...
+                        {t("agencyDashboard.talentSideModal.syncing")}
                       </>
                     ) : (
                       <>
                         <Instagram className="w-4 h-4 mr-2" />
-                        Connect
+                        {t("agencyDashboard.talentSideModal.connect")}
                       </>
                     )}
                   </Button>
                 </div>
                 {formData.instagram_followers > 0 && !fetchingInstagram && (
                   <p className="text-sm text-gray-500 mt-2">
-                    {formData.instagram_followers.toLocaleString()} followers
+                    {formData.instagram_followers.toLocaleString()}{" "}
+                    {t("agencyDashboard.talentSideModal.followers")}
                   </p>
                 )}
               </div>
@@ -1651,8 +1771,10 @@ export default function AddTalent() {
               <Alert className="bg-blue-50 border-2 border-blue-200">
                 <AlertCircle className="h-4 w-4 text-blue-600" />
                 <AlertDescription className="text-blue-900 text-sm">
-                  You can always add more media and update details later from
-                  the roster management screen.
+                  {t("agencyDashboard.addTalent.mediaLaterHelp", {
+                    defaultValue:
+                      "You can always add more media and update details later from the roster management screen.",
+                  })}
                 </AlertDescription>
               </Alert>
 
@@ -1663,7 +1785,7 @@ export default function AddTalent() {
                   className="flex-1 h-12 border-2 border-gray-300"
                 >
                   <ArrowLeft className="w-5 h-5 mr-2" />
-                  Back
+                  {t("agencyDashboard.addTalent.buttons.back")}
                 </Button>
                 <Button
                   onClick={handleSubmit}
@@ -1673,12 +1795,18 @@ export default function AddTalent() {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      {`Adding ${entityLower}...`}
+                      {t("agencyDashboard.addTalent.addingEntity", {
+                        defaultValue: "Adding {{entityLower}}...",
+                        entityLower,
+                      })}
                     </>
                   ) : (
                     <>
                       <CheckCircle2 className="w-5 h-5 mr-2" />
-                      {`Add ${entityTitle} to Roster`}
+                      {t("agencyDashboard.addTalent.addToRoster", {
+                        defaultValue: "Add {{entityTitle}} to Roster",
+                        entityTitle,
+                      })}
                     </>
                   )}
                 </Button>
