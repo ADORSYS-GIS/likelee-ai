@@ -97,10 +97,7 @@ type GeneralSettingsViewProps = {
 const CALENDLY_USE_DEFAULT_VALUE = "__use_default_mapping__";
 const CALENDLY_EVENT_TYPE_URI_PREFIX = "https://api.calendly.com/event_types/";
 const CALENDLY_BOOKING_TYPE_OPTIONS = [
-  {
-    key: "default",
-    label: i18n.t("settings.integrations.calendlyEventType", { ns: "agency" }),
-  },
+  { key: "default", label: "Calendly Event Type" },
 ] as const;
 
 type CalendlySettingsState = {
@@ -194,7 +191,7 @@ const CalendlyAutosaveStatus = ({
     return (
       <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-500">
         <RefreshCw className="h-3 w-3 animate-spin" />
-        {i18n.t("settings.integrations.fieldStatus.saving", { ns: "agency" })}
+        Saving...
       </span>
     );
   }
@@ -203,7 +200,7 @@ const CalendlyAutosaveStatus = ({
     return (
       <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600">
         <Check className="h-3 w-3" />
-        {i18n.t("settings.integrations.fieldStatus.saved", { ns: "agency" })}
+        Saved
       </span>
     );
   }
@@ -211,7 +208,7 @@ const CalendlyAutosaveStatus = ({
   return (
     <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600">
       <XCircle className="h-3 w-3" />
-      {i18n.t("settings.integrations.fieldStatus.saveFailed", { ns: "agency" })}
+      Save failed
     </span>
   );
 };
@@ -346,21 +343,21 @@ const InviteTeamMemberModal = ({
             {t("settings.team.modals.inviteDescription")}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 pt-2">
-          <div className="space-y-2">
-            <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-              {t("settings.team.fields.email")}
+        <div className="space-y-4 sm:space-y-6 py-4">
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label className="text-xs sm:text-sm font-bold text-gray-900">
+              {t("settings.team.modals.emailAddress")}
             </Label>
             <Input
               value={email}
-              onChange={(e) => onEmailChange(e.target.value)}
-              placeholder="teammate@example.com"
-              className="h-10 sm:h-11 rounded-xl bg-gray-50 border-gray-200 text-sm"
+              onChange={(event) => onEmailChange(event.target.value)}
+              placeholder={t("settings.team.modals.emailPlaceholder")}
+              className="h-9 sm:h-11 bg-gray-50 border-gray-200 rounded-xl text-xs sm:text-sm"
             />
           </div>
-          <div className="space-y-2">
-            <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-              {t("settings.team.fields.role")}
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label className="text-xs sm:text-sm font-bold text-gray-900">
+              {t("settings.team.userRole")}
             </Label>
             <Select
               value={role}
@@ -368,134 +365,73 @@ const InviteTeamMemberModal = ({
                 onRoleChange(value as Exclude<TeamRoleValue, "owner">)
               }
             >
-              <SelectTrigger className="h-10 sm:h-11 rounded-xl bg-gray-50 border-gray-200 text-sm">
-                <SelectValue />
+              <SelectTrigger className="h-9 sm:h-11 bg-gray-50 border-gray-200 rounded-xl text-xs sm:text-sm">
+                <SelectValue placeholder={t("settings.team.selectRole")} />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
                 {TEAM_ROLE_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {t(option.labelKey)}
+                  <SelectItem
+                    key={option.value}
+                    value={option.value}
+                    className="text-xs font-bold py-2.5"
+                  >
+                    <div className="flex flex-col gap-0.5">
+                      <span>
+                        {option.value === "admin"
+                          ? t("settings.team.roles.admin.label")
+                          : option.value === "project_manager"
+                            ? t("settings.team.roles.projectManager.label")
+                            : t("settings.team.roles.reviewer.label")}
+                      </span>
+                      <span className="text-[10px] text-gray-400 font-medium">
+                        {option.value === "admin"
+                          ? t("settings.team.roles.admin.description")
+                          : option.value === "project_manager"
+                            ? t(
+                                "settings.team.roles.projectManager.description",
+                              )
+                            : t("settings.team.roles.reviewer.description")}
+                      </span>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
+          <div className="p-3 sm:p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
+            <p className="text-[10px] sm:text-xs text-indigo-700 font-medium leading-relaxed">
+              <span className="font-bold">{t("settings.team.note")}:</span>{" "}
+              {t("settings.team.inviteNote")}
+            </p>
+          </div>
         </div>
-        <DialogFooter className="mt-5 gap-2 sm:gap-0">
+        <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
           <Button
             variant="ghost"
             onClick={() => onOpenChange(false)}
-            className="font-bold rounded-xl"
+            className="w-full sm:w-auto font-bold text-xs sm:text-sm"
+            disabled={submitting}
           >
-            {t("settings.team.actions.cancel")}
+            {t("common.cancel", { ns: "common", defaultValue: "Cancel" })}
           </Button>
           <Button
             onClick={onSubmit}
-            disabled={submitting || !email.trim()}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl px-5"
+            disabled={submitting}
+            className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-9 sm:h-11 px-6 rounded-xl flex items-center justify-center gap-2 text-xs sm:text-sm"
           >
             {submitting ? (
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <Mail className="w-4 h-4 mr-2" />
+              <Mail className="w-4 h-4" />
             )}
-            {t("settings.team.actions.sendInvite")}
+            {submitting
+              ? t("settings.team.modals.sending")
+              : t("settings.team.modals.sendInvitation")}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-};
-
-const SETTINGS_COPY: Record<string, Record<string, string>> = {
-  en: {
-    agencySettings: "Agency Settings",
-    settingsDescription: "Configure your agency profile and preferences",
-    profile: "Profile",
-    subscription: "Subscription",
-    commissions: "Commissions",
-    emailTemplates: "Email Templates",
-    notifications: "Notifications",
-    taxCurrency: "Tax & Currency",
-    team: "Team",
-    fileStorage: "File Storage",
-    integrations: "Integrations",
-    currentPlan: "Current Plan",
-    viewPlans: "View Plans",
-    billingSubscription: "Billing & Subscription",
-    agencyInformation: "Agency Information",
-    verified: "Verified",
-    agencyName: "Agency Name *",
-    legalEntityName: "Legal Entity Name",
-    address: "Address",
-    city: "City",
-    stateProvince: "State/Province",
-    zipPostalCode: "ZIP/Postal Code",
-    country: "Country",
-    selectCountry: "Select country",
-    unitedStates: "United States",
-    unitedKingdom: "United Kingdom",
-    canada: "Canada",
-    germany: "Germany",
-    timeZone: "Time Zone",
-    selectTimezone: "Select timezone",
-    easternTime: "Eastern Time (EST)",
-    centralTime: "Central Time (CST)",
-    pacificTime: "Pacific Time (PST)",
-    phone: "Phone",
-    email: "Email",
-    website: "Website",
-    taxIdEin: "Tax ID / EIN",
-    branding: "Branding",
-    agencyLogo: "Agency Logo",
-    uploading: "Uploading...",
-    uploadNewLogo: "Upload New Logo",
-    emailSignature: "Email Signature",
-  },
-  es: {
-    agencySettings: "Configuración de la agencia",
-    settingsDescription: "Configura el perfil y las preferencias de tu agencia",
-    profile: "Perfil",
-    subscription: "Suscripción",
-    commissions: "Comisiones",
-    emailTemplates: "Plantillas de correo",
-    notifications: "Notificaciones",
-    taxCurrency: "Impuestos y moneda",
-    team: "Equipo",
-    fileStorage: "Almacenamiento de archivos",
-    integrations: "Integraciones",
-    currentPlan: "Plan actual",
-    viewPlans: "Ver planes",
-    billingSubscription: "Facturación y suscripción",
-    agencyInformation: "Información de la agencia",
-    verified: "Verificada",
-    agencyName: "Nombre de la agencia *",
-    legalEntityName: "Nombre legal de la entidad",
-    address: "Dirección",
-    city: "Ciudad",
-    stateProvince: "Estado/Provincia",
-    zipPostalCode: "Código postal",
-    country: "País",
-    selectCountry: "Seleccionar país",
-    unitedStates: "Estados Unidos",
-    unitedKingdom: "Reino Unido",
-    canada: "Canadá",
-    germany: "Alemania",
-    timeZone: "Zona horaria",
-    selectTimezone: "Seleccionar zona horaria",
-    easternTime: "Hora del Este (EST)",
-    centralTime: "Hora Central (CST)",
-    pacificTime: "Hora del Pacífico (PST)",
-    phone: "Teléfono",
-    email: "Correo",
-    website: "Sitio web",
-    taxIdEin: "ID fiscal / EIN",
-    branding: "Marca",
-    agencyLogo: "Logo de la agencia",
-    uploading: "Subiendo...",
-    uploadNewLogo: "Subir nuevo logo",
-    emailSignature: "Firma de correo",
-  },
 };
 
 const EditPermissionsModal = ({
@@ -722,11 +658,7 @@ const GeneralSettingsView = ({
   hasProAccess = false,
   agencyDisplayPlanLabel,
 }: GeneralSettingsViewProps) => {
-  const { t, i18n } = useTranslation("agency");
-  const st = (key: string) => {
-    const lng = String(i18n.language || "en").split("-")[0];
-    return SETTINGS_COPY[lng]?.[key] || SETTINGS_COPY.en[key] || key;
-  };
+  const { t } = useTranslation("agency");
   const { profile, refreshProfile, token } = useAuth();
   const { toast } = useToast();
   const normalizedAgencyType = String((profile as any)?.agency_type || "")
@@ -1201,9 +1133,10 @@ const GeneralSettingsView = ({
         }
         if (!silentSuccess) {
           toast({
-            title: t("settings.saveProfile.settingsSaved"),
+            title: "Settings Saved",
             description:
-              data.message || t("settings.integrations.connectSuccess"),
+              data.message ||
+              "Calendly integration settings have been updated.",
           });
         }
         if (
@@ -1782,8 +1715,8 @@ const GeneralSettingsView = ({
 
       if (error) throw error;
       toast({
-        title: t("settings.notifications.settingsSaved"),
-        description: t("settings.notifications.settingsSavedDescription"),
+        title: "Notification settings saved",
+        description: "Your notification preferences have been updated.",
       });
     } catch (e: any) {
       toast({
@@ -1826,8 +1759,8 @@ const GeneralSettingsView = ({
 
       if (error) throw error;
       toast({
-        title: t("settings.taxAndCurrency.settingsSaved"),
-        description: t("settings.taxAndCurrency.settingsSavedDescription"),
+        title: "Tax & currency settings saved",
+        description: "Your settings have been updated.",
       });
     } catch (e: any) {
       toast({
@@ -1958,8 +1891,8 @@ const GeneralSettingsView = ({
 
       if (error) throw error;
       toast({
-        title: t("settings.emailTemplates.settingsSaved"),
-        description: t("settings.emailTemplates.settingsSavedDescription"),
+        title: "Email templates saved",
+        description: "Your email templates have been saved.",
       });
     } catch (e: any) {
       toast({
@@ -1993,8 +1926,8 @@ const GeneralSettingsView = ({
       if (error) throw error;
 
       toast({
-        title: t("settings.commissions.settingsSaved"),
-        description: t("settings.commissions.settingsSavedDescription"),
+        title: "Commission settings saved",
+        description: "Your commission settings have been saved.",
       });
     } catch (error: any) {
       toast({
@@ -2034,7 +1967,7 @@ const GeneralSettingsView = ({
       await refreshProfile();
       toast({
         title: "Settings Saved",
-        description: t("settings.saveProfile.profileUpdated"),
+        description: "Your agency profile has been updated successfully.",
       });
     } catch (error: any) {
       console.error("Error saving profile:", error);
@@ -2099,8 +2032,8 @@ const GeneralSettingsView = ({
     <div className="max-w-full mx-auto">
       <div className="space-y-6 animate-in fade-in duration-500">
         <DashboardSectionHeader
-          title={st("agencySettings")}
-          description={st("settingsDescription")}
+          title="Agency Settings"
+          description="Configure your agency profile and preferences"
         />
 
         <div className="flex gap-2 p-1 bg-gray-100/50 rounded-xl w-full overflow-x-auto no-scrollbar lg:w-fit">
@@ -2128,15 +2061,7 @@ const GeneralSettingsView = ({
                   : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
               }`}
             >
-              {st(
-                tab === "Tax & Currency"
-                  ? "taxCurrency"
-                  : tab === "Email Templates"
-                    ? "emailTemplates"
-                    : tab === "File Storage"
-                      ? "fileStorage"
-                      : tab.charAt(0).toLowerCase() + tab.slice(1),
-              )}
+              {tab}
             </button>
           ))}
         </div>
@@ -2161,7 +2086,7 @@ const GeneralSettingsView = ({
                       planTier === "pro" ? "text-indigo-300" : "text-gray-400"
                     }`}
                   >
-                    {st("currentPlan")}
+                    Current Plan
                   </div>
                   <div className="mt-2 flex items-center gap-2">
                     <div
@@ -2189,9 +2114,7 @@ const GeneralSettingsView = ({
                               : "border-gray-200 text-gray-600 hover:bg-gray-50"
                       }`}
                     >
-                      <a href={createPageUrl("AgencySubscribe")}>
-                        {st("viewPlans")}
-                      </a>
+                      <a href={createPageUrl("AgencySubscribe")}>View Plans</a>
                     </Button>
                     <Button
                       asChild
@@ -2213,7 +2136,7 @@ const GeneralSettingsView = ({
                       }`}
                     >
                       <a href={createPageUrl("AgencySubscribe")}>
-                        {st("billingSubscription")}
+                        Billing & Subscription
                       </a>
                     </Button>
                   </div>
@@ -2230,7 +2153,7 @@ const GeneralSettingsView = ({
                 </div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                    {st("agencyInformation")}
+                    Agency Information
                   </h3>
                   {(kycStatus === "approved" ||
                     kycStatus === "verified" ||
@@ -2238,7 +2161,7 @@ const GeneralSettingsView = ({
                     <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 rounded-full border border-green-100 shadow-sm animate-in fade-in zoom-in-95 duration-500">
                       <BadgeCheck className="w-3.5 h-3.5 text-green-600" />
                       <span className="text-[10px] font-bold text-green-700 uppercase tracking-wider">
-                        {st("verified")}
+                        Verified
                       </span>
                     </div>
                   )}
@@ -2248,7 +2171,7 @@ const GeneralSettingsView = ({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    {st("agencyName")}
+                    Agency Name *
                   </Label>
                   <Input
                     value={formData.agency_name}
@@ -2260,7 +2183,7 @@ const GeneralSettingsView = ({
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    {st("legalEntityName")}
+                    Legal Entity Name
                   </Label>
                   <Input
                     value={formData.legal_entity_name}
@@ -2272,7 +2195,7 @@ const GeneralSettingsView = ({
                 </div>
                 <div className="md:col-span-2 space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    {st("address")}
+                    Address
                   </Label>
                   <Input
                     value={formData.address}
@@ -2284,7 +2207,7 @@ const GeneralSettingsView = ({
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    {st("city")}
+                    City
                   </Label>
                   <Input
                     value={formData.city}
@@ -2295,7 +2218,7 @@ const GeneralSettingsView = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-sm font-bold text-gray-900">
-                      {st("stateProvince")}
+                      State/Province
                     </Label>
                     <Input
                       value={formData.state}
@@ -2307,7 +2230,7 @@ const GeneralSettingsView = ({
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm font-bold text-gray-900">
-                      {st("zipPostalCode")}
+                      ZIP/Postal Code
                     </Label>
                     <Input
                       value={formData.zip_postal_code}
@@ -2320,44 +2243,44 @@ const GeneralSettingsView = ({
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    {st("country")}
+                    Country
                   </Label>
                   <Select
                     value={formData.country}
                     onValueChange={(val) => handleInputChange("country", val)}
                   >
                     <SelectTrigger className="bg-white border-gray-200 h-9 sm:h-11 text-gray-900 font-medium rounded-xl text-sm">
-                      <SelectValue placeholder={st("selectCountry")} />
+                      <SelectValue placeholder="Select country" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
-                      <SelectItem value="us">{st("unitedStates")}</SelectItem>
-                      <SelectItem value="uk">{st("unitedKingdom")}</SelectItem>
-                      <SelectItem value="ca">{st("canada")}</SelectItem>
-                      <SelectItem value="de">{st("germany")}</SelectItem>
+                      <SelectItem value="us">United States</SelectItem>
+                      <SelectItem value="uk">United Kingdom</SelectItem>
+                      <SelectItem value="ca">Canada</SelectItem>
+                      <SelectItem value="de">Germany</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    {st("timeZone")}
+                    Time Zone
                   </Label>
                   <Select
                     value={formData.time_zone}
                     onValueChange={(val) => handleInputChange("time_zone", val)}
                   >
                     <SelectTrigger className="bg-white border-gray-200 h-9 sm:h-11 text-gray-900 font-medium rounded-xl text-sm">
-                      <SelectValue placeholder={st("selectTimezone")} />
+                      <SelectValue placeholder="Select timezone" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
-                      <SelectItem value="est">{st("easternTime")}</SelectItem>
-                      <SelectItem value="cst">{st("centralTime")}</SelectItem>
-                      <SelectItem value="pst">{st("pacificTime")}</SelectItem>
+                      <SelectItem value="est">Eastern Time (EST)</SelectItem>
+                      <SelectItem value="cst">Central Time (CST)</SelectItem>
+                      <SelectItem value="pst">Pacific Time (PST)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    {st("phone")}
+                    Phone
                   </Label>
                   <Input
                     value={formData.phone_number}
@@ -2369,7 +2292,7 @@ const GeneralSettingsView = ({
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    {st("email")}
+                    Email
                   </Label>
                   <Input
                     value={formData.email}
@@ -2379,7 +2302,7 @@ const GeneralSettingsView = ({
                 </div>
                 <div className="md:col-span-2 space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    {st("website")}
+                    Website
                   </Label>
                   <Input
                     value={formData.website}
@@ -2391,7 +2314,7 @@ const GeneralSettingsView = ({
                 </div>
                 <div className="md:col-span-2 space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    {st("taxIdEin")}
+                    Tax ID / EIN
                   </Label>
                   <Input
                     value={formData.tax_id_ein}
@@ -2408,12 +2331,12 @@ const GeneralSettingsView = ({
             {/* Branding */}
             <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
               <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">
-                {st("branding")}
+                Branding
               </h3>
               <div className="space-y-8">
                 <div className="space-y-4">
                   <Label className="text-sm font-bold text-gray-900">
-                    {st("agencyLogo")}
+                    Agency Logo
                   </Label>
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
                     <div className="w-20 h-20 rounded-xl bg-white border border-gray-200 flex items-center justify-center shadow-sm overflow-hidden p-2">
@@ -2447,14 +2370,14 @@ const GeneralSettingsView = ({
                       ) : (
                         <Upload className="w-4 h-4" />
                       )}
-                      {isUploading ? st("uploading") : st("uploadNewLogo")}
+                      {isUploading ? "Uploading..." : "Upload New Logo"}
                     </Button>
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    {st("emailSignature")}
+                    Email Signature
                   </Label>
                   <Textarea
                     value={formData.email_signature}
@@ -2479,9 +2402,7 @@ const GeneralSettingsView = ({
                 ) : (
                   <Save className="w-5 h-5" />
                 )}
-                {isSaving
-                  ? t("settings.saveProfile.saving")
-                  : t("settings.saveProfile.saveProfileSettings")}
+                {isSaving ? "Saving..." : "Save Profile Settings"}
               </Button>
             </div>
           </div>
@@ -2563,9 +2484,7 @@ const GeneralSettingsView = ({
                 ) : (
                   <Save className="w-5 h-5" />
                 )}
-                {isSavingCommissions
-                  ? t("settings.commissions.saving")
-                  : t("settings.commissions.saveCommissionSettings")}
+                {isSavingCommissions ? "Saving..." : "Save Commission Settings"}
               </Button>
             </div>
           </div>
@@ -2703,9 +2622,7 @@ const GeneralSettingsView = ({
                 ) : (
                   <Save className="w-5 h-5" />
                 )}
-                {isSavingEmailTemplates
-                  ? t("settings.emailTemplates.saving")
-                  : t("settings.emailTemplates.save")}
+                {isSavingEmailTemplates ? "Saving..." : "Save Email Templates"}
               </Button>
             </div>
 
@@ -3462,7 +3379,8 @@ const GeneralSettingsView = ({
               {!hasIrlBookingAddon && (
                 <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    {t("agencyDashboard.navigation.enableIrlBookingMessage")}
+                    Enable the IRL Booking add-on to use Calendly, scouting,
+                    client CRM, bookings, and IRL accounting workflows.
                   </div>
                   <Button
                     asChild
@@ -3470,7 +3388,7 @@ const GeneralSettingsView = ({
                     className="h-9 rounded-xl bg-amber-600 px-4 font-bold text-white hover:bg-amber-700"
                   >
                     <a href={createPageUrl("AgencySubscribe")}>
-                      {t("agencyDashboard.navigation.getIrlBookingAddon")}
+                      Get IRL Booking Add-on
                     </a>
                   </Button>
                 </div>
@@ -3598,9 +3516,8 @@ const GeneralSettingsView = ({
                               Calendly Event Type
                             </h4>
                             <p className="text-xs text-gray-500 font-medium">
-                              {t(
-                                "settings.integrations.calendlyEventTypeDescription",
-                              )}
+                              Select the Calendly event type Likelee should use
+                              for booking invites and reminders
                             </p>
                           </div>
                           <ChevronDown
@@ -3764,20 +3681,17 @@ const GeneralSettingsView = ({
                                     className="h-10 bg-white border-gray-200 rounded-lg text-xs font-medium"
                                   />
                                   <p className="text-[10px] text-gray-400 font-medium leading-relaxed">
-                                    {t(
-                                      "settings.integrations.calendlyEventTypeManualPaste",
-                                    )}
+                                    Paste the full Calendly event type URI that
+                                    Likelee should use for bookings. This works
+                                    even when the token cannot list event types
+                                    automatically.
                                   </p>
                                 </div>
                               ) : (
                                 <div className="p-3 bg-white border border-gray-100 rounded-lg text-[10px] text-gray-400 font-bold flex items-center justify-center text-center">
                                   {hasSavedCalendlyToken
-                                    ? t(
-                                        "settings.integrations.calendlyNoEventTypes",
-                                      )
-                                    : t(
-                                        "settings.integrations.calendlySaveTokenFirst",
-                                      )}
+                                    ? "No active Calendly event types found for this account"
+                                    : "Save a valid Calendly token to load event types"}
                                 </div>
                               )}
                             </div>
@@ -3796,7 +3710,7 @@ const GeneralSettingsView = ({
                       className="h-11 rounded-xl border-amber-300 px-6 font-bold text-amber-800 hover:bg-amber-50"
                     >
                       <a href={createPageUrl("AgencySubscribe")}>
-                        {t("agencyDashboard.navigation.buyIrlBookingAddon")}
+                        Buy IRL Booking Add-on
                       </a>
                     </Button>
                   )}
