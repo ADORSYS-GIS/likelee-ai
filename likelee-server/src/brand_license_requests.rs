@@ -837,5 +837,5 @@ pub async fn update_status_for_agency(
         return Err(sanitize_db_error(status.as_u16(), text));
     }
 
-    Ok(Json(json!({"status":"ok"})))
+    Ok(Json(json!({ "status": "ok" })))
 }

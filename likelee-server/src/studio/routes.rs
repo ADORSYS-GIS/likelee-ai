@@ -4,9 +4,9 @@ use super::wallet;
 use crate::auth::AuthUser;
 use crate::config::AppState;
 use crate::storage::{
-    canonical_object_path, download_object, insert_asset_record, safe_fetch_url,
-    sanitize_file_name, upload_object, StorageAssetRecord, StorageContextType, StorageOwnerType,
-    StorageVisibility,
+    canonical_object_path, download_object, generate_signed_url, insert_asset_record,
+    safe_fetch_url, sanitize_file_name, upload_object, StorageAssetRecord, StorageContextType,
+    StorageOwnerType, StorageVisibility,
 };
 use crate::team::{require_agency_access, require_brand_access};
 use anyhow::anyhow;
@@ -822,145 +822,738 @@ pub async fn upload_file(
 }
 
 /// GET /api/studio/licensed-assets
-/// Returns image and audio assets the brand can use in the Studio.
-/// Scoped to campaigns where the brand has an approved (active) licensing request.
+/// Returns image and audio assets the organization can use in the Studio.
+/// For brands: sources assets from agency catalogs linked to approved license requests.
+/// For agencies: sources assets from their represented talents (portfolio, reference images, voice recordings).
 pub async fn list_licensed_assets(
     State(state): State<AppState>,
     auth_user: AuthUser,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    // 1. Find all talent_ids from approved licensing requests for this brand user
-    let lr_resp = state.pg
-        .from("licensing_requests")
-        .select("talent_id,campaign_title,talent_name,agency_users(full_legal_name,stage_name,profile_photo_url)")
-        .eq("brand_user_id", &auth_user.id)
-        .eq("status", "approved")
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    // Detect if user is agency or brand
+    let (org_type, org_id) = match require_agency_access(&state, &auth_user).await {
+        Ok(access) => ("agency", access.organization_id),
+        Err(_) => {
+            let access = require_brand_access(&state, &auth_user).await?;
+            ("brand", access.organization_id)
+        }
+    };
 
-    let lr_text = lr_resp.text().await.unwrap_or_else(|_| "[]".into());
-    let lr_rows: Vec<serde_json::Value> = serde_json::from_str(&lr_text).unwrap_or_default();
+    info!(
+        user_id = %auth_user.id,
+        org_type = %org_type,
+        org_id = %org_id,
+        "licensed_assets_request"
+    );
 
     let mut assets: Vec<serde_json::Value> = Vec::new();
+    let now = chrono::Utc::now();
 
-    for row in &lr_rows {
-        let talent_id = row["talent_id"].as_str().unwrap_or("");
-        if talent_id.is_empty() {
-            continue;
+    // Branch based on organization type
+    if org_type == "agency" {
+        // Agency: get assets from represented talents
+        let agency_assets = fetch_agency_talent_assets(&state, &org_id).await;
+        assets.extend(agency_assets);
+    } else {
+        // Brand: get assets from approved licensing requests
+        let brand_assets = fetch_brand_licensed_assets(&state, &org_id, now).await;
+        assets.extend(brand_assets);
+    }
+
+    info!(user_id = %auth_user.id, org_type = %org_type, count = assets.len(), "licensed_assets_listed");
+
+    Ok(Json(json!({ "assets": assets })))
+}
+
+/// Fetch licensed assets for a brand from approved license requests and agency catalogs
+async fn fetch_brand_licensed_assets(
+    state: &AppState,
+    brand_id: &str,
+    now: chrono::DateTime<chrono::Utc>,
+) -> Vec<serde_json::Value> {
+    let mut assets: Vec<serde_json::Value> = Vec::new();
+
+    // 0. Get brand's stripe_customer_id to filter by payment
+    let brand_resp = state
+        .pg
+        .from("brands")
+        .select("stripe_customer_id")
+        .eq("id", brand_id)
+        .single()
+        .execute()
+        .await;
+
+    let stripe_customer_id: Option<String> = match brand_resp {
+        Ok(resp) => {
+            if let Ok(text) = resp.text().await {
+                if let Ok(brand) = serde_json::from_str::<serde_json::Value>(&text) {
+                    brand
+                        .get("stripe_customer_id")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string())
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
         }
+        Err(_) => None,
+    };
 
-        let campaign_name = row["campaign_title"]
-            .as_str()
-            .or_else(|| row["talent_name"].as_str())
+    // 1. Get approved licensing_requests for this brand
+    let lr_resp = state
+        .pg
+        .from("licensing_requests")
+        .select("id,agency_id,talent_id,talent_name,campaign_title,status")
+        .eq("brand_id", brand_id)
+        .eq("status", "approved")
+        .execute()
+        .await;
+
+    let approved_licenses: Vec<serde_json::Value> = if let Ok(resp) = lr_resp {
+        if let Ok(text) = resp.text().await {
+            serde_json::from_str(&text).unwrap_or_default()
+        } else {
+            Vec::new()
+        }
+    } else {
+        Vec::new()
+    };
+
+    // 2. For each approved license, find its catalog and verify entitlement
+    for license in &approved_licenses {
+        let license_id = license.get("id").and_then(|v| v.as_str()).unwrap_or("");
+        let license_agency_id = license
+            .get("agency_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let talent_name = license
+            .get("talent_name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Talent")
+            .to_string();
+        let campaign_name = license
+            .get("campaign_title")
+            .and_then(|v| v.as_str())
             .unwrap_or("Licensed Campaign")
             .to_string();
 
-        let talent_display = row
-            .get("agency_users")
-            .and_then(|u| {
-                u["stage_name"]
-                    .as_str()
-                    .or_else(|| u["full_legal_name"].as_str())
-            })
-            .or_else(|| row["talent_name"].as_str())
-            .unwrap_or("Talent")
-            .to_string();
-
-        let avatar = row
-            .get("agency_users")
-            .and_then(|u| u["profile_photo_url"].as_str())
-            .map(String::from);
-
-        // 2a. Portrait / profile image asset
-        if let Some(ref av) = avatar {
-            assets.push(json!({
-                "id": format!("avatar-{}", talent_id),
-                "type": "image",
-                "name": format!("{} – Profile Photo", talent_display),
-                "url": av,
-                "campaign_name": campaign_name,
-                "talent_name": talent_display,
-                "source": "licensed"
-            }));
+        if license_id.is_empty() {
+            continue;
         }
 
-        // 2b. Voice recordings accessible for this talent
-        let vr_resp = state
-            .pg
-            .from("voice_recordings")
-            .select("id,file_name,storage_bucket,storage_path")
-            .eq("user_id", talent_id)
-            .eq("accessible", "true")
-            .execute()
-            .await;
+        // Check per-license entitlement: verify payment is tied to this license's agency
+        // If brand has stripe_customer_id, verify there's an active grant for this license's agency
+        let mut license_entitled = true;
+        if let Some(ref sc_id) = stripe_customer_id {
+            if !license_agency_id.is_empty() {
+                // Check if there's an active access grant for this brand's customer
+                // tied to the specific agency that owns this license
+                let grant_resp = state
+                    .pg
+                    .from("licensing_access_grants")
+                    .select("id")
+                    .eq("stripe_customer_id", sc_id)
+                    .eq("agency_id", license_agency_id)
+                    .eq("status", "active")
+                    .limit(1)
+                    .execute()
+                    .await;
 
-        if let Ok(vr_resp) = vr_resp {
-            let vr_text = vr_resp.text().await.unwrap_or_else(|_| "[]".into());
-            let recordings: Vec<serde_json::Value> =
-                serde_json::from_str(&vr_text).unwrap_or_default();
-            for rec in recordings {
-                let rec_id = rec["id"].as_str().unwrap_or("").to_string();
-                let file_name = rec["file_name"].as_str().unwrap_or("voice").to_string();
-                let bucket = rec["storage_bucket"].as_str().unwrap_or("likelee-private");
-                let path = rec["storage_path"].as_str().unwrap_or("");
-                let url = format!(
-                    "{}/storage/v1/object/public/{}/{}",
-                    state.supabase_url.trim_end_matches('/'),
-                    bucket,
-                    path
-                );
-                assets.push(json!({
-                    "id": format!("voice-{}", rec_id),
-                    "type": "audio",
-                    "name": format!("{} – {}", talent_display, file_name),
-                    "url": url,
-                    "campaign_name": campaign_name,
-                    "talent_name": talent_display,
-                    "source": "licensed"
-                }));
+                let has_grant = if let Ok(grant_r) = grant_resp {
+                    if let Ok(text) = grant_r.text().await {
+                        let grants: Vec<serde_json::Value> =
+                            serde_json::from_str(&text).unwrap_or_default();
+                        !grants.is_empty()
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                };
+
+                if !has_grant {
+                    license_entitled = false;
+                    info!(
+                        license_id = %license_id,
+                        agency_id = %license_agency_id,
+                        brand_id = %brand_id,
+                        "license_no_active_payment_entitlement_for_agency"
+                    );
+                }
+            } else {
+                // No agency_id on license - allow access (legacy case or internal license)
+                license_entitled = true;
             }
         }
 
-        // 2c. Agency talent portfolio images
-        let pa_resp = state
+        if !license_entitled {
+            continue;
+        }
+
+        // Find catalog linked to this license request
+        let catalog_resp = state
             .pg
-            .from("portfolio_items")
-            .select("id,title,media_url,media_type")
-            .eq("user_id", talent_id)
-            .eq("media_type", "image")
-            .limit(10)
+            .from("agency_catalogs")
+            .select("id,title,expires_at")
+            .eq("licensing_request_id", license_id)
+            .limit(1)
             .execute()
             .await;
 
-        if let Ok(pa_resp) = pa_resp {
-            let pa_text = pa_resp.text().await.unwrap_or_else(|_| "[]".into());
-            let items: Vec<serde_json::Value> = serde_json::from_str(&pa_text).unwrap_or_default();
-            for item in items {
-                let item_id = item["id"].as_str().unwrap_or("").to_string();
-                let title = item["title"]
-                    .as_str()
-                    .unwrap_or("Portfolio Image")
-                    .to_string();
-                let url = item["media_url"].as_str().unwrap_or("").to_string();
-                if url.is_empty() {
+        let catalog: Option<serde_json::Value> = if let Ok(catalog_r) = catalog_resp {
+            if let Ok(text) = catalog_r.text().await {
+                let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+                rows.into_iter().next()
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        let catalog = match catalog {
+            Some(c) => c,
+            None => continue,
+        };
+
+        // Check if catalog is expired
+        let expires_at = catalog.get("expires_at").and_then(|v| v.as_str());
+        if let Some(exp) = expires_at {
+            if let Ok(exp_dt) = chrono::DateTime::parse_from_rfc3339(exp) {
+                if exp_dt.with_timezone(&chrono::Utc) < now {
+                    info!(license_id = %license_id, expires_at = %exp, "catalog_expired_skipping");
                     continue;
                 }
-                assets.push(json!({
-                    "id": format!("portfolio-{}", item_id),
-                    "type": "image",
-                    "name": format!("{} – {}", talent_display, title),
-                    "url": url,
-                    "campaign_name": campaign_name,
-                    "talent_name": talent_display,
-                    "source": "licensed"
-                }));
+            }
+        }
+
+        let catalog_id = catalog.get("id").and_then(|v| v.as_str()).unwrap_or("");
+        if catalog_id.is_empty() {
+            continue;
+        }
+
+        // 3. Get catalog items
+        let items_resp = state
+            .pg
+            .from("agency_catalog_items")
+            .select("id,talent_id")
+            .eq("catalog_id", catalog_id)
+            .execute()
+            .await;
+
+        let items: Vec<serde_json::Value> = if let Ok(items_r) = items_resp {
+            if let Ok(text) = items_r.text().await {
+                serde_json::from_str(&text).unwrap_or_default()
+            } else {
+                Vec::new()
+            }
+        } else {
+            Vec::new()
+        };
+
+        // 4. For each item, get assets and recordings
+        for item in &items {
+            let item_id = item.get("id").and_then(|v| v.as_str()).unwrap_or("");
+
+            // 4a. Get digital assets (images)
+            let assets_resp = state
+                .pg
+                .from("agency_catalog_assets")
+                .select("id,asset_id,asset_type,sort_order")
+                .eq("catalog_item_id", item_id)
+                .order("sort_order.asc")
+                .execute()
+                .await;
+
+            if let Ok(assets_r) = assets_resp {
+                if let Ok(text) = assets_r.text().await {
+                    let cat_assets: Vec<serde_json::Value> =
+                        serde_json::from_str(&text).unwrap_or_default();
+
+                    for cat_asset in cat_assets {
+                        let asset_id = cat_asset
+                            .get("asset_id")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("");
+                        let asset_type = cat_asset
+                            .get("asset_type")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("image");
+
+                        if asset_id.is_empty() {
+                            continue;
+                        }
+
+                        // Resolve asset URL from reference_images or agency_files
+                        let url = resolve_asset_url(state, asset_id).await;
+
+                        if let Some(asset_url) = url {
+                            let type_str = if asset_type == "audio" {
+                                "audio"
+                            } else {
+                                "image"
+                            };
+
+                            assets.push(json!({
+                                "id": format!("catalog-asset-{}", asset_id),
+                                "type": type_str,
+                                "name": format!("{} – Licensed Asset", talent_name),
+                                "url": asset_url,
+                                "campaign_name": campaign_name.clone(),
+                                "talent_name": talent_name.clone(),
+                                "source": "licensed"
+                            }));
+                        }
+                    }
+                }
+            }
+
+            // 4b. Get voice recordings
+            let recs_resp = state
+                .pg
+                .from("agency_catalog_recordings")
+                .select("recording_id,emotion_tag,sort_order")
+                .eq("catalog_item_id", item_id)
+                .order("sort_order.asc")
+                .execute()
+                .await;
+
+            if let Ok(recs_r) = recs_resp {
+                if let Ok(text) = recs_r.text().await {
+                    let recordings: Vec<serde_json::Value> =
+                        serde_json::from_str(&text).unwrap_or_default();
+
+                    for rec in recordings {
+                        let rec_id = rec
+                            .get("recording_id")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("");
+
+                        if rec_id.is_empty() {
+                            continue;
+                        }
+
+                        // Get recording details
+                        let vr_resp = state
+                            .pg
+                            .from("voice_recordings")
+                            .select("storage_bucket,storage_path")
+                            .eq("id", rec_id)
+                            .limit(1)
+                            .execute()
+                            .await;
+
+                        if let Ok(vr_r) = vr_resp {
+                            if let Ok(vr_text) = vr_r.text().await {
+                                let vr_rows: Vec<serde_json::Value> =
+                                    serde_json::from_str(&vr_text).unwrap_or_default();
+
+                                if let Some(vr) = vr_rows.into_iter().next() {
+                                    let bucket = vr
+                                        .get("storage_bucket")
+                                        .and_then(|v| v.as_str())
+                                        .unwrap_or("");
+                                    let path = vr
+                                        .get("storage_path")
+                                        .and_then(|v| v.as_str())
+                                        .unwrap_or("");
+
+                                    if !bucket.is_empty() && !path.is_empty() {
+                                        // Use signed URL instead of public URL for access control
+                                        if let Ok(url) =
+                                            generate_signed_url(state, bucket, path, 86_400).await
+                                        {
+                                            assets.push(json!({
+                                                "id": format!("catalog-recording-{}", rec_id),
+                                                "type": "audio",
+                                                "name": format!("{} – Voice Recording", talent_name),
+                                                "url": url,
+                                                "campaign_name": campaign_name.clone(),
+                                                "talent_name": talent_name.clone(),
+                                                "source": "licensed"
+                                            }));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 
-    info!(user_id = %auth_user.id, count = assets.len(), "licensed_assets_listed");
+    // 6. Get campaign offer deliverables for paid offers
+    let cod_resp = state
+        .pg
+        .from("campaign_offer_deliverables")
+        .select("id,asset_type,caption,status,offer_id,brand_campaigns(name),campaign_offers(payment_status,expires_at)")
+        .eq("brand_id", brand_id)
+        .eq("status", "approved")
+        .execute()
+        .await;
 
-    Ok(Json(json!({ "assets": assets })))
+    match cod_resp {
+        Ok(resp) => {
+            if let Ok(text) = resp.text().await {
+                let deliverables: Vec<serde_json::Value> =
+                    serde_json::from_str(&text).unwrap_or_default();
+
+                for del in deliverables {
+                    let offer = del.get("campaign_offers");
+                    let payment_status = offer
+                        .and_then(|o| o.get("payment_status"))
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("unpaid");
+                    let expires_at = offer
+                        .and_then(|o| o.get("expires_at"))
+                        .and_then(|v| v.as_str());
+
+                    if payment_status != "paid" {
+                        continue;
+                    }
+                    if let Some(exp) = expires_at {
+                        if let Ok(exp_dt) = chrono::DateTime::parse_from_rfc3339(exp) {
+                            if exp_dt.with_timezone(&chrono::Utc) < now {
+                                continue;
+                            }
+                        }
+                    }
+
+                    let del_id = del.get("id").and_then(|v| v.as_str()).unwrap_or("");
+                    let offer_id = del.get("offer_id").and_then(|v| v.as_str()).unwrap_or("");
+                    let asset_type = del
+                        .get("asset_type")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("file");
+                    let campaign_name = del
+                        .get("brand_campaigns")
+                        .and_then(|bc| bc.get("name"))
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("Campaign")
+                        .to_string();
+
+                    if !del_id.is_empty() && !offer_id.is_empty() {
+                        let secure_url = format!(
+                            "/api/campaign-offers/{}/deliverables/{}/file",
+                            offer_id, del_id
+                        );
+                        let type_str = match asset_type {
+                            "video" => "video",
+                            "audio" => "audio",
+                            _ => "image",
+                        };
+
+                        assets.push(json!({
+                            "id": format!("campaign-deliverable-{}", del_id),
+                            "type": type_str,
+                            "name": del.get("caption").and_then(|v| v.as_str()).unwrap_or("Campaign Deliverable").to_string(),
+                            "url": secure_url,
+                            "campaign_name": campaign_name,
+                            "source": "licensed"
+                        }));
+                    }
+                }
+            }
+        }
+        Err(e) => {
+            warn!(
+                brand_id = %brand_id,
+                error = %e,
+                "failed_to_fetch_campaign_offer_deliverables"
+            );
+        }
+    }
+
+    assets
+}
+
+/// Fetch assets from talents represented by the agency
+/// This includes portfolio items, reference images, and voice recordings
+async fn fetch_agency_talent_assets(state: &AppState, agency_id: &str) -> Vec<serde_json::Value> {
+    let mut assets: Vec<serde_json::Value> = Vec::new();
+
+    // 1. Get all talents represented by this agency
+    let talents_resp = state
+        .pg
+        .from("agency_talent_relationships")
+        .select("creator_id,status")
+        .eq("agency_id", agency_id)
+        .eq("status", "active")
+        .execute()
+        .await;
+
+    let talents: Vec<serde_json::Value> = if let Ok(resp) = talents_resp {
+        if let Ok(text) = resp.text().await {
+            serde_json::from_str(&text).unwrap_or_default()
+        } else {
+            Vec::new()
+        }
+    } else {
+        Vec::new()
+    };
+
+    let talent_ids: Vec<&str> = talents
+        .iter()
+        .filter_map(|t| t.get("creator_id").and_then(|v| v.as_str()))
+        .collect();
+
+    info!(
+        agency_id = %agency_id,
+        talent_count = talent_ids.len(),
+        "agency_talents_found"
+    );
+
+    // 2. Get talent names for these creators
+    let mut talent_names: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    for talent_id in &talent_ids {
+        let creator_resp = state
+            .pg
+            .from("creators")
+            .select("id,full_name")
+            .eq("id", talent_id)
+            .limit(1)
+            .execute()
+            .await;
+
+        if let Ok(resp) = creator_resp {
+            if let Ok(text) = resp.text().await {
+                let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+                if let Some(row) = rows.into_iter().next() {
+                    if let Some(id) = row.get("id").and_then(|v| v.as_str()) {
+                        let name = row
+                            .get("full_name")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("Talent")
+                            .to_string();
+                        talent_names.insert(id.to_string(), name);
+                    }
+                }
+            }
+        }
+    }
+
+    // 3. Get portfolio items for each talent
+    for talent_id in &talent_ids {
+        let talent_name = talent_names
+            .get(*talent_id)
+            .cloned()
+            .unwrap_or_else(|| "Talent".to_string());
+
+        // 3a. Talent portfolio items
+        let portfolio_resp = state
+            .pg
+            .from("talent_portfolio_items")
+            .select("id,storage_bucket,storage_path")
+            .eq("talent_id", talent_id)
+            .order("created_at.desc")
+            .limit(50)
+            .execute()
+            .await;
+
+        if let Ok(portfolio_r) = portfolio_resp {
+            if let Ok(text) = portfolio_r.text().await {
+                let items: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+
+                for item in items {
+                    let item_id = item.get("id").and_then(|v| v.as_str()).unwrap_or("");
+                    let bucket = item
+                        .get("storage_bucket")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+                    let path = item
+                        .get("storage_path")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+
+                    if bucket.is_empty() || path.is_empty() {
+                        continue;
+                    }
+
+                    let url = match generate_signed_url(state, bucket, path, 86_400).await {
+                        Ok(signed) => signed,
+                        Err(_) => continue,
+                    };
+
+                    assets.push(json!({
+                        "id": format!("portfolio-{}", item_id),
+                        "type": "image",
+                        "name": format!("{} – Portfolio", talent_name),
+                        "url": url,
+                        "talent_name": talent_name.clone(),
+                        "source": "licensed"
+                    }));
+                }
+            }
+        }
+
+        // 3b. Reference images
+        let ref_images_resp = state
+            .pg
+            .from("reference_images")
+            .select("id,storage_bucket,storage_path")
+            .eq("user_id", talent_id)
+            .order("created_at.desc")
+            .limit(50)
+            .execute()
+            .await;
+
+        if let Ok(ref_images_r) = ref_images_resp {
+            if let Ok(text) = ref_images_r.text().await {
+                let images: Vec<serde_json::Value> =
+                    serde_json::from_str(&text).unwrap_or_default();
+
+                for img in images {
+                    let img_id = img.get("id").and_then(|v| v.as_str()).unwrap_or("");
+                    let bucket = img
+                        .get("storage_bucket")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+                    let path = img
+                        .get("storage_path")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+
+                    if bucket.is_empty() || path.is_empty() {
+                        continue;
+                    }
+
+                    let url = match generate_signed_url(state, bucket, path, 86_400).await {
+                        Ok(signed) => signed,
+                        Err(_) => continue,
+                    };
+
+                    assets.push(json!({
+                        "id": format!("refimg-{}", img_id),
+                        "type": "image",
+                        "name": format!("{} – Reference Image", talent_name),
+                        "url": url,
+                        "talent_name": talent_name.clone(),
+                        "source": "licensed"
+                    }));
+                }
+            }
+        }
+
+        // 3c. Voice recordings
+        let recordings_resp = state
+            .pg
+            .from("voice_recordings")
+            .select("id,storage_bucket,storage_path,emotion_tag")
+            .eq("creator_id", talent_id)
+            .eq("accessible", "true")
+            .order("created_at.desc")
+            .limit(20)
+            .execute()
+            .await;
+
+        if let Ok(recordings_r) = recordings_resp {
+            if let Ok(text) = recordings_r.text().await {
+                let recordings: Vec<serde_json::Value> =
+                    serde_json::from_str(&text).unwrap_or_default();
+
+                for rec in recordings {
+                    let rec_id = rec.get("id").and_then(|v| v.as_str()).unwrap_or("");
+                    let bucket = rec
+                        .get("storage_bucket")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+                    let path = rec
+                        .get("storage_path")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+                    let emotion_tag = rec
+                        .get("emotion_tag")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("Voice");
+
+                    if bucket.is_empty() || path.is_empty() {
+                        continue;
+                    }
+
+                    // Use signed URL instead of public URL for access control
+                    if let Ok(url) = generate_signed_url(state, bucket, path, 86_400).await {
+                        assets.push(json!({
+                            "id": format!("rec-{}", rec_id),
+                            "type": "audio",
+                            "name": format!("{} – {} Recording", talent_name, emotion_tag),
+                            "url": url,
+                            "talent_name": talent_name.clone(),
+                            "source": "licensed"
+                        }));
+                    }
+                }
+            }
+        }
+    }
+
+    assets
+}
+
+/// Helper to resolve asset URL from reference_images or agency_files
+/// Returns a signed URL for access-controlled assets
+async fn resolve_asset_url(state: &AppState, asset_id: &str) -> Option<String> {
+    // Try reference_images first
+    let ri_resp = state
+        .pg
+        .from("reference_images")
+        .select("storage_bucket,storage_path")
+        .eq("id", asset_id)
+        .limit(1)
+        .execute()
+        .await;
+
+    if let Ok(ri_r) = ri_resp {
+        if let Ok(text) = ri_r.text().await {
+            let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+            if let Some(ri) = rows.into_iter().next() {
+                let bucket = ri
+                    .get("storage_bucket")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let path = ri
+                    .get("storage_path")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                if !bucket.is_empty() && !path.is_empty() {
+                    return generate_signed_url(state, bucket, path, 86_400).await.ok();
+                }
+            }
+        }
+    }
+
+    // Try agency_files
+    let af_resp = state
+        .pg
+        .from("agency_files")
+        .select("storage_bucket,storage_path")
+        .eq("id", asset_id)
+        .limit(1)
+        .execute()
+        .await;
+
+    if let Ok(af_r) = af_resp {
+        if let Ok(text) = af_r.text().await {
+            let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+            if let Some(af) = rows.into_iter().next() {
+                let bucket = af
+                    .get("storage_bucket")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let path = af
+                    .get("storage_path")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                if !bucket.is_empty() && !path.is_empty() {
+                    return generate_signed_url(state, bucket, path, 86_400).await.ok();
+                }
+            }
+        }
+    }
+
+    None
 }
 
 /// GET /api/studio/presets
