@@ -4545,7 +4545,16 @@
         "editLayout": "Edit Layout",
         "duplicate": "Duplicate",
         "delete": "Delete",
-        "useContract": "Use Contract"
+        "useContract": "Usar contrato",
+        "useContractModal": {
+          "title": "Usar contrato: {{templateName}}",
+          "description": "Ingrese la información del cliente para crear un nuevo contrato desde esta plantilla.",
+          "clientName": "Nombre del cliente",
+          "clientEmail": "Correo electrónico del cliente",
+          "cancel": "Cancelar",
+          "creating": "Creando...",
+          "createAndSign": "Crear & Firmar"
+        }
       },
       "modal": {
         "newTitle": "Nueva plantilla de contrato",

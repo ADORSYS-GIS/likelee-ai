@@ -87,9 +87,7 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
   onBrandRequestContextHandled,
   isSportsAgency = false,
 }) => {
-  const [topTab, setTopTab] = useState<
-    "requests" | "templates" | "submissions"
-  >("templates");
+  const [topTab, setTopTab] = useState<"templates">("templates");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -389,7 +387,6 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
   const openNewTemplateModal = () => {
     setEditingTemplate(null);
     setIsViewOnly(false);
-    setTopTab("templates");
     setHideContractInModal(false);
     setIsModalOpen(true);
   };
@@ -397,7 +394,7 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
   const openEditModal = (template: LicenseTemplate) => {
     setEditingTemplate(template);
     setIsViewOnly(false);
-    setHideContractInModal(topTab === "requests");
+    setHideContractInModal(false);
     setIsModalOpen(true);
   };
 
@@ -484,18 +481,6 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
               className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 px-4 sm:px-6 font-bold whitespace-nowrap"
             >
               {t("agencyDashboard.licenseTemplates.tabs.templates")}
-            </TabsTrigger>
-            <TabsTrigger
-              value="submissions"
-              className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 px-4 sm:px-6 font-bold whitespace-nowrap"
-            >
-              {t("agencyDashboard.licenseTemplates.tabs.submissions")}
-            </TabsTrigger>
-            <TabsTrigger
-              value="requests"
-              className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 px-4 sm:px-6 font-bold whitespace-nowrap"
-            >
-              {t("agencyDashboard.licenseTemplates.tabs.requests")}
             </TabsTrigger>
           </TabsList>
         </div>
@@ -667,14 +652,6 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
               ))
             )}
           </div>
-        </TabsContent>
-
-        <TabsContent value="submissions" className="mt-6">
-          <LicenseSubmissionsTab isSportsAgency={isSportsAgency} />
-        </TabsContent>
-
-        <TabsContent value="requests" className="mt-6">
-          <LicensingRequestsTab isSportsAgency={isSportsAgency} />
         </TabsContent>
       </Tabs>
 

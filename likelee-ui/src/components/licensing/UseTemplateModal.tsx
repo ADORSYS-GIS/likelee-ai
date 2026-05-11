@@ -1,5 +1,6 @@
 import React from "react";
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -33,6 +34,7 @@ export const UseTemplateModal: React.FC<UseTemplateModalProps> = ({
   onSubmit,
   isLoading,
 }) => {
+  const { t } = useTranslation("agency");
   const {
     register,
     handleSubmit,
@@ -52,16 +54,23 @@ export const UseTemplateModal: React.FC<UseTemplateModalProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Use Contract: {template.template_name}</DialogTitle>
+          <DialogTitle>
+            {t("agencyDashboard.licenseTemplates.useContractModal.title", {
+              templateName: template.template_name,
+            })}
+          </DialogTitle>
           <DialogDescription>
-            Enter the client's information to create a new contract from this
-            template.
+            {t("agencyDashboard.licenseTemplates.useContractModal.description")}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="client_name">Client Name</Label>
+            <Label htmlFor="client_name">
+              {t(
+                "agencyDashboard.licenseTemplates.useContractModal.clientName",
+              )}
+            </Label>
             <Input
               id="client_name"
               placeholder="e.g. Acme Corp"
@@ -77,7 +86,11 @@ export const UseTemplateModal: React.FC<UseTemplateModalProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="client_email">Client Email</Label>
+            <Label htmlFor="client_email">
+              {t(
+                "agencyDashboard.licenseTemplates.useContractModal.clientEmail",
+              )}
+            </Label>
             <Input
               id="client_email"
               type="email"
@@ -104,14 +117,20 @@ export const UseTemplateModal: React.FC<UseTemplateModalProps> = ({
               onClick={onClose}
               disabled={isLoading}
             >
-              Cancel
+              {t("agencyDashboard.licenseTemplates.useContractModal.cancel")}
             </Button>
             <Button
               type="submit"
               className="bg-indigo-500 hover:bg-indigo-700"
               disabled={isLoading}
             >
-              {isLoading ? "Creating..." : "Create & Sign"}
+              {isLoading
+                ? t(
+                    "agencyDashboard.licenseTemplates.useContractModal.creating",
+                  )
+                : t(
+                    "agencyDashboard.licenseTemplates.useContractModal.createAndSign",
+                  )}
             </Button>
           </DialogFooter>
         </form>

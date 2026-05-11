@@ -4795,7 +4795,16 @@
         "editLayout": "Edit Layout",
         "duplicate": "Duplicate",
         "delete": "Delete",
-        "useContract": "Use Contract"
+        "useContract": "Use Contract",
+        "useContractModal": {
+          "title": "Use Contract: {{templateName}}",
+          "description": "Enter the client's information to create a new contract from this template.",
+          "clientName": "Client Name",
+          "clientEmail": "Client Email",
+          "cancel": "Cancel",
+          "creating": "Creating...",
+          "createAndSign": "Create & Sign"
+        }
       },
       "modal": {
         "newTitle": "New Contract Template",
