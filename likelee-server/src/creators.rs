@@ -91,9 +91,6 @@ pub async fn upsert_profile(
         .ok_or((StatusCode::BAD_REQUEST, "missing email".to_string()))?
         .to_string();
 
-    // Debug logging to inspect incoming payload
-    tracing::info!(?body, "upsert_profile payload");
-
     // Weekly is canonical. Keep monthly in sync during transition.
     let weekly = body.get("base_weekly_price_cents").and_then(|v| v.as_i64());
     let monthly = body

@@ -211,7 +211,6 @@ pub async fn create_package(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    tracing::info!("Package created response: {}", text);
     let packages: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let package = match packages {
@@ -441,7 +440,6 @@ pub async fn create_package(
                     package_url
                 );
 
-                tracing::info!("Sending package email: To={}, Subject={}, FrontendURL={}, Agency={}, Client={}", client_email, subject, state.frontend_url, agency_name, client_name);
                 match crate::email::send_email_core(
                     &state,
                     client_email,
@@ -452,9 +450,9 @@ pub async fn create_package(
                 )
                 .await
                 {
-                    Ok(_) => tracing::info!("Package email SENT SUCCESSFULLY to {}", client_email),
+                    Ok(_) => {}
                     Err((code, msg)) => tracing::error!(
-                        "FAILED TO SEND package email to {}: [{}] {}",
+                        "Failed to send package email to {}: [{}] {}",
                         client_email,
                         code,
                         msg
@@ -466,8 +464,6 @@ pub async fn create_package(
                     payload.client_email
                 );
             }
-        } else {
-            tracing::info!("No client email provided in payload, skipping email step");
         }
     } // End of !is_template check
 

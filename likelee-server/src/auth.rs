@@ -79,7 +79,6 @@ impl JwksCache {
                 return;
             }
         };
-        tracing::info!("JWKS response: {}", text);
         let jwks: JwksResponse = match serde_json::from_str(&text) {
             Ok(j) => j,
             Err(e) => {
