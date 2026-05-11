@@ -9,6 +9,9 @@
   "marketingAgencySolutionsDescription": "Une plateforme unique pour les campagnes de créateurs alimentées par l'IA. Licence de créateur vérifiée, flux de travail de production, conformité et exposition de marque.",
   "marketingAgencyCreatorPlatform": "Plateforme de créateurs pour agence de marketing",
   "agencyDashboard": {
+    "protection": {
+      "comingSoonDescription": "Les fonctionnalités de Protection & Utilisation arrivent bientôt."
+    },
     "tabs": {
       "jobs": "Emplois",
       "roster": "Liste",
@@ -136,6 +139,7 @@
         "inactive": "Inactif",
         "pending": "En attente"
       },
+      "searchPlaceholder": "Rechercher un talent...",
       "header": {
         "verifiedAgency": "Agence vérifiée",
         "upgradePlan": "Mettre à niveau le plan",
@@ -267,7 +271,9 @@
         },
         "performanceMetrics": "Performance Metrics",
         "engagementRate": "Engagement Rate",
-        "comingSoon": "Bientôt disponible"
+        "labels": {
+          "comingSoon": "Bientôt disponible"
+        }
       },
       "digitals": {
         "title": "Suivi des digitals",
@@ -4576,10 +4582,10 @@
         "useTemplate": "Utiliser le modèle",
         "editInBuilder": "Modifier dans le constructeur",
         "sendContract": "Envoyer le contrat",
-        "editDetails": "Edit Details",
-        "editLayout": "Edit Layout",
-        "duplicate": "Duplicate",
-        "delete": "Delete",
+        "editDetails": "Modifier les détails",
+        "editLayout": "Modifier la mise en page",
+        "duplicate": "Dupliquer",
+        "delete": "Supprimer",
         "useContract": "Utiliser le contrat",
         "useContractModal": {
           "title": "Utiliser le contrat : {{templateName}}",
@@ -4645,6 +4651,8 @@
       },
       "wizard": {
         "stepOf": "Étape {{step}} sur 3",
+        "externalClientTitle": "Création d'un contrat pour un client externe",
+        "externalClientDescription": "Vous initiez ce contrat directement - tous les champs sont ouverts pour vous à remplir. Entrez les détails du client et sélectionnez le {{entity}} que vous avez accepté de licencier, généralement basé sur le package que vous avez envoyé et la sélection du client à partir de celui-ci.",
         "dealSpecifics": "Détails du contrat",
         "contentReview": "Révision du contenu",
         "dealSpecificsSubtitle": "Saisissez les détails clés de cet accord de licence",
@@ -4661,19 +4669,19 @@
         "dealSpecificsModal": "Détails du contrat",
         "newContractTemplate": "Nouveau modèle de contrat",
         "filterModal": "Filtre",
-        "renewalPrefill": "Relleno previo de renovación",
-        "renewalPrefillDesc": "Esta renovación se rellenó automáticamente desde la solicitud de licencia anterior. Ajusta lo que necesites antes de enviar.",
-        "brandNamePlaceholder": "p. ej. Nike, Spotify",
-        "sendToConnectedBrands": "Enviar a marcas conectadas",
-        "selectBrand": "Seleccionar marca",
-        "selectedBrand": "Marca seleccionada",
-        "connectedBrandsHelp": "Selecciona entre tus marcas conectadas. Desactiva para escribir el correo manualmente.",
-        "clientEmailPlaceholder": "cliente@ejemplo.com",
-        "toggleConnectedBrands": "Activa para seleccionar entre marcas conectadas.",
-        "agencySignsFirstDesc": "El cliente recibe el contrato solo después de la firma de la agencia.",
-        "durationDays": "Duración (días)",
-        "territory": "Territorio",
-        "clientEmailRequired": "El correo del cliente es obligatorio"
+        "renewalPrefill": "Préremplissage de renouvellement",
+        "renewalPrefillDesc": "Ce renouvellement a été automatiquement prérempli à partir de la demande de licence précédente. Ajustez si nécessaire avant d'envoyer.",
+        "brandNamePlaceholder": "ex. Nike, Spotify",
+        "sendToConnectedBrands": "Envoyer aux marques connectées",
+        "selectBrand": "Sélectionner une marque",
+        "selectedBrand": "Marque sélectionnée",
+        "connectedBrandsHelp": "Sélectionnez parmi vos marques connectées. Désactivez pour taper l'e-mail manuellement.",
+        "clientEmailPlaceholder": "client@exemple.com",
+        "toggleConnectedBrands": "Activer pour sélectionner parmi les marques connectées.",
+        "agencySignsFirstDesc": "Le client reçoit le contrat uniquement après la signature de l'agence.",
+        "durationDays": "Durée (jours)",
+        "territory": "Territoire",
+        "clientEmailRequired": "L'e-mail du client est requis"
       },
       "deleteModal": {
         "title": "Supprimer le modèle",
@@ -4693,8 +4701,8 @@
       "noTemplatesYet": "Aucun modèle pour le moment. Créez le vôtre pour commencer !",
       "notSet": "Non défini",
       "brandContext": "Toute soumission de contrat créée sera envoyée à {{brand}}.",
-      "newTemplate": "New template",
-      "loading": "Loading...",
+      "newTemplate": "Nouveau modèle",
+      "loading": "Chargement...",
       "noMatch": "No templates match your criteria.",
       "delete": {
         "title": "Delete Template"

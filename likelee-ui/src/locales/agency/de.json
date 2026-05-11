@@ -17,6 +17,9 @@
       "licensing": "Lizenzierung",
       "scouting": "Scouting"
     },
+    "protection": {
+      "comingSoonDescription": "Schutz & Nutzung Funktionen kommen bald."
+    },
     "dashboard": {
       "entities": {
         "talent": "Talent",
@@ -137,6 +140,7 @@
         "inactive": "Inaktiv",
         "pending": "Ausstehend"
       },
+      "searchPlaceholder": "Talent suchen...",
       "header": {
         "verifiedAgency": "Verifizierte Agentur",
         "upgradePlan": "Plan upgraden",
@@ -325,7 +329,10 @@
           "compliance": "Compliance"
         },
         "performanceMetrics": "Performance Metrics",
-        "engagementRate": "Engagement Rate"
+        "engagementRate": "Engagement Rate",
+        "labels": {
+          "comingSoon": "Demnächst verfügbar"
+        }
       },
       "digitals": {
         "title": "Digitals-Tracking",
@@ -4587,10 +4594,10 @@
         "useTemplate": "Vorlage verwenden",
         "editInBuilder": "Im Builder bearbeiten",
         "sendContract": "Vertrag senden",
-        "editDetails": "Edit Details",
-        "editLayout": "Edit Layout",
-        "duplicate": "Duplicate",
-        "delete": "Delete",
+        "editDetails": "Details bearbeiten",
+        "editLayout": "Layout bearbeiten",
+        "duplicate": "Duplizieren",
+        "delete": "Löschen",
         "useContract": "Vertrag verwenden",
         "useContractModal": {
           "title": "Vertrag verwenden: {{templateName}}",
@@ -4656,6 +4663,8 @@
       },
       "wizard": {
         "stepOf": "Schritt {{step}} von 3",
+        "externalClientTitle": "Vertrag für externen Kunden erstellen",
+        "externalClientDescription": "Sie initiieren diesen Vertrag direkt - alle Felder stehen Ihnen zum Ausfüllen zur Verfügung. Geben Sie die Details des Kunden ein und wählen Sie den {{entity}}, den Sie lizenzieren möchten, in der Regel basierend auf dem Paket, das Sie gesendet haben, und der Auswahl des Kunden daraus.",
         "dealSpecifics": "Deal-Details",
         "contentReview": "Inhaltsprüfung",
         "dealSpecificsSubtitle": "Geben Sie die Kerndetails dieses Lizenzdeals ein",
@@ -4672,19 +4681,19 @@
         "dealSpecificsModal": "Deal-Details",
         "newContractTemplate": "Neue Vertragsvorlage",
         "filterModal": "Filter",
-        "renewalPrefill": "Relleno previo de renovación",
-        "renewalPrefillDesc": "Esta renovación se rellenó automáticamente desde la solicitud de licencia anterior. Ajusta lo que necesites antes de enviar.",
-        "brandNamePlaceholder": "p. ej. Nike, Spotify",
-        "sendToConnectedBrands": "Enviar a marcas conectadas",
-        "selectBrand": "Seleccionar marca",
-        "selectedBrand": "Marca seleccionada",
-        "connectedBrandsHelp": "Selecciona entre tus marcas conectadas. Desactiva para escribir el correo manualmente.",
-        "clientEmailPlaceholder": "cliente@ejemplo.com",
-        "toggleConnectedBrands": "Activa para seleccionar entre marcas conectadas.",
-        "agencySignsFirstDesc": "El cliente recibe el contrato solo después de la firma de la agencia.",
-        "durationDays": "Duración (días)",
-        "territory": "Territorio",
-        "clientEmailRequired": "El correo del cliente es obligatorio"
+        "renewalPrefill": "Erneuerungsvorabfüllung",
+        "renewalPrefillDesc": "Diese Erneuerung wurde automatisch aus der vorherigen Lizenzanfrage vorab ausgefüllt. Passen Sie vor dem Senden an, was nötig ist.",
+        "brandNamePlaceholder": "z. B. Nike, Spotify",
+        "sendToConnectedBrands": "An verbundene Marken senden",
+        "selectBrand": "Marke auswählen",
+        "selectedBrand": "Ausgewählte Marke",
+        "connectedBrandsHelp": "Wählen Sie aus Ihren verbundenen Marken. Deaktivieren Sie, um E-Mail manuell einzugeben.",
+        "clientEmailPlaceholder": "kunde@beispiel.de",
+        "toggleConnectedBrands": "Umschalten, um aus verbundenen Marken auszuwählen.",
+        "agencySignsFirstDesc": "Der Kunde erhält den Vertrag erst nach der Unterschrift der Agentur.",
+        "durationDays": "Dauer (Tage)",
+        "territory": "Territorium",
+        "clientEmailRequired": "Kunden-E-Mail ist erforderlich"
       },
       "deleteModal": {
         "title": "Vorlage löschen",
@@ -4704,8 +4713,8 @@
       "noTemplatesYet": "Noch keine Vorlagen. Erstellen Sie Ihre erste, um zu beginnen!",
       "notSet": "Nicht festgelegt",
       "brandContext": "Jede erstellte Vertragsübermittlung wird an {{brand}} gesendet.",
-      "newTemplate": "New template",
-      "loading": "Loading...",
+      "newTemplate": "Neue Vorlage",
+      "loading": "Wird geladen...",
       "noMatch": "No templates match your criteria.",
       "delete": {
         "title": "Delete Template"

@@ -17,6 +17,9 @@
       "licensing": "Licensing",
       "scouting": "Scouting"
     },
+    "protection": {
+      "comingSoonDescription": "Protection & Usage features are coming soon."
+    },
     "dashboard": {
       "entities": {
         "talent": "talent",
@@ -137,6 +140,7 @@
         "inactive": "Inactive",
         "pending": "Pending"
       },
+      "searchPlaceholder": "Search talent...",
       "header": {
         "verifiedAgency": "Verified Agency",
         "upgradePlan": "Upgrade plan",
@@ -325,7 +329,10 @@
         "engagementRate": "Engagement Rate",
         "comingSoonDescription": "Analytics Dashboard for IRL Mode is coming soon.",
         "comingSoonButton": "Coming Soon",
-        "comingSoon": "Coming Soon"
+        "comingSoon": "Coming Soon",
+        "labels": {
+          "comingSoon": "Coming Soon"
+        }
       },
       "clientsCampaigns": {
         "title": "Clients & Campaigns",
@@ -4860,6 +4867,8 @@
       },
       "wizard": {
         "stepOf": "Step {{step}} of 3",
+        "externalClientTitle": "Creating a contract for an external client",
+        "externalClientDescription": "You're initiating this contract directly - all fields are open for you to fill in. Enter the client's details and select the {{entity}} you've agreed to license, typically based on the package you sent and the client's selection from it.",
         "dealSpecifics": "Deal Specifics",
         "contentReview": "Content Review",
         "dealSpecificsSubtitle": "Enter the core details of this licensing deal",
@@ -4876,19 +4885,19 @@
         "dealSpecificsModal": "Deal Specifics",
         "newContractTemplate": "New Contract Template",
         "filterModal": "Filter",
-        "renewalPrefill": "Relleno previo de renovación",
-        "renewalPrefillDesc": "Esta renovación se rellenó automáticamente desde la solicitud de licencia anterior. Ajusta lo que necesites antes de enviar.",
-        "brandNamePlaceholder": "p. ej. Nike, Spotify",
-        "sendToConnectedBrands": "Enviar a marcas conectadas",
-        "selectBrand": "Seleccionar marca",
-        "selectedBrand": "Marca seleccionada",
-        "connectedBrandsHelp": "Selecciona entre tus marcas conectadas. Desactiva para escribir el correo manualmente.",
-        "clientEmailPlaceholder": "cliente@ejemplo.com",
-        "toggleConnectedBrands": "Activa para seleccionar entre marcas conectadas.",
-        "agencySignsFirstDesc": "El cliente recibe el contrato solo después de la firma de la agencia.",
-        "durationDays": "Duración (días)",
-        "territory": "Territorio",
-        "clientEmailRequired": "El correo del cliente es obligatorio"
+        "renewalPrefill": "Renewal Prefill",
+        "renewalPrefillDesc": "This renewal was automatically prefilled from the previous license request. Adjust as needed before sending.",
+        "brandNamePlaceholder": "e.g. Nike, Spotify",
+        "sendToConnectedBrands": "Send to connected brands",
+        "selectBrand": "Select brand",
+        "selectedBrand": "Selected brand",
+        "connectedBrandsHelp": "Select from your connected brands. Toggle off to type email manually.",
+        "clientEmailPlaceholder": "client@example.com",
+        "toggleConnectedBrands": "Toggle to select from connected brands.",
+        "agencySignsFirstDesc": "Client receives the contract only after agency signature.",
+        "durationDays": "Duration (days)",
+        "territory": "Territory",
+        "clientEmailRequired": "Client email is required"
       },
       "deleteModal": {
         "title": "Delete Template",
