@@ -6,13 +6,6 @@ const ALLOWED_ADVISORY_IDS = new Set([
   "GHSA-r5fr-rjxr-66jc",
   "GHSA-f23m-r3pf-42rh",
 
-  // Babel plugin-transform-modules-systemjs (transitive, build-time only)
-  "GHSA-fv7c-fp4j-7gwp",
-
-  // fast-uri vulnerabilities (transitive via ajv/fastify ecosystem)
-  "GHSA-q3j6-qgpj-74h6",
-  "GHSA-v39h-62p7-jpjc",
-
   // Axios vulnerabilities (January 2025)
   "GHSA-w9j2-pvgh-6h63", // Authentication Bypass via Prototype Pollution
   "GHSA-pmwg-cvhr-8vh7", // Incomplete Fix for CVE-2025-62718
@@ -36,8 +29,6 @@ const ALLOWED_MODULES = new Set([
   "lodash",
   "axios",
   "uuid",
-  "@babel/plugin-transform-modules-systemjs",
-  "fast-uri",
 ]);
 const ALLOWED_TRANSITIVE = new Set([
   "@aws-amplify/analytics",
