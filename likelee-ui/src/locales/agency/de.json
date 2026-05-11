@@ -4693,7 +4693,11 @@
         "agencySignsFirstDesc": "Der Kunde erhält den Vertrag erst nach der Unterschrift der Agentur.",
         "durationDays": "Dauer (Tage)",
         "territory": "Territorium",
-        "clientEmailRequired": "Kunden-E-Mail ist erforderlich"
+        "clientEmailRequired": "Kunden-E-Mail ist erforderlich",
+        "searchTalent": "{{entity}} suchen...",
+        "modificationsPlaceholder": "z. B. Ja, mit Genehmigung",
+        "customTermsPlaceholder": "Beschreiben Sie andere Bedingungen für diesen spezifischen Deal...",
+        "contractContentPlaceholder": "Der Vertragsinhalt wird hier erscheinen..."
       },
       "deleteModal": {
         "title": "Vorlage löschen",
@@ -4742,7 +4746,14 @@
         "phone": "Telefon",
         "dateOfBirth": "Geburtsdatum",
         "licensingRate": "Lizenzrate (monatlich USD)",
-        "required": "Erforderlich"
+        "required": "Erforderlich",
+        "placeholders": {
+          "fullName": "Vollständiger rechtlicher Name",
+          "stageName": "Optional",
+          "email": "{{entityLower}}@beispiel.de",
+          "phone": "+49 (555) 123-4567",
+          "licensingRate": "z.B. 750"
+        }
       },
       "attributes": {
         "title": "Physische Attribute",
@@ -4771,7 +4782,14 @@
         "no": "Nein",
         "preferNotToSay": "Möchte nicht angeben",
         "roleCategories": "Rollenkategorien",
-        "selectRoles": "Rollenkategorien auswählen"
+        "selectRoles": "Rollenkategorien auswählen",
+        "placeholders": {
+          "heightFeet": "5",
+          "heightInches": "8",
+          "bust": "Brustumfang",
+          "waist": "Taillenumfang",
+          "hips": "Hüftumfang"
+        }
       },
       "mediaSocial": {
         "title": "Medien & Social",
@@ -4790,7 +4808,17 @@
         "country": "Land",
         "organization": "Organisation / Team",
         "sports": "Sportarten",
-        "acceptNegotiations": "Verhandlungen akzeptieren"
+        "acceptNegotiations": "Verhandlungen akzeptieren",
+        "placeholders": {
+          "city": "Berlin",
+          "state": "BY",
+          "country": "Deutschland",
+          "organization": "z.B. TU München",
+          "sports": "z.B. Fußball, Basketball",
+          "bio": "Kurze Bio oder interne Notizen über diesen {{entityLower}}...",
+          "specialSkills": "z.B. Tänzer, Athlet, zweisprachig Spanisch",
+          "instagram": "@handle"
+        }
       },
       "buttons": {
         "continue": "Weiter",
@@ -5453,10 +5481,10 @@
           "verifyingAccess": "Zugriff wird überprüft…",
           "accessRestricted": "Zugriff eingeschränkt",
           "permissionRequired": "Berechtigung erforderlich",
+          "subtitle": "Verwalten Sie verbundene Marken, Anfragen, Angebote, Verträge und Liefergegenstände.",
           "permissionDescription": "Sie haben nicht die erforderlichen Berechtigungen, um Markenverbindungen zu sehen. Bitte wenden Sie sich an Ihren Administrator, wenn Sie glauben, dass dies ein Fehler ist.",
           "viewOnlyTitle": "Nur-Ansicht-Modus",
           "viewOnlyDescription": "Ihre Rolle erlaubt das Anzeigen, aber nicht das Verwalten von Markenverbindungen.",
-          "subtitle": "Verwalten Sie verbundene Marken, Anfragen, Angebote, Verträge und Lieferungen.",
           "connected": "Verbunden",
           "since": "Seit {{date}}",
           "loadingRequests": "Anfragen werden geladen…",

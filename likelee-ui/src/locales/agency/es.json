@@ -4604,7 +4604,11 @@
         "clientEmailRequired": "El correo del cliente es obligatorio",
         "dealSpecificsModal": "Detalles del acuerdo",
         "newContractTemplate": "Nueva plantilla de contrato",
-        "filterModal": "Filtro"
+        "filterModal": "Filtro",
+        "searchTalent": "Buscar {{entity}}...",
+        "modificationsPlaceholder": "p. ej. Sí, con aprobación",
+        "customTermsPlaceholder": "Describe otras condiciones para este contrato específico...",
+        "contractContentPlaceholder": "El contenido del contrato aparecerá aquí..."
       },
       "form": {
         "templateIdentity": "Identidad de plantilla",
@@ -4695,7 +4699,14 @@
         "phone": "Teléfono",
         "dateOfBirth": "Fecha de nacimiento",
         "licensingRate": "Tarifa de licencia (mensual USD)",
-        "required": "Requerido"
+        "required": "Requerido",
+        "placeholders": {
+          "fullName": "Nombre legal completo",
+          "stageName": "Opcional",
+          "email": "{{entityLower}}@ejemplo.com",
+          "phone": "+1 (555) 123-4567",
+          "licensingRate": "ej. 750"
+        }
       },
       "attributes": {
         "title": "Atributos físicos",
@@ -4718,6 +4729,13 @@
         "preferNotToSay": "Prefiero no decirlo",
         "roleCategories": "Categorías de roles",
         "selectRoles": "Seleccionar categorías de roles",
+        "placeholders": {
+          "heightFeet": "5",
+          "heightInches": "8",
+          "bust": "Busto",
+          "waist": "Cintura",
+          "hips": "Caderas"
+        },
         "options": {
           "female": "Weiblich",
           "male": "Männlich",
@@ -4743,7 +4761,17 @@
         "country": "País",
         "organization": "Organización / Equipo",
         "sports": "Deportes",
-        "acceptNegotiations": "Aceptar negociaciones"
+        "acceptNegotiations": "Aceptar negociaciones",
+        "placeholders": {
+          "city": "Ciudad de México",
+          "state": "CDMX",
+          "country": "México",
+          "organization": "ej. UNAM",
+          "sports": "ej. Fútbol, Baloncesto",
+          "bio": "Breve biografía o notas internas sobre este {{entityLower}}...",
+          "specialSkills": "ej. Bailarín, Atleta, Bilingüe español",
+          "instagram": "@handle"
+        }
       },
       "buttons": {
         "continue": "Continuar",
@@ -5363,21 +5391,6 @@
       },
       "brandConnections": {
         "title": "Conexiones de marca",
-        "tabs": {
-          "connections": "Conexiones",
-          "requests": "Solicitudes",
-          "offers": "Ofertas",
-          "contractHub": "Centro de contratos",
-          "acceptSuccess": "Solicitud aceptada exitosamente",
-          "acceptFailed": "Error al aceptar la solicitud",
-          "rejectSuccess": "Solicitud rechazada exitosamente",
-          "rejectFailed": "Error al rechazar la solicitud",
-          "noRequests": "No hay solicitudes pendientes",
-          "accept": "Aceptar",
-          "reject": "Rechazar",
-          "deliverables": "Lieferungen",
-          "feedback": "Feedback"
-        },
         "offers": {
           "title": "Ofertas",
           "noOffers": "No se encontraron ofertas",
@@ -5708,7 +5721,6 @@
           "permissionDescription": "No tienes los permisos necesarios para ver Conexiones de marca. Contacta a tu administrador si crees que esto es un error.",
           "viewOnlyTitle": "Modo de solo lectura",
           "viewOnlyDescription": "Tu rol permite ver, pero no gestionar las conexiones de marca.",
-          "subtitle": "Gestiona marcas conectadas, solicitudes, ofertas, contratos y entregables.",
           "connected": "Conectado",
           "since": "Desde {{date}}",
           "loadingRequests": "Cargando solicitudes…",

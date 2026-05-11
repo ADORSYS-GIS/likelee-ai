@@ -2009,7 +2009,14 @@
         "phone": "Phone",
         "dateOfBirth": "Date of Birth",
         "licensingRate": "Licensing Rate (Monthly USD)",
-        "required": "Required"
+        "required": "Required",
+        "placeholders": {
+          "fullName": "Full legal name",
+          "stageName": "Optional",
+          "email": "{{entityLower}}@example.com",
+          "phone": "+1 (555) 123-4567",
+          "licensingRate": "e.g. 750"
+        }
       },
       "attributes": {
         "title": "Physical Attributes",
@@ -2032,6 +2039,13 @@
         "preferNotToSay": "Prefer not to say",
         "roleCategories": "Role Categories",
         "selectRoles": "Select role categories",
+        "placeholders": {
+          "heightFeet": "5",
+          "heightInches": "8",
+          "bust": "Bust",
+          "waist": "Waist",
+          "hips": "Hips"
+        },
         "options": {
           "female": "Weiblich",
           "male": "Männlich",
@@ -2057,7 +2071,17 @@
         "country": "Country",
         "organization": "Organization / Team",
         "sports": "Sports",
-        "acceptNegotiations": "Accept Negotiations"
+        "acceptNegotiations": "Accept Negotiations",
+        "placeholders": {
+          "city": "Los Angeles",
+          "state": "CA",
+          "country": "USA",
+          "organization": "e.g. UCLA",
+          "sports": "e.g. Football, Basketball",
+          "bio": "Brief bio or internal notes about this {{entityLower}}...",
+          "specialSkills": "e.g., Dancer, Athlete, Bilingual Spanish",
+          "instagram": "@handle"
+        }
       },
       "buttons": {
         "continue": "Continue",
@@ -4897,7 +4921,11 @@
         "agencySignsFirstDesc": "Client receives the contract only after agency signature.",
         "durationDays": "Duration (days)",
         "territory": "Territory",
-        "clientEmailRequired": "Client email is required"
+        "clientEmailRequired": "Client email is required",
+        "searchTalent": "Search {{entity}}...",
+        "modificationsPlaceholder": "e.g. Yes, with approval",
+        "customTermsPlaceholder": "Describe any other conditions for this specific deal...",
+        "contractContentPlaceholder": "The contract content will appear here..."
       },
       "deleteModal": {
         "title": "Delete Template",

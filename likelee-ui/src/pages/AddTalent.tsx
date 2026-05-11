@@ -762,7 +762,9 @@ export default function AddTalent() {
                       setFormData({ ...formData, full_name: e.target.value })
                     }
                     className="border-2 border-gray-300"
-                    placeholder="Full legal name"
+                    placeholder={t(
+                      "agencyDashboard.addTalent.basicInfo.placeholders.fullName",
+                    )}
                   />
                 </div>
 
@@ -781,7 +783,9 @@ export default function AddTalent() {
                       setFormData({ ...formData, stage_name: e.target.value })
                     }
                     className="border-2 border-gray-300"
-                    placeholder="Optional"
+                    placeholder={t(
+                      "agencyDashboard.addTalent.basicInfo.placeholders.stageName",
+                    )}
                   />
                 </div>
 
@@ -796,7 +800,10 @@ export default function AddTalent() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder={`${entityLower}@example.com`}
+                    placeholder={t(
+                      "agencyDashboard.addTalent.basicInfo.placeholders.email",
+                      { entityLower },
+                    )}
                     value={formData.email}
                     onChange={(e) =>
                       setFormData({ ...formData, email: e.target.value })
@@ -820,7 +827,9 @@ export default function AddTalent() {
                       setFormData({ ...formData, phone: e.target.value })
                     }
                     className="border-2 border-gray-300"
-                    placeholder="+1 (555) 123-4567"
+                    placeholder={t(
+                      "agencyDashboard.addTalent.basicInfo.placeholders.phone",
+                    )}
                   />
                 </div>
               </div>
@@ -858,7 +867,9 @@ export default function AddTalent() {
                       setFormData({ ...formData, city: e.target.value })
                     }
                     className="border-2 border-gray-300"
-                    placeholder="Los Angeles"
+                    placeholder={t(
+                      "agencyDashboard.addTalent.mediaSocial.placeholders.city",
+                    )}
                   />
                 </div>
 
@@ -876,7 +887,9 @@ export default function AddTalent() {
                       setFormData({ ...formData, state: e.target.value })
                     }
                     className="border-2 border-gray-300"
-                    placeholder="CA"
+                    placeholder={t(
+                      "agencyDashboard.addTalent.mediaSocial.placeholders.state",
+                    )}
                   />
                 </div>
 
@@ -894,7 +907,9 @@ export default function AddTalent() {
                       setFormData({ ...formData, country: e.target.value })
                     }
                     className="border-2 border-gray-300"
-                    placeholder="USA"
+                    placeholder={t(
+                      "agencyDashboard.addTalent.mediaSocial.placeholders.country",
+                    )}
                   />
                 </div>
                 {showOrganizationField && (
@@ -915,7 +930,9 @@ export default function AddTalent() {
                         })
                       }
                       className="border-2 border-gray-300"
-                      placeholder="e.g. UCLA"
+                      placeholder={t(
+                        "agencyDashboard.addTalent.mediaSocial.placeholders.organization",
+                      )}
                     />
                   </div>
                 )}
@@ -934,7 +951,9 @@ export default function AddTalent() {
                         setFormData({ ...formData, sports: e.target.value })
                       }
                       className="border-2 border-gray-300"
-                      placeholder="e.g. Football, Basketball"
+                      placeholder={t(
+                        "agencyDashboard.addTalent.mediaSocial.placeholders.sports",
+                      )}
                     />
                   </div>
                 )}
@@ -954,7 +973,10 @@ export default function AddTalent() {
                     setFormData({ ...formData, bio: e.target.value })
                   }
                   className="border-2 border-gray-300 min-h-24"
-                  placeholder={`Brief bio or internal notes about this ${entityLower}...`}
+                  placeholder={t(
+                    "agencyDashboard.addTalent.mediaSocial.placeholders.bio",
+                    { entityLower },
+                  )}
                 />
               </div>
 
@@ -980,7 +1002,9 @@ export default function AddTalent() {
                       })
                     }
                     className="border-2 border-gray-300"
-                    placeholder="e.g. 750"
+                    placeholder={t(
+                      "agencyDashboard.addTalent.basicInfo.placeholders.licensingRate",
+                    )}
                   />
                 </div>
                 <div className="flex items-end">
@@ -1345,7 +1369,9 @@ export default function AddTalent() {
                         })
                       }
                       className="border-2 border-gray-300"
-                      placeholder="5"
+                      placeholder={t(
+                        "agencyDashboard.addTalent.attributes.placeholders.heightFeet",
+                      )}
                       min="0"
                       max="8"
                     />
@@ -1364,7 +1390,9 @@ export default function AddTalent() {
                         })
                       }
                       className="border-2 border-gray-300"
-                      placeholder="8"
+                      placeholder={t(
+                        "agencyDashboard.addTalent.attributes.placeholders.heightInches",
+                      )}
                       min="0"
                       max="11"
                     />
@@ -1391,7 +1419,9 @@ export default function AddTalent() {
                         })
                       }
                       className="border-2 border-gray-300"
-                      placeholder="Bust"
+                      placeholder={t(
+                        "agencyDashboard.addTalent.attributes.placeholders.bust",
+                      )}
                       min="0"
                     />
                     <span className="text-xs text-gray-500 mt-1 block">
@@ -1409,7 +1439,9 @@ export default function AddTalent() {
                         })
                       }
                       className="border-2 border-gray-300"
-                      placeholder="Waist"
+                      placeholder={t(
+                        "agencyDashboard.addTalent.attributes.placeholders.waist",
+                      )}
                       min="0"
                     />
                     <span className="text-xs text-gray-500 mt-1 block">
@@ -1427,7 +1459,9 @@ export default function AddTalent() {
                         })
                       }
                       className="border-2 border-gray-300"
-                      placeholder="Hips"
+                      placeholder={t(
+                        "agencyDashboard.addTalent.attributes.placeholders.hips",
+                      )}
                       min="0"
                     />
                     <span className="text-xs text-gray-500 mt-1 block">
@@ -1451,7 +1485,9 @@ export default function AddTalent() {
                     setFormData({ ...formData, special_skills: e.target.value })
                   }
                   className="border-2 border-gray-300"
-                  placeholder="e.g., Dancer, Athlete, Bilingual Spanish"
+                  placeholder={t(
+                    "agencyDashboard.addTalent.mediaSocial.placeholders.specialSkills",
+                  )}
                 />
               </div>
 
@@ -1731,7 +1767,9 @@ export default function AddTalent() {
                           instagram_handle: e.target.value,
                         })
                       }
-                      placeholder="@handle"
+                      placeholder={t(
+                        "agencyDashboard.addTalent.mediaSocial.placeholders.instagram",
+                      )}
                       className={`pl-10 h-12 ${fetchingInstagram ? "border-indigo-400 ring-2 ring-indigo-100" : ""}`}
                     />
                     {fetchingInstagram && (
