@@ -21,7 +21,7 @@ export default async ({ mode }) => {
         filename: "sw.js",
         injectManifest: {
           minify: false,
-          maximumFileSizeToCacheInBytes: 15000000,
+          maximumFileSizeToCacheInBytes: 50000000,
         },
         registerType: "autoUpdate",
         injectRegister: "auto",
