@@ -854,6 +854,17 @@ async fn get_brand_checkout_row(
         .ok_or((StatusCode::NOT_FOUND, "brand_profile_not_found".to_string()))
 }
 
+/// Verify a stored Stripe customer ID still exists in the current Stripe account.
+/// Returns true if valid, false if stale/deleted/not found.
+async fn stripe_customer_exists(client: &stripe_sdk::Client, customer_id: &str) -> bool {
+    let Ok(cid) = customer_id.trim().parse::<stripe_sdk::CustomerId>() else {
+        return false;
+    };
+    stripe_sdk::Customer::retrieve(client, &cid, &[])
+        .await
+        .is_ok()
+}
+
 async fn ensure_brand_customer(
     state: &AppState,
     brand_id: &str,
@@ -861,11 +872,31 @@ async fn ensure_brand_customer(
     company_name: &str,
     existing_customer: &str,
 ) -> Result<String, (StatusCode, String)> {
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+
+    // If we have a stored customer ID, verify it still exists in Stripe.
+    // It may be stale if the Stripe account was reset, switched between test/live mode,
+    // or the customer was manually deleted.
     if !existing_customer.trim().is_empty() {
-        return Ok(existing_customer.to_string());
+        if stripe_customer_exists(&client, existing_customer).await {
+            return Ok(existing_customer.to_string());
+        }
+        warn!(
+            brand_id = %brand_id,
+            stale_customer_id = %existing_customer,
+            "Stored Stripe customer ID is stale or invalid; creating a new customer"
+        );
+        // Clear the stale ID from the DB
+        let _ = state
+            .pg
+            .from("brands")
+            .eq("id", brand_id)
+            .update(json!({ "stripe_customer_id": null }).to_string())
+            .execute()
+            .await;
     }
 
-    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    // Create a new Stripe customer
     let mut params = stripe_sdk::CreateCustomer::new();
     if !email.trim().is_empty() {
         params.email = Some(email);
@@ -1246,9 +1277,25 @@ async fn get_or_create_agency_billing_context(
         .unwrap_or(false);
 
     let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
-    let customer_id = if !existing_customer.trim().is_empty() {
+    let customer_id = if !existing_customer.trim().is_empty()
+        && stripe_customer_exists(&client, &existing_customer).await
+    {
         existing_customer
     } else {
+        if !existing_customer.trim().is_empty() {
+            warn!(
+                agency_id = %agency_id,
+                stale_customer_id = %existing_customer,
+                "Stored Stripe customer ID is stale or invalid; creating a new customer"
+            );
+            let _ = state
+                .pg
+                .from("agencies")
+                .eq("id", agency_id)
+                .update(json!({ "stripe_customer_id": null }).to_string())
+                .execute()
+                .await;
+        }
         let mut params = stripe_sdk::CreateCustomer::new();
         if !email.trim().is_empty() {
             params.email = Some(email.as_str());
@@ -2856,9 +2903,25 @@ pub async fn create_creator_subscription_checkout(
             return Err((StatusCode::FORBIDDEN, "trial_already_used".to_string()));
         }
     }
-    let customer_id = if !existing_customer.is_empty() {
+    let customer_id = if !existing_customer.is_empty()
+        && stripe_customer_exists(&client, &existing_customer).await
+    {
         existing_customer
     } else {
+        if !existing_customer.is_empty() {
+            warn!(
+                creator_id = %creator_id,
+                stale_customer_id = %existing_customer,
+                "Stored Stripe customer ID is stale or invalid; creating a new customer"
+            );
+            let _ = state
+                .pg
+                .from("creators")
+                .eq("id", &creator_id)
+                .update(json!({ "stripe_customer_id": null }).to_string())
+                .execute()
+                .await;
+        }
         let mut params = stripe_sdk::CreateCustomer::new();
         if let Some(email) = creator_row
             .get("email")
