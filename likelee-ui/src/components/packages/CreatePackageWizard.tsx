@@ -1142,7 +1142,9 @@ export function CreatePackageWizard({
                                       )}
                                     </Badge>
                                     <p className="text-[10px] text-gray-600 font-bold uppercase tracking-widest">
-                                      Selected
+                                      {t(
+                                        "agencyDashboard.packages.wizard.selectTalents.selected",
+                                      )}
                                     </p>
                                   </div>
                                 </div>
@@ -1739,7 +1741,8 @@ export function CreatePackageWizard({
                 t("agencyDashboard.packages.wizard.buttons.cancel")
               ) : (
                 <>
-                  <ArrowLeft className="w-4 h-4 mr-2" /> Back
+                  <ArrowLeft className="w-4 h-4 mr-2" />{" "}
+                  {t("agencyDashboard.packages.wizard.buttons.back")}
                 </>
               )}
             </Button>
