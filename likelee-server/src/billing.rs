@@ -865,6 +865,46 @@ async fn stripe_customer_exists(client: &stripe_sdk::Client, customer_id: &str) 
         .is_ok()
 }
 
+/// Clear a stale stripe_customer_id from the given table row.
+/// Logs a warning if the DB update fails so the issue is visible in logs.
+async fn clear_stale_customer_id(
+    state: &AppState,
+    table: &str,
+    id_column: &str,
+    id_value: &str,
+    stale_customer_id: &str,
+) {
+    match state
+        .pg
+        .from(table)
+        .eq(id_column, id_value)
+        .update(json!({ "stripe_customer_id": null }).to_string())
+        .execute()
+        .await
+    {
+        Ok(resp) if !resp.status().is_success() => {
+            let body = resp.text().await.unwrap_or_default();
+            warn!(
+                table = %table,
+                id = %id_value,
+                stale_customer_id = %stale_customer_id,
+                status = %body,
+                "failed to clear stale stripe_customer_id from DB — stale ID may persist"
+            );
+        }
+        Err(e) => {
+            warn!(
+                table = %table,
+                id = %id_value,
+                stale_customer_id = %stale_customer_id,
+                error = %e,
+                "transport error clearing stale stripe_customer_id from DB — stale ID may persist"
+            );
+        }
+        _ => {}
+    }
+}
+
 async fn ensure_brand_customer(
     state: &AppState,
     brand_id: &str,
@@ -886,14 +926,7 @@ async fn ensure_brand_customer(
             stale_customer_id = %existing_customer,
             "Stored Stripe customer ID is stale or invalid; creating a new customer"
         );
-        // Clear the stale ID from the DB
-        let _ = state
-            .pg
-            .from("brands")
-            .eq("id", brand_id)
-            .update(json!({ "stripe_customer_id": null }).to_string())
-            .execute()
-            .await;
+        clear_stale_customer_id(state, "brands", "id", brand_id, existing_customer).await;
     }
 
     // Create a new Stripe customer
@@ -1288,13 +1321,7 @@ async fn get_or_create_agency_billing_context(
                 stale_customer_id = %existing_customer,
                 "Stored Stripe customer ID is stale or invalid; creating a new customer"
             );
-            let _ = state
-                .pg
-                .from("agencies")
-                .eq("id", agency_id)
-                .update(json!({ "stripe_customer_id": null }).to_string())
-                .execute()
-                .await;
+            clear_stale_customer_id(state, "agencies", "id", agency_id, &existing_customer).await;
         }
         let mut params = stripe_sdk::CreateCustomer::new();
         if !email.trim().is_empty() {
@@ -2903,24 +2930,18 @@ pub async fn create_creator_subscription_checkout(
             return Err((StatusCode::FORBIDDEN, "trial_already_used".to_string()));
         }
     }
-    let customer_id = if !existing_customer.is_empty()
+    let customer_id = if !existing_customer.trim().is_empty()
         && stripe_customer_exists(&client, &existing_customer).await
     {
         existing_customer
     } else {
-        if !existing_customer.is_empty() {
+        if !existing_customer.trim().is_empty() {
             warn!(
                 creator_id = %creator_id,
                 stale_customer_id = %existing_customer,
                 "Stored Stripe customer ID is stale or invalid; creating a new customer"
             );
-            let _ = state
-                .pg
-                .from("creators")
-                .eq("id", &creator_id)
-                .update(json!({ "stripe_customer_id": null }).to_string())
-                .execute()
-                .await;
+            clear_stale_customer_id(&state, "creators", "id", &creator_id, &existing_customer).await;
         }
         let mut params = stripe_sdk::CreateCustomer::new();
         if let Some(email) = creator_row
