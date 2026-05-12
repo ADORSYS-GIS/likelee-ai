@@ -9571,6 +9571,68 @@ export default function CreatorDashboard() {
                           variant="outline"
                           className="border-gray-200"
                           onClick={() => {
+                            // Stripe readiness gate for independent creator offers.
+                            if (!payoutAccountStatus?.connected) {
+                              setStripeGateModalConfig({
+                                severity: "block",
+                                title: "Connect Stripe to submit deliverables",
+                                description:
+                                  "You need to connect your Stripe account before submitting deliverables. This ensures you get paid when the brand approves your work.",
+                                actions: [
+                                  {
+                                    label: "Go to Payouts",
+                                    onClick: () => {
+                                      setStripeGateModalOpen(false);
+                                      setShowPayoutSettings(true);
+                                    },
+                                  },
+                                  {
+                                    label: "Cancel",
+                                    variant: "outline",
+                                    onClick: () =>
+                                      setStripeGateModalOpen(false),
+                                  },
+                                ],
+                              });
+                              setStripeGateModalOpen(true);
+                              return;
+                            }
+                            if (
+                              payoutAccountStatus?.connected &&
+                              !payoutAccountStatus?.transfers_enabled
+                            ) {
+                              setStripeGateModalConfig({
+                                severity: "warning",
+                                title: "Stripe transfers not fully enabled",
+                                description:
+                                  "Your Stripe account is connected but transfers are not yet enabled. Complete your Stripe onboarding in Payouts to ensure you get paid on time. You can still submit deliverables now.",
+                                actions: [
+                                  {
+                                    label: "Submit anyway",
+                                    onClick: () => {
+                                      setStripeGateModalOpen(false);
+                                      setSendDeliverableBrandId(
+                                        String(offer?.brand_id || ""),
+                                      );
+                                      setSendDeliverableOfferId(offerId);
+                                      setSendDeliverableRequestId("");
+                                      setSendDeliverableRequestMeta(null);
+                                      setSendDeliverableOpen(true);
+                                    },
+                                  },
+                                  {
+                                    label: "Go to Payouts",
+                                    variant: "outline",
+                                    onClick: () => {
+                                      setStripeGateModalOpen(false);
+                                      setShowPayoutSettings(true);
+                                    },
+                                  },
+                                ],
+                              });
+                              setStripeGateModalOpen(true);
+                              return;
+                            }
                             setSendDeliverableBrandId(
                               String(offer?.brand_id || ""),
                             );
