@@ -2941,7 +2941,8 @@ pub async fn create_creator_subscription_checkout(
                 stale_customer_id = %existing_customer,
                 "Stored Stripe customer ID is stale or invalid; creating a new customer"
             );
-            clear_stale_customer_id(&state, "creators", "id", &creator_id, &existing_customer).await;
+            clear_stale_customer_id(&state, "creators", "id", &creator_id, &existing_customer)
+                .await;
         }
         let mut params = stripe_sdk::CreateCustomer::new();
         if let Some(email) = creator_row
