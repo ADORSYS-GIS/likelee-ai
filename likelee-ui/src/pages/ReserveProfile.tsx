@@ -47,6 +47,7 @@ import {
 import { CreatorTermsContent } from "@/components/CreatorTermsContent";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { EmailOtpDialog } from "@/components/auth/EmailOtpDialog";
+import { DuplicateEmailModal } from "@/components/auth/DuplicateEmailModal";
 import { DobInput } from "@/components/ui/DobInput";
 import {
   normalizeEmail,
@@ -556,6 +557,7 @@ export default function ReserveProfile() {
   ]);
 
   const [signupOtpOpen, setSignupOtpOpen] = useState(false);
+  const [duplicateEmailModalOpen, setDuplicateEmailModalOpen] = useState(false);
 
   const requireSupabase = () => {
     if (!supabase) {
@@ -598,15 +600,6 @@ export default function ReserveProfile() {
         ),
       });
     }
-  };
-
-  const loginExistingAccount = async () => {
-    await login(normalizeEmail(formData.email), formData.password);
-    toast({
-      title: "Account found",
-      description:
-        "This email already belongs to an existing account. Continuing there now.",
-    });
   };
 
   const totalSteps = TOTAL_STEPS;
@@ -819,26 +812,9 @@ export default function ReserveProfile() {
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
         if (!data.available) {
-          try {
-            await loginExistingAccount();
-            return;
-          } catch {
-            // Existing unverified creator signups still resume via OTP.
-          }
-          try {
-            await handleCreatorOtpResend();
-            setSignupOtpOpen(true);
-            return;
-          } catch {
-            setAuthMode("login");
-            toast({
-              title: "Account already exists",
-              description:
-                "This email already belongs to another account. Sign in instead to continue with that account.",
-              className: "bg-cyan-50 border-2 border-cyan-400",
-            });
-            return;
-          }
+          setAuthMode("login");
+          setDuplicateEmailModalOpen(true);
+          return;
         }
         // Create Supabase auth user and keep verification on the current page.
         const displayName =
@@ -881,18 +857,8 @@ export default function ReserveProfile() {
           msg.includes("already registered") ||
           msg.includes("already exists")
         ) {
-          try {
-            await loginExistingAccount();
-            return;
-          } catch {
-            setAuthMode("login");
-            toast({
-              title: "Account already exists",
-              description:
-                "This email already belongs to another account. Sign in instead to continue with that account.",
-              className: "bg-cyan-50 border-2 border-cyan-400",
-            });
-          }
+          setAuthMode("login");
+          setDuplicateEmailModalOpen(true);
         } else {
           toast({
             title: "Sign-up Failed",
@@ -1853,6 +1819,10 @@ export default function ReserveProfile() {
           verifyLabel={t("reserveProfile.otp.verifyLabel", "Continue")}
           onVerify={handleCreatorOtpVerify}
           onResend={handleCreatorOtpResend}
+        />
+        <DuplicateEmailModal
+          open={duplicateEmailModalOpen}
+          onOpenChange={setDuplicateEmailModalOpen}
         />
       </div>
     </div>

@@ -161,6 +161,81 @@ fn supabase_auth_base_url(state: &AppState) -> String {
         .to_string()
 }
 
+pub fn normalize_signup_email(email: &str) -> Result<String, (StatusCode, String)> {
+    let normalized = email.trim().to_lowercase();
+    if normalized.is_empty() || !normalized.contains('@') {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            json!({
+                "code": "invalid_email",
+                "message": "Please enter a valid email address."
+            })
+            .to_string(),
+        ));
+    }
+    Ok(normalized)
+}
+
+pub async fn existing_profile_role_for_email(
+    state: &AppState,
+    email: &str,
+) -> Result<Option<&'static str>, (StatusCode, String)> {
+    let normalized = normalize_signup_email(email)?;
+    let candidates = [
+        ("agencies", "agency"),
+        ("brands", "brand"),
+        ("creators", "creator"),
+    ];
+
+    for (table, role) in candidates {
+        let resp = state
+            .pg
+            .from(table)
+            .select("id")
+            .eq("email", normalized.as_str())
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        let status = resp.status();
+        let text = resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !status.is_success() {
+            return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+        }
+
+        let rows: Value = serde_json::from_str(&text)
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if rows.as_array().map(|a| !a.is_empty()).unwrap_or(false) {
+            return Ok(Some(role));
+        }
+    }
+
+    Ok(None)
+}
+
+pub async fn ensure_signup_email_available(
+    state: &AppState,
+    email: &str,
+) -> Result<String, (StatusCode, String)> {
+    let normalized = normalize_signup_email(email)?;
+    if let Some(role) = existing_profile_role_for_email(state, normalized.as_str()).await? {
+        return Err((
+            StatusCode::CONFLICT,
+            json!({
+                "code": "email_already_registered",
+                "existing_role": role,
+                "message": "This email is already registered. Please sign in with the existing account or use a different email."
+            })
+            .to_string(),
+        ));
+    }
+    Ok(normalized)
+}
+
 async fn lookup_role_from_supabase_auth(state: &AppState, user_id: &str) -> Option<String> {
     let user_id = user_id.trim();
     if user_id.is_empty() {

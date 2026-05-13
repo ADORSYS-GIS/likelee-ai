@@ -1,6 +1,6 @@
 use crate::{
     agency_talent_refs::{list_agency_talent_refs, resolve_agency_talent_ref, AgencyTalentRef},
-    auth::AuthUser,
+    auth::{ensure_signup_email_available, AuthUser},
     config::AppState,
     errors::sanitize_db_error,
     storage::{
@@ -80,11 +80,12 @@ pub async fn register(
     Json(payload): Json<AgencyRegisterPayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let client = Client::new();
+    let email = ensure_signup_email_available(&state, payload.email.as_str()).await?;
 
     // 1. Create Supabase user with role metadata
     let create_user_url = format!("{}/auth/v1/admin/users", state.supabase_url);
     let body = json!({
-        "email": payload.email,
+        "email": email,
         "password": payload.password,
         "email_confirm": false,
         "user_metadata": {
@@ -109,6 +110,17 @@ pub async fn register(
             .text()
             .await
             .unwrap_or_else(|_| "failed to create user".to_string());
+        let lower = txt.to_lowercase();
+        if lower.contains("already") || lower.contains("registered") || lower.contains("exists") {
+            return Err((
+                StatusCode::CONFLICT,
+                json!({
+                    "code": "email_already_registered",
+                    "message": "This email is already registered. Please sign in with the existing account or use a different email."
+                })
+                .to_string(),
+            ));
+        }
         return Err((StatusCode::BAD_REQUEST, txt));
     }
 
@@ -126,7 +138,7 @@ pub async fn register(
     let gen_link_url = format!("{}/auth/v1/admin/generate_link", state.supabase_url);
     let link_body = json!({
         "type": "signup",
-        "email": payload.email,
+        "email": email,
         "password": payload.password
     });
 
@@ -160,7 +172,7 @@ pub async fn register(
         "agency_type": payload.agency_type,
         "contact_name": payload.contact_name,
         "contact_title": payload.contact_title,
-        "email": payload.email,
+        "email": email,
         "website": payload.website,
         "phone_number": payload.phone_number,
         "plan_tier": "none",
