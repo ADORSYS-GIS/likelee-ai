@@ -17,6 +17,9 @@
       "licensing": "Lizenzierung",
       "scouting": "Scouting"
     },
+    "protection": {
+      "comingSoonDescription": "Schutz & Nutzung Funktionen kommen bald."
+    },
     "dashboard": {
       "entities": {
         "talent": "Talent",
@@ -137,6 +140,7 @@
         "inactive": "Inaktiv",
         "pending": "Ausstehend"
       },
+      "searchPlaceholder": "Talent suchen...",
       "header": {
         "verifiedAgency": "Verifizierte Agentur",
         "upgradePlan": "Plan upgraden",
@@ -325,7 +329,10 @@
           "compliance": "Compliance"
         },
         "performanceMetrics": "Performance Metrics",
-        "engagementRate": "Engagement Rate"
+        "engagementRate": "Engagement Rate",
+        "labels": {
+          "comingSoon": "Demnächst verfügbar"
+        }
       },
       "digitals": {
         "title": "Digitals-Tracking",
@@ -957,15 +964,15 @@
         "loadingOffers": "Loading offers..."
       },
       "brandConnections": {
-        "title": "Brand Connections",
-        "connectedBrands": "Connected Brands",
-        "requests": "Requests",
-        "brandOffers": "Brand Offers",
-        "deliverables": "Deliverables",
-        "packageFeedback": "Package Feedback",
-        "loadingBrands": "Loading connected brands...",
-        "loadBrandsFailed": "Failed to load connected brands.",
-        "noBrands": "No connected brands yet.",
+        "title": "Markenverbindungen",
+        "connectedBrands": "Verbundene Marken",
+        "requests": "Anfragen",
+        "brandOffers": "Markenangebote",
+        "deliverables": "Liefergegenstände",
+        "packageFeedback": "Paket-Feedback",
+        "loadingBrands": "Verbundene Marken werden geladen...",
+        "loadBrandsFailed": "Fehler beim Laden der verbundenen Marken.",
+        "noBrands": "Noch keine verbundenen Marken.",
         "ui": {
           "verifyingAccess": "Verifying access…",
           "accessRestricted": "Access restricted",
@@ -973,7 +980,7 @@
           "permissionDescription": "You don’t have the required permissions to view Brand Connections. Please contact your admin if you believe this is a mistake.",
           "viewOnlyTitle": "View-only mode",
           "viewOnlyDescription": "Your role allows viewing, but not managing brand connections.",
-          "subtitle": "Manage connected brands, requests, offers, contracts, and deliverables.",
+          "subtitle": "Verwalten Sie verbundene Marken, Anfragen, Angebote, Verträge und Liefergegenstände.",
           "connected": "Connected",
           "since": "Since {{date}}",
           "loadingRequests": "Loading requests…",
@@ -4587,11 +4594,20 @@
         "useTemplate": "Vorlage verwenden",
         "editInBuilder": "Im Builder bearbeiten",
         "sendContract": "Vertrag senden",
-        "editDetails": "Edit Details",
-        "editLayout": "Edit Layout",
-        "duplicate": "Duplicate",
-        "delete": "Delete",
-        "useContract": "Use Contract"
+        "editDetails": "Details bearbeiten",
+        "editLayout": "Layout bearbeiten",
+        "duplicate": "Duplizieren",
+        "delete": "Löschen",
+        "useContract": "Vertrag verwenden",
+        "useContractModal": {
+          "title": "Vertrag verwenden: {{templateName}}",
+          "description": "Geben Sie die Informationen des Kunden ein, um einen neuen Vertrag aus dieser Vorlage zu erstellen.",
+          "clientName": "Kundenname",
+          "clientEmail": "Kunden-E-Mail",
+          "cancel": "Abbrechen",
+          "creating": "Wird erstellt...",
+          "createAndSign": "Erstellen & Signieren"
+        }
       },
       "modal": {
         "newTitle": "Neue Vertragsvorlage",
@@ -4647,6 +4663,8 @@
       },
       "wizard": {
         "stepOf": "Schritt {{step}} von 3",
+        "externalClientTitle": "Vertrag für externen Kunden erstellen",
+        "externalClientDescription": "Sie initiieren diesen Vertrag direkt - alle Felder stehen Ihnen zum Ausfüllen zur Verfügung. Geben Sie die Details des Kunden ein und wählen Sie den {{entity}}, den Sie lizenzieren möchten, in der Regel basierend auf dem Paket, das Sie gesendet haben, und der Auswahl des Kunden daraus.",
         "dealSpecifics": "Deal-Details",
         "contentReview": "Inhaltsprüfung",
         "dealSpecificsSubtitle": "Geben Sie die Kerndetails dieses Lizenzdeals ein",
@@ -4663,19 +4681,23 @@
         "dealSpecificsModal": "Deal-Details",
         "newContractTemplate": "Neue Vertragsvorlage",
         "filterModal": "Filter",
-        "renewalPrefill": "Relleno previo de renovación",
-        "renewalPrefillDesc": "Esta renovación se rellenó automáticamente desde la solicitud de licencia anterior. Ajusta lo que necesites antes de enviar.",
-        "brandNamePlaceholder": "p. ej. Nike, Spotify",
-        "sendToConnectedBrands": "Enviar a marcas conectadas",
-        "selectBrand": "Seleccionar marca",
-        "selectedBrand": "Marca seleccionada",
-        "connectedBrandsHelp": "Selecciona entre tus marcas conectadas. Desactiva para escribir el correo manualmente.",
-        "clientEmailPlaceholder": "cliente@ejemplo.com",
-        "toggleConnectedBrands": "Activa para seleccionar entre marcas conectadas.",
-        "agencySignsFirstDesc": "El cliente recibe el contrato solo después de la firma de la agencia.",
-        "durationDays": "Duración (días)",
-        "territory": "Territorio",
-        "clientEmailRequired": "El correo del cliente es obligatorio"
+        "renewalPrefill": "Erneuerungsvorabfüllung",
+        "renewalPrefillDesc": "Diese Erneuerung wurde automatisch aus der vorherigen Lizenzanfrage vorab ausgefüllt. Passen Sie vor dem Senden an, was nötig ist.",
+        "brandNamePlaceholder": "z. B. Nike, Spotify",
+        "sendToConnectedBrands": "An verbundene Marken senden",
+        "selectBrand": "Marke auswählen",
+        "selectedBrand": "Ausgewählte Marke",
+        "connectedBrandsHelp": "Wählen Sie aus Ihren verbundenen Marken. Deaktivieren Sie, um E-Mail manuell einzugeben.",
+        "clientEmailPlaceholder": "kunde@beispiel.de",
+        "toggleConnectedBrands": "Umschalten, um aus verbundenen Marken auszuwählen.",
+        "agencySignsFirstDesc": "Der Kunde erhält den Vertrag erst nach der Unterschrift der Agentur.",
+        "durationDays": "Dauer (Tage)",
+        "territory": "Territorium",
+        "clientEmailRequired": "Kunden-E-Mail ist erforderlich",
+        "searchTalent": "{{entity}} suchen...",
+        "modificationsPlaceholder": "z. B. Ja, mit Genehmigung",
+        "customTermsPlaceholder": "Beschreiben Sie andere Bedingungen für diesen spezifischen Deal...",
+        "contractContentPlaceholder": "Der Vertragsinhalt wird hier erscheinen..."
       },
       "deleteModal": {
         "title": "Vorlage löschen",
@@ -4695,8 +4717,8 @@
       "noTemplatesYet": "Noch keine Vorlagen. Erstellen Sie Ihre erste, um zu beginnen!",
       "notSet": "Nicht festgelegt",
       "brandContext": "Jede erstellte Vertragsübermittlung wird an {{brand}} gesendet.",
-      "newTemplate": "New template",
-      "loading": "Loading...",
+      "newTemplate": "Neue Vorlage",
+      "loading": "Wird geladen...",
       "noMatch": "No templates match your criteria.",
       "delete": {
         "title": "Delete Template"
@@ -4724,7 +4746,14 @@
         "phone": "Telefon",
         "dateOfBirth": "Geburtsdatum",
         "licensingRate": "Lizenzrate (monatlich USD)",
-        "required": "Erforderlich"
+        "required": "Erforderlich",
+        "placeholders": {
+          "fullName": "Vollständiger rechtlicher Name",
+          "stageName": "Optional",
+          "email": "{{entityLower}}@beispiel.de",
+          "phone": "+49 (555) 123-4567",
+          "licensingRate": "z.B. 750"
+        }
       },
       "attributes": {
         "title": "Physische Attribute",
@@ -4753,7 +4782,14 @@
         "no": "Nein",
         "preferNotToSay": "Möchte nicht angeben",
         "roleCategories": "Rollenkategorien",
-        "selectRoles": "Rollenkategorien auswählen"
+        "selectRoles": "Rollenkategorien auswählen",
+        "placeholders": {
+          "heightFeet": "5",
+          "heightInches": "8",
+          "bust": "Brustumfang",
+          "waist": "Taillenumfang",
+          "hips": "Hüftumfang"
+        }
       },
       "mediaSocial": {
         "title": "Medien & Social",
@@ -4772,7 +4808,17 @@
         "country": "Land",
         "organization": "Organisation / Team",
         "sports": "Sportarten",
-        "acceptNegotiations": "Verhandlungen akzeptieren"
+        "acceptNegotiations": "Verhandlungen akzeptieren",
+        "placeholders": {
+          "city": "Berlin",
+          "state": "BY",
+          "country": "Deutschland",
+          "organization": "z.B. TU München",
+          "sports": "z.B. Fußball, Basketball",
+          "bio": "Kurze Bio oder interne Notizen über diesen {{entityLower}}...",
+          "specialSkills": "z.B. Tänzer, Athlet, zweisprachig Spanisch",
+          "instagram": "@handle"
+        }
       },
       "buttons": {
         "continue": "Weiter",
@@ -5435,10 +5481,10 @@
           "verifyingAccess": "Zugriff wird überprüft…",
           "accessRestricted": "Zugriff eingeschränkt",
           "permissionRequired": "Berechtigung erforderlich",
+          "subtitle": "Verwalten Sie verbundene Marken, Anfragen, Angebote, Verträge und Liefergegenstände.",
           "permissionDescription": "Sie haben nicht die erforderlichen Berechtigungen, um Markenverbindungen zu sehen. Bitte wenden Sie sich an Ihren Administrator, wenn Sie glauben, dass dies ein Fehler ist.",
           "viewOnlyTitle": "Nur-Ansicht-Modus",
           "viewOnlyDescription": "Ihre Rolle erlaubt das Anzeigen, aber nicht das Verwalten von Markenverbindungen.",
-          "subtitle": "Verwalten Sie verbundene Marken, Anfragen, Angebote, Verträge und Lieferungen.",
           "connected": "Verbunden",
           "since": "Seit {{date}}",
           "loadingRequests": "Anfragen werden geladen…",

@@ -9535,73 +9535,6 @@ export default function CreatorDashboard() {
                 <div className="text-lg font-semibold text-gray-900">
                   {t("brandConnections.deliverables")}
                 </div>
-                <Button
-                  className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                  onClick={() => {
-                    // Stripe readiness gate for independent creator offers.
-                    if (!payoutAccountStatus?.connected) {
-                      setStripeGateModalConfig({
-                        severity: "block",
-                        title: "Connect Stripe to submit deliverables",
-                        description:
-                          "You need to connect your Stripe account before submitting deliverables. This ensures you get paid when the brand approves your work.",
-                        actions: [
-                          {
-                            label: "Go to Payouts",
-                            onClick: () => {
-                              setStripeGateModalOpen(false);
-                              setShowPayoutSettings(true);
-                            },
-                          },
-                          {
-                            label: "Cancel",
-                            variant: "outline",
-                            onClick: () => setStripeGateModalOpen(false),
-                          },
-                        ],
-                      });
-                      setStripeGateModalOpen(true);
-                      return;
-                    }
-                    if (
-                      payoutAccountStatus?.connected &&
-                      !payoutAccountStatus?.transfers_enabled
-                    ) {
-                      setStripeGateModalConfig({
-                        severity: "warning",
-                        title: "Stripe transfers not fully enabled",
-                        description:
-                          "Your Stripe account is connected but transfers are not yet enabled. Complete your Stripe onboarding in Payouts to ensure you get paid on time. You can still submit deliverables now.",
-                        actions: [
-                          {
-                            label: "Submit anyway",
-                            onClick: () => {
-                              setStripeGateModalOpen(false);
-                              setSendDeliverableRequestId("");
-                              setSendDeliverableRequestMeta(null);
-                              setSendDeliverableOpen(true);
-                            },
-                          },
-                          {
-                            label: "Go to Payouts",
-                            variant: "outline",
-                            onClick: () => {
-                              setStripeGateModalOpen(false);
-                              setShowPayoutSettings(true);
-                            },
-                          },
-                        ],
-                      });
-                      setStripeGateModalOpen(true);
-                      return;
-                    }
-                    setSendDeliverableRequestId("");
-                    setSendDeliverableRequestMeta(null);
-                    setSendDeliverableOpen(true);
-                  }}
-                >
-                  {t("brandConnections.sendDeliverable")}
-                </Button>
               </div>
               {loadingBrandOffers && (
                 <p className="text-sm text-gray-600">
@@ -9633,15 +9566,94 @@ export default function CreatorDashboard() {
                           {formatStatus(offer?.status || "sent")}
                         </p>
                       </div>
-                      <Button
-                        variant="outline"
-                        className="border-gray-200"
-                        onClick={() => openOfferBrief(offerId)}
-                      >
-                        {expanded
-                          ? t("brandConnections.hide")
-                          : t("brandConnections.open")}
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          className="border-gray-200"
+                          onClick={() => {
+                            // Stripe readiness gate for independent creator offers.
+                            if (!payoutAccountStatus?.connected) {
+                              setStripeGateModalConfig({
+                                severity: "block",
+                                title: "Connect Stripe to submit deliverables",
+                                description:
+                                  "You need to connect your Stripe account before submitting deliverables. This ensures you get paid when the brand approves your work.",
+                                actions: [
+                                  {
+                                    label: "Go to Payouts",
+                                    onClick: () => {
+                                      setStripeGateModalOpen(false);
+                                      setShowPayoutSettings(true);
+                                    },
+                                  },
+                                  {
+                                    label: "Cancel",
+                                    variant: "outline",
+                                    onClick: () =>
+                                      setStripeGateModalOpen(false),
+                                  },
+                                ],
+                              });
+                              setStripeGateModalOpen(true);
+                              return;
+                            }
+                            if (
+                              payoutAccountStatus?.connected &&
+                              !payoutAccountStatus?.transfers_enabled
+                            ) {
+                              setStripeGateModalConfig({
+                                severity: "warning",
+                                title: "Stripe transfers not fully enabled",
+                                description:
+                                  "Your Stripe account is connected but transfers are not yet enabled. Complete your Stripe onboarding in Payouts to ensure you get paid on time. You can still submit deliverables now.",
+                                actions: [
+                                  {
+                                    label: "Submit anyway",
+                                    onClick: () => {
+                                      setStripeGateModalOpen(false);
+                                      setSendDeliverableBrandId(
+                                        String(offer?.brand_id || ""),
+                                      );
+                                      setSendDeliverableOfferId(offerId);
+                                      setSendDeliverableRequestId("");
+                                      setSendDeliverableRequestMeta(null);
+                                      setSendDeliverableOpen(true);
+                                    },
+                                  },
+                                  {
+                                    label: "Go to Payouts",
+                                    variant: "outline",
+                                    onClick: () => {
+                                      setStripeGateModalOpen(false);
+                                      setShowPayoutSettings(true);
+                                    },
+                                  },
+                                ],
+                              });
+                              setStripeGateModalOpen(true);
+                              return;
+                            }
+                            setSendDeliverableBrandId(
+                              String(offer?.brand_id || ""),
+                            );
+                            setSendDeliverableOfferId(offerId);
+                            setSendDeliverableRequestId("");
+                            setSendDeliverableRequestMeta(null);
+                            setSendDeliverableOpen(true);
+                          }}
+                        >
+                          {t("brandConnections.sendDeliverable")}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="border-gray-200"
+                          onClick={() => openOfferBrief(offerId)}
+                        >
+                          {expanded
+                            ? t("brandConnections.hide")
+                            : t("brandConnections.open")}
+                        </Button>
+                      </div>
                     </div>
                     {expanded && (
                       <div className="rounded-md border border-gray-200 p-3">
@@ -13500,66 +13512,112 @@ export default function CreatorDashboard() {
                     <Label htmlFor="deliverable-brand">
                       {t("brandConnections.selectBrand")}
                     </Label>
-                    <select
-                      id="deliverable-brand"
-                      value={sendDeliverableBrandId}
-                      onChange={(e) => {
-                        setSendDeliverableBrandId(e.target.value);
-                        setSendDeliverableOfferId("");
-                      }}
-                      className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
-                    >
-                      <option value="">
-                        {t("brandConnections.selectConnectedBrand")}
-                      </option>
-                      {brandConnections.map((c: any) => (
-                        <option
-                          key={String(c?.brand_id || c?.id)}
-                          value={String(c?.brand_id || "")}
-                        >
-                          {resolveConnectedBrandName(c)}
+                    {sendDeliverableOfferId ? (
+                      (() => {
+                        const selectedOffer = brandOffers.find(
+                          (offer: any) =>
+                            String(offer?.id || "") === sendDeliverableOfferId,
+                        );
+                        const selectedBrand = brandConnections.find(
+                          (c: any) =>
+                            String(c?.brand_id || "") ===
+                            sendDeliverableBrandId,
+                        );
+                        const brandName = selectedBrand
+                          ? resolveConnectedBrandName(selectedBrand)
+                          : selectedOffer?.brands?.company_name ||
+                            "Selected Brand";
+                        return (
+                          <Input
+                            readOnly
+                            value={brandName}
+                            className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm bg-gray-50 text-gray-700 cursor-default"
+                          />
+                        );
+                      })()
+                    ) : (
+                      <select
+                        id="deliverable-brand"
+                        value={sendDeliverableBrandId}
+                        onChange={(e) => {
+                          setSendDeliverableBrandId(e.target.value);
+                          setSendDeliverableOfferId("");
+                        }}
+                        className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
+                      >
+                        <option value="">
+                          {t("brandConnections.selectConnectedBrand")}
                         </option>
-                      ))}
-                    </select>
+                        {brandConnections.map((c: any) => (
+                          <option
+                            key={String(c?.brand_id || c?.id)}
+                            value={String(c?.brand_id || "")}
+                          >
+                            {resolveConnectedBrandName(c)}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="deliverable-campaign">
                       {t("brandConnections.selectCampaign")}
                     </Label>
-                    <select
-                      id="deliverable-campaign"
-                      value={sendDeliverableOfferId}
-                      onChange={(e) => {
-                        const offerId = e.target.value;
-                        setSendDeliverableOfferId(offerId);
-                        const selected = brandOffers.find(
-                          (offer: any) => String(offer?.id || "") === offerId,
+                    {sendDeliverableOfferId ? (
+                      (() => {
+                        const selectedOffer = brandOffers.find(
+                          (offer: any) =>
+                            String(offer?.id || "") === sendDeliverableOfferId,
                         );
-                        const selectedBrandId = String(
-                          selected?.brand_id || "",
+                        const campaignName = String(
+                          selectedOffer?.brand_campaigns?.name ||
+                            selectedOffer?.offer_title ||
+                            t("brandConnections.offerFallback"),
                         );
-                        if (selectedBrandId) {
-                          setSendDeliverableBrandId(selectedBrandId);
-                        }
-                      }}
-                      className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
-                    >
-                      <option value="">
-                        {t("brandConnections.selectCampaignOffer")}
-                      </option>
-                      {campaignOptions.map((offer: any) => (
-                        <option
-                          key={String(offer?.id)}
-                          value={String(offer?.id)}
-                        >
-                          {String(
-                            offer?.brand_campaigns?.name ||
-                              offer?.offer_title ||
-                              t("brandConnections.offerFallback"),
-                          )}
+                        return (
+                          <Input
+                            readOnly
+                            value={campaignName}
+                            className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm bg-gray-50 text-gray-700 cursor-default"
+                          />
+                        );
+                      })()
+                    ) : (
+                      <select
+                        id="deliverable-campaign"
+                        value={sendDeliverableOfferId}
+                        onChange={(e) => {
+                          const offerId = e.target.value;
+                          setSendDeliverableOfferId(offerId);
+                          const selected = brandOffers.find(
+                            (offer: any) => String(offer?.id || "") === offerId,
+                          );
+                          const selectedBrandId = String(
+                            selected?.brand_id || "",
+                          );
+                          if (selectedBrandId) {
+                            setSendDeliverableBrandId(selectedBrandId);
+                          }
+                        }}
+                        className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
+                      >
+                        <option value="">
+                          {t("brandConnections.selectCampaignOffer")}
                         </option>
-                      ))}
-                    </select>
+                        {campaignOptions.map((offer: any) => (
+                          <option
+                            key={String(offer?.id)}
+                            value={String(offer?.id)}
+                          >
+                            {String(
+                              offer?.brand_campaigns?.name ||
+                                offer?.offer_title ||
+                                t("brandConnections.offerFallback"),
+                            )}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                     {sendDeliverableBrandId && campaignOptions.length === 0 && (
                       <p className="text-xs text-amber-700">
                         {t("brandConnections.noCampaignOffersForBrandYet")}

@@ -9,6 +9,9 @@
   "marketingAgencySolutionsDescription": "Une plateforme unique pour les campagnes de créateurs alimentées par l'IA. Licence de créateur vérifiée, flux de travail de production, conformité et exposition de marque.",
   "marketingAgencyCreatorPlatform": "Plateforme de créateurs pour agence de marketing",
   "agencyDashboard": {
+    "protection": {
+      "comingSoonDescription": "Les fonctionnalités de Protection & Utilisation arrivent bientôt."
+    },
     "tabs": {
       "jobs": "Emplois",
       "roster": "Liste",
@@ -136,6 +139,7 @@
         "inactive": "Inactif",
         "pending": "En attente"
       },
+      "searchPlaceholder": "Rechercher un talent...",
       "header": {
         "verifiedAgency": "Agence vérifiée",
         "upgradePlan": "Mettre à niveau le plan",
@@ -267,7 +271,9 @@
         },
         "performanceMetrics": "Performance Metrics",
         "engagementRate": "Engagement Rate",
-        "comingSoon": "Bientôt disponible"
+        "labels": {
+          "comingSoon": "Bientôt disponible"
+        }
       },
       "digitals": {
         "title": "Suivi des digitals",
@@ -956,15 +962,15 @@
         "loadingOffers": "Loading offers..."
       },
       "brandConnections": {
-        "title": "Brand Connections",
-        "connectedBrands": "Connected Brands",
-        "requests": "Requests",
-        "brandOffers": "Brand Offers",
-        "deliverables": "Deliverables",
-        "packageFeedback": "Package Feedback",
-        "loadingBrands": "Loading connected brands...",
-        "loadBrandsFailed": "Failed to load connected brands.",
-        "noBrands": "No connected brands yet.",
+        "title": "Connexions de marque",
+        "connectedBrands": "Marques connectées",
+        "requests": "Demandes",
+        "brandOffers": "Offres de marque",
+        "deliverables": "Livrables",
+        "packageFeedback": "Commentaires du paquet",
+        "loadingBrands": "Chargement des marques connectées...",
+        "loadBrandsFailed": "Échec du chargement des marques connectées.",
+        "noBrands": "Aucune marque connectée pour le moment.",
         "ui": {
           "verifyingAccess": "Verifying access…",
           "accessRestricted": "Access restricted",
@@ -972,7 +978,7 @@
           "permissionDescription": "You don’t have the required permissions to view Brand Connections. Please contact your admin if you believe this is a mistake.",
           "viewOnlyTitle": "View-only mode",
           "viewOnlyDescription": "Your role allows viewing, but not managing brand connections.",
-          "subtitle": "Manage connected brands, requests, offers, contracts, and deliverables.",
+          "subtitle": "Gérer les marques connectées, les demandes, les offres, les contrats et les livrables.",
           "connected": "Connected",
           "since": "Since {{date}}",
           "loadingRequests": "Loading requests…",
@@ -1352,66 +1358,66 @@
         }
       },
       "settings": {
-        "title": "Settings",
+        "title": "Paramètres",
         "tabs": {
-          "profile": "Profile",
-          "team": "Team",
-          "integrations": "Integrations",
-          "billing": "Billing",
+          "profile": "Profil",
+          "team": "Équipe",
+          "integrations": "Intégrations",
+          "billing": "Facturation",
           "notifications": "Notifications"
         },
         "profile": {
-          "title": "Agency Profile",
-          "subtitle": "Configure your agency profile and preferences",
-          "save": "Save Changes",
-          "cancel": "Cancel",
-          "uploadLogo": "Upload Logo",
-          "agencyName": "Agency Name",
-          "agencyEmail": "Agency Email",
-          "agencyPhone": "Agency Phone",
-          "agencyAddress": "Agency Address",
-          "agencyWebsite": "Agency Website",
+          "title": "Profil de l'agence",
+          "subtitle": "Configurez le profil et les préférences de votre agence",
+          "save": "Enregistrer les modifications",
+          "cancel": "Annuler",
+          "uploadLogo": "Télécharger le logo",
+          "agencyName": "Nom de l'agence",
+          "agencyEmail": "E-mail de l'agence",
+          "agencyPhone": "Téléphone de l'agence",
+          "agencyAddress": "Adresse de l'agence",
+          "agencyWebsite": "Site web de l'agence",
           "description": "Description",
-          "saveSuccess": "Profile saved successfully",
-          "saveFailed": "Failed to save profile",
-          "currentPlan": "Current Plan"
+          "saveSuccess": "Profil enregistré avec succès",
+          "saveFailed": "Échec de l'enregistrement du profil",
+          "currentPlan": "Plan actuel"
         },
         "agencyInformation": {
-          "title": "Agency Information",
-          "verified": "Verified",
-          "agencyName": "Agency Name",
-          "legalEntityName": "Legal Entity Name",
-          "address": "Address",
-          "city": "City",
-          "stateProvince": "State/Province",
-          "zipPostalCode": "ZIP/Postal Code",
-          "country": "Country",
-          "timeZone": "Time Zone",
-          "phone": "Phone",
-          "email": "Email",
-          "website": "Website",
-          "taxIdEin": "Tax ID / EIN",
-          "selectCountry": "Select country",
-          "selectTimezone": "Select timezone",
+          "title": "Informations sur l'agence",
+          "verified": "Vérifié",
+          "agencyName": "Nom de l'agence",
+          "legalEntityName": "Nom de l'entité légale",
+          "address": "Adresse",
+          "city": "Ville",
+          "stateProvince": "État/Province",
+          "zipPostalCode": "Code postal",
+          "country": "Pays",
+          "timeZone": "Fuseau horaire",
+          "phone": "Téléphone",
+          "email": "E-mail",
+          "website": "Site web",
+          "taxIdEin": "Numéro d'identification fiscale",
+          "selectCountry": "Sélectionner le pays",
+          "selectTimezone": "Sélectionner le fuseau horaire",
           "countries": {
-            "us": "United States",
-            "uk": "United Kingdom",
+            "us": "États-Unis",
+            "uk": "Royaume-Uni",
             "ca": "Canada",
-            "de": "Germany"
+            "de": "Allemagne"
           },
           "timezones": {
-            "est": "Eastern Time (EST)",
-            "cst": "Central Time (CST)",
-            "pst": "Pacific Time (PST)"
+            "est": "Heure de l'Est (EST)",
+            "cst": "Heure du Centre (CST)",
+            "pst": "Heure du Pacifique (PST)"
           }
         },
         "branding": {
-          "title": "Branding",
-          "agencyLogo": "Agency Logo",
-          "uploadNewLogo": "Upload New Logo",
-          "uploading": "Uploading...",
-          "emailSignature": "Email Signature",
-          "emailSignaturePlaceholder": "Best regards,\\nAgency Name\\nhttps://agency.com/\\n+1 (212) 555-0123"
+          "title": "Image de marque",
+          "agencyLogo": "Logo de l'agence",
+          "uploadNewLogo": "Télécharger un nouveau logo",
+          "uploading": "Téléchargement...",
+          "emailSignature": "Signature e-mail",
+          "emailSignaturePlaceholder": "Cordialement,\\nNom de l'agence\\nhttps://agence.com/\\n+1 (212) 555-0123"
         },
         "saveProfile": {
           "saving": "Enregistrement...",
@@ -1428,36 +1434,36 @@
           "settingsSavedDescription": "Vos paramètres de commission ont été enregistrés."
         },
         "team": {
-          "title": "Team Members",
-          "invite": "Invite Member",
-          "remove": "Remove Member",
-          "editPermissions": "Edit Permissions",
+          "title": "Membres de l'équipe",
+          "invite": "Inviter un membre",
+          "remove": "Supprimer un membre",
+          "editPermissions": "Modifier les autorisations",
           "roles": {
-            "admin": "Admin",
-            "manager": "Manager",
-            "member": "Member"
+            "admin": "Administrateur",
+            "manager": "Gestionnaire",
+            "member": "Membre"
           },
-          "inviteSuccess": "Member invited successfully",
-          "inviteFailed": "Failed to invite member",
-          "removeSuccess": "Member removed successfully",
-          "removeFailed": "Failed to remove member"
+          "inviteSuccess": "Membre invité avec succès",
+          "inviteFailed": "Échec de l'invitation du membre",
+          "removeSuccess": "Membre supprimé avec succès",
+          "removeFailed": "Échec de la suppression du membre"
         },
         "taxAndCurrency": {
-          "title": "Tax & Currency Settings",
-          "defaultCurrency": "Default Currency",
-          "selectCurrency": "Select currency",
+          "title": "Paramètres fiscaux et monétaires",
+          "defaultCurrency": "Devise par défaut",
+          "selectCurrency": "Sélectionner la devise",
           "currencies": {
-            "usd": "USD - US Dollar",
+            "usd": "USD - Dollar américain",
             "eur": "EUR - Euro",
-            "gbp": "GBP - British Pound"
+            "gbp": "GBP - Livre sterling"
           },
-          "dateFormat": "Date Format",
-          "selectFormat": "Select format",
-          "invoiceSettings": "Invoice Settings",
-          "defaultPaymentTerms": "Default Payment Terms",
-          "selectTerms": "Select terms",
+          "dateFormat": "Format de date",
+          "selectFormat": "Sélectionner le format",
+          "invoiceSettings": "Paramètres de facturation",
+          "defaultPaymentTerms": "Conditions de paiement par défaut",
+          "selectTerms": "Sélectionner les conditions",
           "paymentTerms": {
-            "due": "Due on Receipt",
+            "due": "Paiement à réception",
             "net15": "Net 15",
             "net30": "Net 30",
             "net60": "Net 60"
@@ -1466,145 +1472,145 @@
           "settingsSavedDescription": "Vos paramètres ont été mis à jour."
         },
         "subTabs": {
-          "profile": "Profile",
+          "profile": "Profil",
           "commissions": "Commissions",
-          "emailTemplates": "Email Templates",
+          "emailTemplates": "Modèles d'e-mail",
           "notifications": "Notifications",
-          "taxAndCurrency": "Tax & Currency",
-          "team": "Team",
-          "fileStorage": "File Storage",
-          "integrations": "Integrations"
+          "taxAndCurrency": "Taxe et devise",
+          "team": "Équipe",
+          "fileStorage": "Stockage de fichiers",
+          "integrations": "Intégrations"
         },
         "emailTemplates": {
-          "title": "Email Templates",
-          "subtitle": "Customize automated email messages",
-          "newTemplate": "New Template",
-          "save": "Save Email Templates",
+          "title": "Modèles d'e-mail",
+          "subtitle": "Personnaliser les messages e-mail automatisés",
+          "newTemplate": "Nouveau modèle",
+          "save": "Enregistrer les modèles d'e-mail",
           "saving": "Enregistrement...",
           "settingsSaved": "Modèles d'e-mail enregistrés",
           "settingsSavedDescription": "Vos modèles d'e-mail ont été enregistrés.",
-          "availableVariables": "Available Variables:",
-          "editTemplate": "Edit Template",
-          "templateName": "Template Name",
-          "subject": "Subject:",
-          "body": "Body:",
-          "subjectLabel": "Subject",
-          "bodyLabel": "Body",
-          "active": "Active",
-          "enableTemplateHint": "Enable this template for automated emails",
+          "availableVariables": "Variables disponibles :",
+          "editTemplate": "Modifier le modèle",
+          "templateName": "Nom du modèle",
+          "subject": "Sujet :",
+          "body": "Corps :",
+          "subjectLabel": "Sujet",
+          "bodyLabel": "Corps",
+          "active": "Actif",
+          "enableTemplateHint": "Activer ce modèle pour les e-mails automatisés",
           "templateNames": {
-            "bookingConfirmation": "Booking Confirmation",
-            "invoiceEmail": "Invoice Email",
-            "paymentReminder": "Payment Reminder"
+            "bookingConfirmation": "Confirmation de réservation",
+            "invoiceEmail": "E-mail de facture",
+            "paymentReminder": "Rappel de paiement"
           },
           "defaults": {
             "bookingConfirmation": {
-              "name": "Booking Confirmation",
-              "subject": "Booking Confirmed - {client_name}",
-              "body": "Hi {talent_name},\n\nYour booking with {client_name} on {booking_date} at {call_time} has been confirmed.\n\nLocation: {location}\nRate: {rate}\n\nBest regards,\n{agency_name}"
+              "name": "Confirmation de réservation",
+              "subject": "Réservation confirmée - {client_name}",
+              "body": "Bonjour {talent_name},\n\nVotre réservation avec {client_name} le {booking_date} à {call_time} a été confirmée.\n\nLieu : {location}\nTaux : {rate}\n\nCordialement,\n{agency_name}"
             },
             "invoiceEmail": {
-              "name": "Invoice Email",
-              "subject": "Invoice {invoice_number} from {agency_name}",
-              "body": "Dear {client_name},\n\nPlease find attached invoice {invoice_number} for the amount of {invoice_total}.\n\nPayment terms: {payment_terms}\n\nThank you for your business.\n\n{agency_name}"
+              "name": "E-mail de facture",
+              "subject": "Facture {invoice_number} de {agency_name}",
+              "body": "Cher {client_name},\n\nVeuillez trouver ci-joint la facture {invoice_number} pour un montant de {invoice_total}.\n\nConditions de paiement : {payment_terms}\n\nMerci de votre confiance.\n\n{agency_name}"
             },
             "paymentReminder": {
-              "name": "Payment Reminder",
-              "subject": "Payment Reminder - Invoice {invoice_number}",
-              "body": "Dear {client_name},\n\nThis is a friendly reminder that invoice {invoice_number} for {invoice_total} is due on {due_date}.\n\nIf you have already made the payment, please disregard this message.\n\nThank you,\n{agency_name}"
+              "name": "Rappel de paiement",
+              "subject": "Rappel de paiement - Facture {invoice_number}",
+              "body": "Cher {client_name},\n\nCeci est un rappel amical que la facture {invoice_number} pour {invoice_total} est due le {due_date}.\n\nSi vous avez déjà effectué le paiement, veuillez ignorer ce message.\n\nMerci,\n{agency_name}"
             }
           }
         },
         "fileStorage": {
-          "title": "File Storage",
-          "subtitle": "Organize and manage your agency files",
-          "goToStudio": "Go to Studio",
-          "storageUsage": "Storage usage",
-          "ofUsed": "of {{total}} used",
-          "remaining": "remaining",
-          "billingSubscription": "Billing & subscription",
-          "searchPlaceholder": "Search files and folders",
+          "title": "Stockage de fichiers",
+          "subtitle": "Organisez et gérez les fichiers de votre agence",
+          "goToStudio": "Aller à Studio",
+          "storageUsage": "Utilisation du stockage",
+          "ofUsed": "sur {{total}} utilisés",
+          "remaining": "restant",
+          "billingSubscription": "Facturation et abonnement",
+          "searchPlaceholder": "Rechercher des fichiers et des dossiers",
           "view": {
-            "grid": "Grid",
-            "list": "List"
+            "grid": "Grille",
+            "list": "Liste"
           },
-          "search": "Search files and folders",
+          "search": "Rechercher des fichiers et des dossiers",
           "viewMode": {
-            "grid": "Grid View",
-            "list": "List View"
+            "grid": "Vue en grille",
+            "list": "Vue en liste"
           },
           "actions": {
-            "back": "Back",
-            "all": "All",
-            "newFolder": "New Folder",
-            "loadMoreFolders": "Load more folders",
-            "loadMoreFiles": "Load more files",
-            "uploadFiles": "Upload files",
-            "upload": "Upload File",
-            "addFile": "Add file",
-            "rename": "Rename",
-            "delete": "Delete",
-            "download": "Download",
-            "share": "Share",
-            "preview": "Preview"
+            "back": "Retour",
+            "all": "Tout",
+            "newFolder": "Nouveau dossier",
+            "loadMoreFolders": "Charger plus de dossiers",
+            "loadMoreFiles": "Charger plus de fichiers",
+            "uploadFiles": "Télécharger des fichiers",
+            "upload": "Télécharger un fichier",
+            "addFile": "Ajouter un fichier",
+            "rename": "Renommer",
+            "delete": "Supprimer",
+            "download": "Télécharger",
+            "share": "Partager",
+            "preview": "Aperçu"
           },
-          "clickToCreate": "Click to create",
-          "clickToUpload": "Click to upload",
-          "loading": "Loading…",
-          "uploading": "Uploading…",
-          "uploadingShort": "Uploading",
-          "noMoreFolders": "No more folders",
-          "noMoreFiles": "No more files",
-          "fileCount": "{{count}} file",
-          "fileCount_other": "{{count}} files",
+          "clickToCreate": "Cliquez pour créer",
+          "clickToUpload": "Cliquez pour télécharger",
+          "loading": "Chargement…",
+          "uploading": "Téléchargement…",
+          "uploadingShort": "Téléchargement",
+          "noMoreFolders": "Plus de dossiers",
+          "noMoreFiles": "Plus de fichiers",
+          "fileCount": "{{count}} fichier",
+          "fileCount_other": "{{count}} fichiers",
           "deleteFile": {
-            "title": "Delete file",
-            "description": "Are you sure you want to delete this file?",
-            "cannotUndo": "This action cannot be undone.",
-            "confirm": "Delete file"
+            "title": "Supprimer le fichier",
+            "description": "Êtes-vous sûr de vouloir supprimer ce fichier ?",
+            "cannotUndo": "Cette action ne peut pas être annulée.",
+            "confirm": "Supprimer le fichier"
           },
           "deleteFolder": {
-            "title": "Delete folder",
-            "description": "Are you sure you want to delete the folder",
-            "descriptionSuffix": "and all of its contents?",
-            "confirm": "Delete folder"
+            "title": "Supprimer le dossier",
+            "description": "Êtes-vous sûr de vouloir supprimer le dossier",
+            "descriptionSuffix": "et tout son contenu ?",
+            "confirm": "Supprimer le dossier"
           },
           "folders": {
-            "title": "Folders",
-            "createFolder": "Create Folder",
-            "folderName": "Folder Name",
-            "createSuccess": "Folder created successfully",
-            "createFailed": "Failed to create folder",
-            "renameSuccess": "Folder renamed successfully",
-            "renameFailed": "Failed to rename folder",
-            "deleteSuccess": "Folder deleted successfully",
-            "deleteFailed": "Failed to delete folder"
+            "title": "Dossiers",
+            "createFolder": "Créer un dossier",
+            "folderName": "Nom du dossier",
+            "createSuccess": "Dossier créé avec succès",
+            "createFailed": "Échec de la création du dossier",
+            "renameSuccess": "Dossier renommé avec succès",
+            "renameFailed": "Échec du renommage du dossier",
+            "deleteSuccess": "Dossier supprimé avec succès",
+            "deleteFailed": "Échec de la suppression du dossier"
           },
           "files": {
-            "title": "Files",
-            "uploadSuccess": "File uploaded successfully",
-            "uploadFailed": "Failed to upload file",
-            "deleteSuccess": "File deleted successfully",
-            "deleteFailed": "Failed to delete file",
-            "downloadSuccess": "File downloaded successfully",
-            "downloadFailed": "Failed to download file"
+            "title": "Fichiers",
+            "uploadSuccess": "Fichier téléchargé avec succès",
+            "uploadFailed": "Échec du téléchargement du fichier",
+            "deleteSuccess": "Fichier supprimé avec succès",
+            "deleteFailed": "Échec de la suppression du fichier",
+            "downloadSuccess": "Fichier téléchargé avec succès",
+            "downloadFailed": "Échec du téléchargement du fichier"
           },
           "storage": {
-            "used": "Used",
-            "of": "of",
-            "total": "Total Storage"
+            "used": "Utilisé",
+            "of": "sur",
+            "total": "Stockage total"
           }
         },
         "integrations": {
-          "title": "Integrations",
+          "title": "Intégrations",
           "calendly": "Calendly",
           "stripe": "Stripe",
-          "connect": "Connect",
-          "disconnect": "Disconnect",
-          "connectSuccess": "Integration connected successfully",
-          "connectFailed": "Failed to connect integration",
-          "disconnectSuccess": "Integration disconnected successfully",
-          "disconnectFailed": "Failed to disconnect integration",
+          "connect": "Connecter",
+          "disconnect": "Déconnecter",
+          "connectSuccess": "Intégration connectée avec succès",
+          "connectFailed": "Échec de la connexion de l'intégration",
+          "disconnectSuccess": "Intégration déconnectée avec succès",
+          "disconnectFailed": "Échec de la déconnexion de l'intégration",
           "calendlyEventType": "Type d'événement Calendly",
           "calendlyEventTypeDescription": "Sélectionnez le type d'événement Calendly que Likelee doit utiliser pour les invitations et rappels de réservation",
           "calendlyEventTypeManualPaste": "Collez l'URI complet du type d'événement Calendly que Likelee doit utiliser pour les réservations. Cela fonctionne même lorsque le jeton ne peut pas lister automatiquement les types d'événements.",
@@ -1619,28 +1625,28 @@
           "saving": "Enregistrement..."
         },
         "billing": {
-          "title": "Billing",
-          "plan": "Current Plan",
-          "upgrade": "Upgrade Plan",
-          "cancel": "Cancel Subscription",
-          "paymentMethod": "Payment Method",
-          "invoices": "Invoices",
-          "downloadInvoice": "Download Invoice"
+          "title": "Facturation",
+          "plan": "Plan actuel",
+          "upgrade": "Mettre à niveau le plan",
+          "cancel": "Annuler l'abonnement",
+          "paymentMethod": "Méthode de paiement",
+          "invoices": "Factures",
+          "downloadInvoice": "Télécharger la facture"
         },
         "notifications": {
           "title": "Notifications",
-          "email": "Email Notifications",
-          "push": "Push Notifications",
-          "sms": "SMS Notifications",
-          "preferences": "Notification Preferences",
-          "saveSuccess": "Preferences saved successfully",
-          "saveFailed": "Failed to save preferences",
+          "email": "Notifications par e-mail",
+          "push": "Notifications push",
+          "sms": "Notifications SMS",
+          "preferences": "Préférences de notification",
+          "saveSuccess": "Préférences enregistrées avec succès",
+          "saveFailed": "Échec de l'enregistrement des préférences",
           "settingsSaved": "Paramètres de notification enregistrés",
           "settingsSavedDescription": "Vos préférences de notification ont été mises à jour."
         }
       },
-      "comingSoon": "Coming soon",
-      "comingSoonDescription": "Coming soon.",
+      "comingSoon": "Bientôt disponible",
+      "comingSoonDescription": "Bientôt disponible.",
       "commissionStructure": {
         "connectionRequired": "Connexion requise",
         "connectionRequiredDescription": "Seuls les talents avec un compte créateur actif sont répertoriés ici. Pour gérer les commissions des membres du roster en attente ou non invités, assurez-vous qu'ils ont accepté leur invitation au portail des talents. Les comptes créateurs connectés au marketplace sont affichés comme contrôlés par contrat une fois que leur accord signé devient actif.",
@@ -4576,11 +4582,20 @@
         "useTemplate": "Utiliser le modèle",
         "editInBuilder": "Modifier dans le constructeur",
         "sendContract": "Envoyer le contrat",
-        "editDetails": "Edit Details",
-        "editLayout": "Edit Layout",
-        "duplicate": "Duplicate",
-        "delete": "Delete",
-        "useContract": "Use Contract"
+        "editDetails": "Modifier les détails",
+        "editLayout": "Modifier la mise en page",
+        "duplicate": "Dupliquer",
+        "delete": "Supprimer",
+        "useContract": "Utiliser le contrat",
+        "useContractModal": {
+          "title": "Utiliser le contrat : {{templateName}}",
+          "description": "Entrez les informations du client pour créer un nouveau contrat à partir de ce modèle.",
+          "clientName": "Nom du client",
+          "clientEmail": "E-mail du client",
+          "cancel": "Annuler",
+          "creating": "Création...",
+          "createAndSign": "Créer & Signer"
+        }
       },
       "modal": {
         "newTitle": "Nouveau modèle de contrat",
@@ -4636,6 +4651,8 @@
       },
       "wizard": {
         "stepOf": "Étape {{step}} sur 3",
+        "externalClientTitle": "Création d'un contrat pour un client externe",
+        "externalClientDescription": "Vous initiez ce contrat directement - tous les champs sont ouverts pour vous à remplir. Entrez les détails du client et sélectionnez le {{entity}} que vous avez accepté de licencier, généralement basé sur le package que vous avez envoyé et la sélection du client à partir de celui-ci.",
         "dealSpecifics": "Détails du contrat",
         "contentReview": "Révision du contenu",
         "dealSpecificsSubtitle": "Saisissez les détails clés de cet accord de licence",
@@ -4652,19 +4669,23 @@
         "dealSpecificsModal": "Détails du contrat",
         "newContractTemplate": "Nouveau modèle de contrat",
         "filterModal": "Filtre",
-        "renewalPrefill": "Relleno previo de renovación",
-        "renewalPrefillDesc": "Esta renovación se rellenó automáticamente desde la solicitud de licencia anterior. Ajusta lo que necesites antes de enviar.",
-        "brandNamePlaceholder": "p. ej. Nike, Spotify",
-        "sendToConnectedBrands": "Enviar a marcas conectadas",
-        "selectBrand": "Seleccionar marca",
-        "selectedBrand": "Marca seleccionada",
-        "connectedBrandsHelp": "Selecciona entre tus marcas conectadas. Desactiva para escribir el correo manualmente.",
-        "clientEmailPlaceholder": "cliente@ejemplo.com",
-        "toggleConnectedBrands": "Activa para seleccionar entre marcas conectadas.",
-        "agencySignsFirstDesc": "El cliente recibe el contrato solo después de la firma de la agencia.",
-        "durationDays": "Duración (días)",
-        "territory": "Territorio",
-        "clientEmailRequired": "El correo del cliente es obligatorio"
+        "renewalPrefill": "Préremplissage de renouvellement",
+        "renewalPrefillDesc": "Ce renouvellement a été automatiquement prérempli à partir de la demande de licence précédente. Ajustez si nécessaire avant d'envoyer.",
+        "brandNamePlaceholder": "ex. Nike, Spotify",
+        "sendToConnectedBrands": "Envoyer aux marques connectées",
+        "selectBrand": "Sélectionner une marque",
+        "selectedBrand": "Marque sélectionnée",
+        "connectedBrandsHelp": "Sélectionnez parmi vos marques connectées. Désactivez pour taper l'e-mail manuellement.",
+        "clientEmailPlaceholder": "client@exemple.com",
+        "toggleConnectedBrands": "Activer pour sélectionner parmi les marques connectées.",
+        "agencySignsFirstDesc": "Le client reçoit le contrat uniquement après la signature de l'agence.",
+        "durationDays": "Durée (jours)",
+        "territory": "Territoire",
+        "clientEmailRequired": "L'e-mail du client est requis",
+        "searchTalent": "Rechercher {{entity}}...",
+        "modificationsPlaceholder": "ex. Oui, avec approbation",
+        "customTermsPlaceholder": "Décrivez d'autres conditions pour ce contrat spécifique...",
+        "contractContentPlaceholder": "Le contenu du contrat apparaîtra ici..."
       },
       "deleteModal": {
         "title": "Supprimer le modèle",
@@ -4684,8 +4705,8 @@
       "noTemplatesYet": "Aucun modèle pour le moment. Créez le vôtre pour commencer !",
       "notSet": "Non défini",
       "brandContext": "Toute soumission de contrat créée sera envoyée à {{brand}}.",
-      "newTemplate": "New template",
-      "loading": "Loading...",
+      "newTemplate": "Nouveau modèle",
+      "loading": "Chargement...",
       "noMatch": "No templates match your criteria.",
       "delete": {
         "title": "Delete Template"
@@ -4713,7 +4734,14 @@
         "phone": "Téléphone",
         "dateOfBirth": "Date de naissance",
         "licensingRate": "Taux de licence (mensuel USD)",
-        "required": "Obligatoire"
+        "required": "Obligatoire",
+        "placeholders": {
+          "fullName": "Nom légal complet",
+          "stageName": "Optionnel",
+          "email": "{{entityLower}}@exemple.fr",
+          "phone": "+33 (555) 123-4567",
+          "licensingRate": "ex. 750"
+        }
       },
       "attributes": {
         "title": "Attributs physiques",
@@ -4736,6 +4764,13 @@
         "preferNotToSay": "Préfère ne pas dire",
         "roleCategories": "Catégories de rôles",
         "selectRoles": "Sélectionner les catégories de rôles",
+        "placeholders": {
+          "heightFeet": "5",
+          "heightInches": "8",
+          "bust": "Tour de poitrine",
+          "waist": "Tour de taille",
+          "hips": "Tour de hanches"
+        },
         "options": {
           "female": "Weiblich",
           "male": "Männlich",
@@ -4761,7 +4796,17 @@
         "country": "Pays",
         "organization": "Organisation / Équipe",
         "sports": "Sports",
-        "acceptNegotiations": "Accepter les négociations"
+        "acceptNegotiations": "Accepter les négociations",
+        "placeholders": {
+          "city": "Paris",
+          "state": "Île-de-France",
+          "country": "France",
+          "organization": "ex. Université Paris-Saclay",
+          "sports": "ex. Football, Basket-ball",
+          "bio": "Brève bio ou notes internes sur ce {{entityLower}}...",
+          "specialSkills": "ex. Danseur, Athlète, Bilingue espagnol",
+          "instagram": "@handle"
+        }
       },
       "buttons": {
         "continue": "Continuer",
@@ -5412,10 +5457,10 @@
           "verifyingAccess": "Vérification de l’accès…",
           "accessRestricted": "Accès restreint",
           "permissionRequired": "Autorisation requise",
+          "subtitle": "Gérer les marques connectées, les demandes, les offres, les contrats et les livrables.",
           "permissionDescription": "Vous n’avez pas les autorisations nécessaires pour voir les connexions de marque. Contactez votre administrateur si vous pensez qu’il s’agit d’une erreur.",
           "viewOnlyTitle": "Mode consultation seule",
           "viewOnlyDescription": "Votre rôle permet la consultation, mais pas la gestion des connexions de marque.",
-          "subtitle": "Gérez les marques connectées, les demandes, les offres, les contrats et les livraisons.",
           "connected": "Connecté",
           "since": "Depuis le {{date}}",
           "loadingRequests": "Chargement des demandes…",

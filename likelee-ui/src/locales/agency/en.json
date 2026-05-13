@@ -17,6 +17,9 @@
       "licensing": "Licensing",
       "scouting": "Scouting"
     },
+    "protection": {
+      "comingSoonDescription": "Protection & Usage features are coming soon."
+    },
     "dashboard": {
       "entities": {
         "talent": "talent",
@@ -137,6 +140,7 @@
         "inactive": "Inactive",
         "pending": "Pending"
       },
+      "searchPlaceholder": "Search talent...",
       "header": {
         "verifiedAgency": "Verified Agency",
         "upgradePlan": "Upgrade plan",
@@ -325,7 +329,10 @@
         "engagementRate": "Engagement Rate",
         "comingSoonDescription": "Analytics Dashboard for IRL Mode is coming soon.",
         "comingSoonButton": "Coming Soon",
-        "comingSoon": "Coming Soon"
+        "comingSoon": "Coming Soon",
+        "labels": {
+          "comingSoon": "Coming Soon"
+        }
       },
       "clientsCampaigns": {
         "title": "Clients & Campaigns",
@@ -882,25 +889,6 @@
           "assignedTalent": "Assigned Talent",
           "sendMessage": "Send Message"
         },
-        "toasts": {
-          "requestAccepted": "Request accepted",
-          "requestDeclined": "Request declined",
-          "requestApproved": "The brand has been notified.",
-          "requestDeclinedDesc": "The brand has been notified.",
-          "actionFailed": "Action failed",
-          "pleaseTryAgain": "Please try again.",
-          "pleaseTryAgainShort": "Please try again.",
-          "assignmentsLocked": "Assignments locked",
-          "assignmentsLockedDesc": "Assignments are locked after the contract is sent.",
-          "contractAlreadySigned": "This contract has already been signed.",
-          "cantUnassignAfterSent": "You can’t change assigned talents after the contract is sent.",
-          "talentUnassigned": "Talent unassigned",
-          "talentRemovedFromOffer": "Talent was removed from this offer.",
-          "assignmentFailed": "Assignment failed",
-          "disconnected": "Disconnected",
-          "disconnectedDesc": "Brand disconnected successfully.",
-          "disconnectFailed": "Failed to disconnect brand"
-        },
         "tabs": {
           "connections": "Connections",
           "noRequests": "No pending requests",
@@ -941,13 +929,97 @@
           "setupPayouts": "Set up payouts",
           "noContractsForOffer": "No contracts for this offer yet.",
           "createFirstContract": "Create first contract",
+          "contractTemplates": "Contract Templates",
+          "readyToPrepare": "Ready to prepare",
+          "titleColumn": "Title",
+          "actionsColumn": "Actions",
+          "contractDraft": "Contract Draft",
+          "templateId": "Template ID",
+          "prepare": "Prepare",
+          "send": "Send",
+          "sentSubmissions": "Sent Submissions",
+          "activeSubmissions": "Active Submissions",
+          "statusColumn": "Status",
+          "contractSubmission": "Contract Submission",
+          "id": "ID",
           "uploadingPdf": "Uploading PDF…",
           "creatingTemplate": "Creating template…",
           "uploadContractPdf": "Upload contract PDF",
           "uploadPdfDescription": "Upload a PDF to create a reusable contract template for this offer.",
           "assignTalentFirst": "Assign talent first",
           "assignTalentFirstDescription": "Assign at least one talent to this offer before creating a contract.",
+          "saveContract": "Save Contract",
           "assignTalent": "Assign Talent"
+        },
+        "actions": {
+          "view": "View",
+          "hide": "Hide",
+          "open": "Open",
+          "sending": "Sending...",
+          "sendMessage": "Send Message"
+        },
+        "fallbacks": {
+          "directRequest": "Direct request",
+          "talentPackage": "Talent package",
+          "campaignOffer": "Campaign offer"
+        },
+        "precheck": {
+          "sendAnyway": "Send anyway"
+        },
+        "packageDefaults": {
+          "talentPackage": "Talent Package"
+        },
+        "toasts": {
+          "requestAccepted": "Request accepted",
+          "requestDeclined": "Request declined",
+          "requestApproved": "The brand has been notified.",
+          "requestDeclinedDesc": "The brand has been notified.",
+          "actionFailed": "Action failed",
+          "pleaseTryAgain": "Please try again.",
+          "pleaseTryAgainShort": "Please try again.",
+          "assignmentsLocked": "Assignments locked",
+          "assignmentsLockedDesc": "Assignments are locked after the contract is sent.",
+          "contractAlreadySigned": "This contract has already been signed.",
+          "cantUnassignAfterSent": "You can't change assigned talents after the contract is sent.",
+          "talentUnassigned": "Talent unassigned",
+          "talentRemovedFromOffer": "Talent was removed from this offer.",
+          "assignmentFailed": "Assignment failed",
+          "disconnected": "Disconnected",
+          "disconnectedDesc": "Brand disconnected successfully.",
+          "disconnectFailed": "Failed to disconnect brand",
+          "offerAccepted": "Offer accepted",
+          "offerDeclined": "Offer declined",
+          "contractUploaded": "Contract uploaded",
+          "draftCreated": "Draft created",
+          "uploadFailed": "Upload failed",
+          "uploadFailedDesc": "Could not upload this contract.",
+          "agencySignatureRequired": "Agency signature required",
+          "signToRelease": "Sign to release this contract to the client.",
+          "contractSent": "Contract sent",
+          "contractSentDesc": "The client has been notified.",
+          "sendFailed": "Send failed",
+          "assignTalentFirst": "Assign talent before sending.",
+          "noSignatureFields": "No signature fields found.",
+          "sendFailedGeneric": "Could not send this contract.",
+          "statusSynced": "Status synced",
+          "statusSyncedDesc": "Contract status updated.",
+          "syncFailed": "Sync failed",
+          "syncFailedDesc": "Could not sync status.",
+          "downloadFailed": "Download failed",
+          "downloadFailedDesc": "Could not download this file.",
+          "contractDeleted": "Contract deleted",
+          "draftRemoved": "Draft removed.",
+          "deleteFailed": "Delete failed",
+          "deleteFailedDesc": "Could not delete this contract.",
+          "packageSent": "Package sent",
+          "packageSentDesc": "Package sent to the brand.",
+          "packageSendFailed": "Package send failed",
+          "linkCopied": "Link copied",
+          "linkCopiedDesc": "The signing link was copied.",
+          "linkUnavailable": "Link unavailable",
+          "linkUnavailableDesc": "No link is available yet.",
+          "missingContract": "Missing contract",
+          "selectContractFirst": "Select a contract first."
         },
         "feedback": {
           "title": "Package Feedback",
@@ -2002,7 +2074,14 @@
         "phone": "Phone",
         "dateOfBirth": "Date of Birth",
         "licensingRate": "Licensing Rate (Monthly USD)",
-        "required": "Required"
+        "required": "Required",
+        "placeholders": {
+          "fullName": "Full legal name",
+          "stageName": "Optional",
+          "email": "{{entityLower}}@example.com",
+          "phone": "+1 (555) 123-4567",
+          "licensingRate": "e.g. 750"
+        }
       },
       "attributes": {
         "title": "Physical Attributes",
@@ -2025,6 +2104,13 @@
         "preferNotToSay": "Prefer not to say",
         "roleCategories": "Role Categories",
         "selectRoles": "Select role categories",
+        "placeholders": {
+          "heightFeet": "5",
+          "heightInches": "8",
+          "bust": "Bust",
+          "waist": "Waist",
+          "hips": "Hips"
+        },
         "options": {
           "female": "Weiblich",
           "male": "Männlich",
@@ -2050,7 +2136,17 @@
         "country": "Country",
         "organization": "Organization / Team",
         "sports": "Sports",
-        "acceptNegotiations": "Accept Negotiations"
+        "acceptNegotiations": "Accept Negotiations",
+        "placeholders": {
+          "city": "Los Angeles",
+          "state": "CA",
+          "country": "USA",
+          "organization": "e.g. UCLA",
+          "sports": "e.g. Football, Basketball",
+          "bio": "Brief bio or internal notes about this {{entityLower}}...",
+          "specialSkills": "e.g., Dancer, Athlete, Bilingual Spanish",
+          "instagram": "@handle"
+        }
       },
       "buttons": {
         "continue": "Continue",
@@ -4795,7 +4891,16 @@
         "editLayout": "Edit Layout",
         "duplicate": "Duplicate",
         "delete": "Delete",
-        "useContract": "Use Contract"
+        "useContract": "Use Contract",
+        "useContractModal": {
+          "title": "Use Contract: {{templateName}}",
+          "description": "Enter the client's information to create a new contract from this template.",
+          "clientName": "Client Name",
+          "clientEmail": "Client Email",
+          "cancel": "Cancel",
+          "creating": "Creating...",
+          "createAndSign": "Create & Sign"
+        }
       },
       "modal": {
         "newTitle": "New Contract Template",
@@ -4851,6 +4956,8 @@
       },
       "wizard": {
         "stepOf": "Step {{step}} of 3",
+        "externalClientTitle": "Creating a contract for an external client",
+        "externalClientDescription": "You're initiating this contract directly - all fields are open for you to fill in. Enter the client's details and select the {{entity}} you've agreed to license, typically based on the package you sent and the client's selection from it.",
         "dealSpecifics": "Deal Specifics",
         "contentReview": "Content Review",
         "dealSpecificsSubtitle": "Enter the core details of this licensing deal",
@@ -4867,19 +4974,23 @@
         "dealSpecificsModal": "Deal Specifics",
         "newContractTemplate": "New Contract Template",
         "filterModal": "Filter",
-        "renewalPrefill": "Relleno previo de renovación",
-        "renewalPrefillDesc": "Esta renovación se rellenó automáticamente desde la solicitud de licencia anterior. Ajusta lo que necesites antes de enviar.",
-        "brandNamePlaceholder": "p. ej. Nike, Spotify",
-        "sendToConnectedBrands": "Enviar a marcas conectadas",
-        "selectBrand": "Seleccionar marca",
-        "selectedBrand": "Marca seleccionada",
-        "connectedBrandsHelp": "Selecciona entre tus marcas conectadas. Desactiva para escribir el correo manualmente.",
-        "clientEmailPlaceholder": "cliente@ejemplo.com",
-        "toggleConnectedBrands": "Activa para seleccionar entre marcas conectadas.",
-        "agencySignsFirstDesc": "El cliente recibe el contrato solo después de la firma de la agencia.",
-        "durationDays": "Duración (días)",
-        "territory": "Territorio",
-        "clientEmailRequired": "El correo del cliente es obligatorio"
+        "renewalPrefill": "Renewal Prefill",
+        "renewalPrefillDesc": "This renewal was automatically prefilled from the previous license request. Adjust as needed before sending.",
+        "brandNamePlaceholder": "e.g. Nike, Spotify",
+        "sendToConnectedBrands": "Send to connected brands",
+        "selectBrand": "Select brand",
+        "selectedBrand": "Selected brand",
+        "connectedBrandsHelp": "Select from your connected brands. Toggle off to type email manually.",
+        "clientEmailPlaceholder": "client@example.com",
+        "toggleConnectedBrands": "Toggle to select from connected brands.",
+        "agencySignsFirstDesc": "Client receives the contract only after agency signature.",
+        "durationDays": "Duration (days)",
+        "territory": "Territory",
+        "clientEmailRequired": "Client email is required",
+        "searchTalent": "Search {{entity}}...",
+        "modificationsPlaceholder": "e.g. Yes, with approval",
+        "customTermsPlaceholder": "Describe any other conditions for this specific deal...",
+        "contractContentPlaceholder": "The contract content will appear here..."
       },
       "deleteModal": {
         "title": "Delete Template",

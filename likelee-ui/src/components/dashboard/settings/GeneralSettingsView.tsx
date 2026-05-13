@@ -374,7 +374,7 @@ const InviteTeamMemberModal = ({
               <SelectContent className="rounded-xl">
                 {TEAM_ROLE_OPTIONS.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
-                    {t(option.labelKey)}
+                    {option.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -725,6 +725,13 @@ const GeneralSettingsView = ({
   const { t, i18n } = useTranslation("agency");
   const st = (key: string) => {
     const lng = String(i18n.language || "en").split("-")[0];
+    // Try locale file first for German and French, then fallback to SETTINGS_COPY
+    if (lng === "de" || lng === "fr") {
+      const localeValue = t(`settings.ui.${key}`, { ns: "agency" });
+      if (localeValue !== `settings.ui.${key}`) {
+        return localeValue;
+      }
+    }
     return SETTINGS_COPY[lng]?.[key] || SETTINGS_COPY.en[key] || key;
   };
   const { profile, refreshProfile, token } = useAuth();
