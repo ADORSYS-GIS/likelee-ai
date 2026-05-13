@@ -36,6 +36,7 @@ import {
   EmailOtpDialog,
   type EmailOtpDialogTheme,
 } from "@/components/auth/EmailOtpDialog";
+import { DuplicateEmailModal } from "@/components/auth/DuplicateEmailModal";
 import {
   normalizeEmail,
   resendSignupEmailOtp,
@@ -215,7 +216,7 @@ const getIndustries = (t: any) => [
 
 export default function OrganizationSignup() {
   const { t } = useTranslation();
-  const { user, profile, refreshProfile, initialized, login, authenticated } =
+  const { user, profile, refreshProfile, initialized, authenticated } =
     useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -274,6 +275,7 @@ export default function OrganizationSignup() {
 
   const [emailVerificationPending, setEmailVerificationPending] =
     useState(false);
+  const [duplicateEmailModalOpen, setDuplicateEmailModalOpen] = useState(false);
 
   // Pre-fill email and set profileId for OAuth users
   useEffect(() => {
@@ -317,14 +319,6 @@ export default function OrganizationSignup() {
         description: t("organizationSignup.toasts.codeSent.description"),
       });
     }
-  };
-
-  const loginExistingAccount = async () => {
-    await login(normalizeEmail(formData.email), formData.password);
-    toast({
-      title: t("organizationSignup.toasts.accountFound.title"),
-      description: t("organizationSignup.toasts.accountFound.description"),
-    });
   };
 
   const toOptionalText = (value: unknown) => {
@@ -388,6 +382,7 @@ export default function OrganizationSignup() {
 
     return (
       code === "email_exists" ||
+      code === "email_already_registered" ||
       message.includes("already exists") ||
       message.includes("already registered") ||
       message.includes("already been registered")
@@ -846,37 +841,8 @@ export default function OrganizationSignup() {
     },
     onError: async (error) => {
       if (isExistingOrganizationSignupError(error)) {
-        try {
-          await loginExistingAccount();
-          return;
-        } catch {
-          // Existing unverified organization signups still resume via OTP.
-        }
-
-        try {
-          await handleOrganizationOtpResend(false);
-          setEmailVerificationPending(true);
-          toast({
-            title: t("organizationSignup.toasts.continueSignup.title"),
-            description: t(
-              "organizationSignup.toasts.continueSignup.description",
-            ),
-          });
-          return;
-        } catch (resendError) {
-          console.error(
-            "Existing organization signup found, but resend failed:",
-            resendError,
-          );
-          toast({
-            title: t("organizationSignup.toasts.accountAlreadyExists.title"),
-            description: t(
-              "organizationSignup.toasts.accountAlreadyExists.description",
-            ),
-            className: "bg-cyan-50 border-2 border-cyan-400",
-          });
-          return;
-        }
+        setDuplicateEmailModalOpen(true);
+        return;
       }
 
       console.error("Error creating initial profile:", error);
@@ -2856,6 +2822,14 @@ export default function OrganizationSignup() {
           onVerify={handleOrganizationOtpVerify}
           onResend={handleOrganizationOtpResend}
           theme={colors.otpTheme}
+        />
+        <DuplicateEmailModal
+          open={duplicateEmailModalOpen}
+          onOpenChange={setDuplicateEmailModalOpen}
+          title={t("organizationSignup.toasts.accountAlreadyExists.title")}
+          description={t(
+            "organizationSignup.toasts.accountAlreadyExists.description",
+          )}
         />
       </div>
     </div>

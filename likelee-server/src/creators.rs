@@ -406,6 +406,13 @@ pub async fn check_email(
     State(state): State<AppState>,
     Query(q): Query<EmailQuery>,
 ) -> Result<Json<EmailAvailability>, (StatusCode, String)> {
+    if crate::auth::existing_profile_role_for_email(&state, q.email.as_str())
+        .await?
+        .is_some()
+    {
+        return Ok(Json(EmailAvailability { available: false }));
+    }
+
     match state
         .pg
         .from("creators")
