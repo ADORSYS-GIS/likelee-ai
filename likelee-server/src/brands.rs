@@ -263,13 +263,10 @@ pub async fn update(
             return Ok(Json(profile));
         }
 
-        // Include the effective brand ID for upsert matching
-        map.insert("id".into(), json!(brand_id));
         map.insert("onboarding_step".into(), json!("complete"));
 
-        // For new profiles (OAuth signup), set default values
+        // For OAuth signups, fill in email from auth metadata if not provided
         if payload.email.is_none() {
-            // Try to get email from auth user metadata if not provided
             if let Some(email) = &user.email {
                 map.insert("email".into(), json!(email));
             }
@@ -284,20 +281,21 @@ pub async fn update(
             map.remove(&k);
         }
 
-        // Include the user's id for upsert matching
-        map.insert("id".into(), json!(user.id));
+        // Remove id from the update payload — the row is matched by the .eq() filter below.
+        // Never include id in the UPDATE body; it is the primary key and must not be changed.
+        map.remove("id");
     }
 
-    // Use upsert to create or update the profile
-    // This supports both:
-    // - OAuth users creating their profile for the first time
-    // - Existing users updating their profile
-    // - Team members updating their organization's profile
+    // Use a plain UPDATE (not upsert). The brand row is always created first by
+    // brand-register, so the row is guaranteed to exist at this point.
+    // Using upsert here triggers the _enforce_single_role INSERT path on the
+    // ON CONFLICT branch even when the row already exists, causing a false 23P01.
     let resp = state
         .pg
         .from("brands")
         .auth(state.supabase_service_key.clone())
-        .upsert(v.to_string())
+        .eq("id", &brand_id)
+        .update(v.to_string())
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -314,10 +312,36 @@ pub async fn update(
 
     let _ = ensure_owner_membership(&state, &user, OrganizationType::Brand, &brand_id).await;
 
-    let v: serde_json::Value = serde_json::from_str(&text)
+    // UPDATE returns an empty array by default; fetch the updated record explicitly.
+    let fetch_resp = state
+        .pg
+        .from("brands")
+        .auth(state.supabase_service_key.clone())
+        .select("*")
+        .eq("id", &brand_id)
+        .limit(1)
+        .execute()
+        .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    Ok(Json(v))
+    let fetch_text = fetch_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&fetch_text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let profile = rows.into_iter().next().ok_or((
+        StatusCode::NOT_FOUND,
+        json!({
+            "error": "Brand profile not found after update.",
+            "code": "profile_not_found"
+        })
+        .to_string(),
+    ))?;
+
+    Ok(Json(profile))
 }
 
 pub async fn get_by_user(
