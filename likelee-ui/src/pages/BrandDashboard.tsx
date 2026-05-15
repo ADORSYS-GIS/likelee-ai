@@ -1063,8 +1063,9 @@ export default function BrandDashboard() {
   const brandHasIncludedStudio = brandIncludesStudioAccess(profile);
   const brandCanSelfServeStudioAddon = brandCanPurchaseStudioAddon(profile);
   const brandIsTrialing =
-    String(profile?.subscription_status || "").trim().toLowerCase() ===
-    "trialing";
+    String(profile?.subscription_status || "")
+      .trim()
+      .toLowerCase() === "trialing";
   const brandTrialEndsAt = brandIsTrialing
     ? formatBillingDate(profile?.subscription_trial_end)
     : null;

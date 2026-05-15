@@ -825,7 +825,9 @@ export default function OrganizationSignup() {
         setStep(2);
         toast({
           title: t("organizationSignup.toasts.accountCreated.title"),
-          description: t("organizationSignup.toasts.accountCreated.description"),
+          description: t(
+            "organizationSignup.toasts.accountCreated.description",
+          ),
         });
         return;
       }

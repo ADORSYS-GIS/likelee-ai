@@ -86,7 +86,8 @@ export const LicensingRequestsTab = ({
     if (status === "approved") return "bg-green-100 text-green-700";
     if (status === "rejected") return "bg-red-100 text-red-700";
     // DocuSeal submission statuses
-    if (status === "signed" || status === "completed") return "bg-green-100 text-green-700";
+    if (status === "signed" || status === "completed")
+      return "bg-green-100 text-green-700";
     if (status === "sent") return "bg-blue-100 text-blue-700";
     if (status === "opened") return "bg-indigo-100 text-indigo-700";
     if (status === "declined") return "bg-red-100 text-red-700";
@@ -503,10 +504,12 @@ export const LicensingRequestsTab = ({
                   </p>
                 </div>
                 <span
-                  className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${statusStyle(group.submission_id ? (group.submission_status || group.status) : group.status)}`}
+                  className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${statusStyle(group.submission_id ? group.submission_status || group.status : group.status)}`}
                 >
                   {group.submission_id
-                    ? submissionStatusLabel(group.submission_status || group.status)
+                    ? submissionStatusLabel(
+                        group.submission_status || group.status,
+                      )
                     : statusLabel(group.status)}
                 </span>
               </div>
@@ -648,21 +651,15 @@ export const LicensingRequestsTab = ({
                     )}
                   </Button>
                 </div>
-              ) : group.submission_id || !group.brand_id ? (
-                // Agency-initiated via SubmissionWizard — no brand actions needed,
-                // the agency is waiting on the client to sign. Show nothing.
-                null
-              ) : (
-                null
-              )}
+              ) : group.submission_id ||
+                !group.brand_id ? // Agency-initiated via SubmissionWizard — no brand actions needed,
+              // the agency is waiting on the client to sign. Show nothing.
+              null : null}
             </Card>
           ))}
         </div>
 
-        <Dialog
-          open={showFilterDialog}
-          onOpenChange={setShowFilterDialog}
-        >
+        <Dialog open={showFilterDialog} onOpenChange={setShowFilterDialog}>
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>
@@ -851,7 +848,6 @@ export const LicensingRequestsTab = ({
             </DialogFooter>
           </DialogContent>
         </Dialog>
-
       </div>
     </>
   );
