@@ -1330,6 +1330,20 @@ export default function BrandCampaignDashboard({
   const isValidDateString = (value: string): boolean =>
     /^\d{4}-\d{2}-\d{2}$/.test(String(value || "").trim());
 
+  const parseDateOnly = (value: string): Date | null => {
+    if (!isValidDateString(value)) return null;
+    const [year, month, day] = value.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  };
+
+  const todayDateString = (): string => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   const parsePositiveNumber = (value: unknown): number | null => {
     if (value === null || value === undefined) return null;
     const normalized = String(value)
@@ -1366,9 +1380,11 @@ export default function BrandCampaignDashboard({
     if (!isValidDateString(String(campaignBrief.overview_launch_date || ""))) {
       return { ok: false, message: "Launch date must be a valid date." };
     }
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const launchDate = new Date(campaignBrief.overview_launch_date);
+    const today = parseDateOnly(todayDateString());
+    const launchDate = parseDateOnly(campaignBrief.overview_launch_date);
+    if (!today || !launchDate) {
+      return { ok: false, message: "Launch date must be a valid date." };
+    }
     if (launchDate < today) {
       return { ok: false, message: "Launch date cannot be in the past." };
     }
@@ -1380,9 +1396,15 @@ export default function BrandCampaignDashboard({
         message: "Submission deadline must be a valid date.",
       };
     }
-    const submissionDeadline = new Date(
+    const submissionDeadline = parseDateOnly(
       campaignBrief.budget_submission_deadline,
     );
+    if (!submissionDeadline) {
+      return {
+        ok: false,
+        message: "Submission deadline must be a valid date.",
+      };
+    }
     if (submissionDeadline < launchDate) {
       return {
         ok: false,
@@ -1832,7 +1854,7 @@ export default function BrandCampaignDashboard({
     setNewCampaignStep(2);
   };
 
-  const handleStep2Next = async () => {
+  const getStep2BriefErrors = () => {
     const errors: Record<string, string> = {};
     const expectedTotal = Number.parseInt(
       String(campaignBrief.total_expected_deliverables || "").trim(),
@@ -1851,10 +1873,9 @@ export default function BrandCampaignDashboard({
     if (!isValidDateString(String(campaignBrief.overview_launch_date || "")))
       errors.overview_launch_date = "Please enter a valid launch date.";
     else {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const launchDate = new Date(campaignBrief.overview_launch_date);
-      if (launchDate < today)
+      const today = parseDateOnly(todayDateString());
+      const launchDate = parseDateOnly(campaignBrief.overview_launch_date);
+      if (today && launchDate && launchDate < today)
         errors.overview_launch_date = "Launch date cannot be in the past.";
     }
     if (
@@ -1863,11 +1884,11 @@ export default function BrandCampaignDashboard({
       errors.budget_submission_deadline =
         "Please enter a valid submission deadline.";
     else if (campaignBrief.overview_launch_date) {
-      const launchDate = new Date(campaignBrief.overview_launch_date);
-      const submissionDeadline = new Date(
+      const launchDate = parseDateOnly(campaignBrief.overview_launch_date);
+      const submissionDeadline = parseDateOnly(
         campaignBrief.budget_submission_deadline,
       );
-      if (submissionDeadline < launchDate)
+      if (launchDate && submissionDeadline && submissionDeadline < launchDate)
         errors.budget_submission_deadline =
           "Submission deadline must be after or equal to launch date.";
     }
@@ -1876,6 +1897,63 @@ export default function BrandCampaignDashboard({
     if (!parsePositiveNumber(campaignBrief.budget_creator_payment))
       errors.budget_creator_payment = "Creator payment must be a valid amount.";
 
+    return errors;
+  };
+
+  useEffect(() => {
+    if (!showNewCampaignModal || newCampaignStep !== 2) return;
+
+    const errors: Record<string, string> = {};
+    const launchValue = String(campaignBrief.overview_launch_date || "");
+    const deadlineValue = String(
+      campaignBrief.budget_submission_deadline || "",
+    );
+    const today = parseDateOnly(todayDateString());
+    const launchDate = parseDateOnly(launchValue);
+
+    if (launchValue) {
+      if (!launchDate) {
+        errors.overview_launch_date = "Please enter a valid launch date.";
+      } else if (today && launchDate < today) {
+        errors.overview_launch_date = "Launch date cannot be in the past.";
+      }
+    }
+
+    if (deadlineValue) {
+      const submissionDeadline = parseDateOnly(deadlineValue);
+      if (!submissionDeadline) {
+        errors.budget_submission_deadline =
+          "Please enter a valid submission deadline.";
+      } else if (
+        launchDate &&
+        !errors.overview_launch_date &&
+        submissionDeadline < launchDate
+      ) {
+        errors.budget_submission_deadline =
+          "Submission deadline must be after or equal to launch date.";
+      }
+    }
+
+    setStep2FieldErrors((prev) => {
+      const next = { ...prev };
+      for (const field of [
+        "overview_launch_date",
+        "budget_submission_deadline",
+      ]) {
+        if (errors[field]) next[field] = errors[field];
+        else if (next[field]) delete next[field];
+      }
+      return next;
+    });
+  }, [
+    campaignBrief.budget_submission_deadline,
+    campaignBrief.overview_launch_date,
+    newCampaignStep,
+    showNewCampaignModal,
+  ]);
+
+  const handleStep2Next = async () => {
+    const errors = getStep2BriefErrors();
     setStep2FieldErrors(errors);
 
     if (Object.keys(errors).length > 0) {
