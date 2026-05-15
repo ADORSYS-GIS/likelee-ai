@@ -1,5 +1,10 @@
-//! Messaging module (Phase 3 - Cross-cutting).
+//! messaging module.
 
-mod legacy;
+pub mod dto;
+pub mod handlers;
+pub mod service;
+pub mod routes;
 
-pub use legacy::*;
+pub use dto::*;
+pub use handlers::*;
+pub use service::*;

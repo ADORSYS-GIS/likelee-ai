@@ -14,64 +14,8 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use tracing::warn;
 
-fn sanitize_db_error(error_text: &str) -> String {
-    // Log the full error for debugging
-    warn!("Database error: {}", error_text);
 
-    // Return a generic message to clients to avoid exposing internal details
-    if error_text.contains("unique constraint") || error_text.contains("duplicate key") {
-        "A profile with this information already exists".to_string()
-    } else if error_text.contains("foreign key") {
-        "Invalid reference in profile data".to_string()
-    } else if error_text.contains("not null") || error_text.contains("null value") {
-        "Required field is missing".to_string()
-    } else if error_text.contains("invalid input") || error_text.contains("malformed") {
-        "Invalid data format provided".to_string()
-    } else {
-        "Failed to save profile. Please try again".to_string()
-    }
-}
-
-fn visibility_maps_to_public_profile(visibility: &str) -> bool {
-    matches!(
-        visibility.trim().to_lowercase().as_str(),
-        "public" | "brands" | "visible_to_brands" | "true"
-    )
-}
-
-fn sync_public_profile_visibility(body: &mut serde_json::Value) {
-    let explicit_public_visibility = body.get("public_profile_visible").and_then(|v| v.as_bool());
-    let explicit_visibility = body
-        .get("visibility")
-        .and_then(|v| v.as_str())
-        .map(|s| s.trim().to_lowercase())
-        .filter(|s| !s.is_empty());
-
-    if let Some(is_public) = explicit_public_visibility {
-        body["public_profile_visible"] = serde_json::Value::Bool(is_public);
-        body["visibility"] =
-            serde_json::Value::String(if is_public { "brands" } else { "private" }.to_string());
-        return;
-    }
-
-    if let Some(visibility) = explicit_visibility {
-        body["public_profile_visible"] =
-            serde_json::Value::Bool(visibility_maps_to_public_profile(&visibility));
-    }
-}
-
-fn normalized_string_array(values: Option<&serde_json::Value>) -> Vec<String> {
-    values
-        .and_then(|v| v.as_array())
-        .map(|arr| {
-            arr.iter()
-                .filter_map(|v| v.as_str())
-                .map(|s| s.trim().to_string())
-                .filter(|s| !s.is_empty())
-                .collect::<Vec<_>>()
-        })
-        .unwrap_or_default()
-}
+use super::*;
 
 pub async fn upsert_profile(
     State(state): State<AppState>,
@@ -393,14 +337,6 @@ pub async fn upsert_profile(
     }
 }
 
-#[derive(Deserialize)]
-pub struct EmailQuery {
-    pub email: String,
-}
-#[derive(Serialize)]
-pub struct EmailAvailability {
-    pub available: bool,
-}
 
 pub async fn check_email(
     State(state): State<AppState>,
@@ -446,12 +382,7 @@ pub async fn check_email(
     }
 }
 
-#[derive(Deserialize)]
-pub struct PhotoUploadQuery {
-    pub user_id: String,
-}
 
-/// Handles the profile photo upload and updates the user's profile.
 pub async fn upload_profile_photo(
     State(state): State<AppState>,
     user: AuthUser,
@@ -560,47 +491,7 @@ pub async fn upload_profile_photo(
     })))
 }
 
-#[derive(Deserialize, Debug)]
-pub struct FaceSearchQuery {
-    pub age_min: Option<i32>,
-    pub age_max: Option<i32>,
-    pub race: Option<String>,
-    pub hair_color: Option<String>,
-    pub hairstyle: Option<String>,
-    pub eye_color: Option<String>,
-    pub height_min_cm: Option<i32>,
-    pub height_max_cm: Option<i32>,
-    pub weight_min_kg: Option<i32>,
-    pub weight_max_kg: Option<i32>,
-    // Comma-separated features (best-effort, applied client-side if present)
-    pub features: Option<String>,
-    pub page: Option<u32>,
-    pub page_size: Option<u32>,
-}
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FaceSummary {
-    pub id: String,
-    pub full_name: Option<String>,
-    pub profile_photo_url: Option<String>,
-    pub age: Option<i32>,
-    pub race: Option<String>,
-    pub hair_color: Option<String>,
-    pub hairstyle: Option<String>,
-    pub eye_color: Option<String>,
-    pub height_cm: Option<i32>,
-    pub weight_kg: Option<i32>,
-    pub facial_features: Option<Vec<String>>,
-}
-
-#[derive(Serialize)]
-pub struct FaceSearchResponse {
-    pub items: Vec<FaceSummary>,
-    pub page: u32,
-    pub page_size: u32,
-}
-
-/// Basic search for Faces (Talents/Creators) with optional filters
 pub async fn search_faces(
     State(state): State<AppState>,
     Query(q): Query<FaceSearchQuery>,
@@ -754,3 +645,4 @@ pub async fn search_faces(
         page_size,
     }))
 }
+

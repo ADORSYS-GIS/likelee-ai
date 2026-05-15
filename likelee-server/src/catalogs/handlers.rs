@@ -13,58 +13,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tracing::info;
 
-// ============================================================================
-// Request / Response types
-// ============================================================================
 
-#[derive(Deserialize)]
-pub struct CreateCatalogRequest {
-    pub title: String,
-    pub client_name: Option<String>,
-    pub client_email: Option<String>,
-    pub licensing_request_id: Option<String>,
-    pub notes: Option<String>,
-    pub expires_at: Option<String>,
-    pub items: Vec<CatalogItemRequest>,
-}
 
-#[derive(Deserialize)]
-pub struct CatalogItemRequest {
-    pub talent_id: String,
-    pub asset_ids: Vec<CatalogAssetRef>,
-    pub recording_ids: Vec<CatalogRecordingRef>,
-}
-
-#[derive(Deserialize)]
-pub struct CatalogAssetRef {
-    pub asset_id: String,
-    pub asset_type: String,
-}
-
-#[derive(Deserialize)]
-pub struct CatalogRecordingRef {
-    pub recording_id: String,
-    pub emotion_tag: Option<String>,
-}
-
-#[derive(Serialize)]
-pub struct CatalogRow {
-    pub id: String,
-    pub agency_id: String,
-    pub licensing_request_id: Option<String>,
-    pub title: String,
-    pub client_name: Option<String>,
-    pub client_email: Option<String>,
-    pub access_token: String,
-    pub created_at: String,
-    pub sent_at: Option<String>,
-    pub notes: Option<String>,
-    pub item_count: i64,
-}
-
-// ============================================================================
-// List catalogs (agency dashboard)
-// ============================================================================
+use super::*;
 
 pub async fn list_catalogs(
     State(state): State<AppState>,
@@ -177,6 +128,7 @@ pub async fn list_catalogs(
 // ============================================================================
 // List eligible signed licensing requests
 // ============================================================================
+
 
 pub async fn list_eligible_requests(
     State(state): State<AppState>,
@@ -828,6 +780,7 @@ pub async fn list_eligible_requests(
 // Create catalog
 // ============================================================================
 
+
 pub async fn create_catalog(
     State(state): State<AppState>,
     user: AuthUser,
@@ -1100,6 +1053,7 @@ pub async fn create_catalog(
 // Delete catalog
 // ============================================================================
 
+
 pub async fn delete_catalog(
     State(state): State<AppState>,
     user: AuthUser,
@@ -1130,6 +1084,7 @@ pub async fn delete_catalog(
 // ============================================================================
 // Public catalog view  GET /api/public/catalogs/:token
 // ============================================================================
+
 
 pub async fn get_public_catalog(
     State(state): State<AppState>,
@@ -1622,12 +1577,4 @@ pub async fn get_public_catalog(
 }
 
 // Helper: generate a 24-hour signed URL for a private storage object
-async fn generate_signed_url(
-    state: &crate::state::AppState,
-    bucket: &str,
-    path: &str,
-) -> Option<String> {
-    crate::storage::generate_signed_url(state, bucket, path, 86_400)
-        .await
-        .ok()
-}
+

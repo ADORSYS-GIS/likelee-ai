@@ -1,5 +1,10 @@
-//! Notifications module (Phase 3 - Cross-cutting).
+//! notifications module.
 
-mod legacy;
+pub mod dto;
+pub mod handlers;
+pub mod service;
+pub mod routes;
 
-pub use legacy::*;
+pub use dto::*;
+pub use handlers::*;
+pub use service::*;

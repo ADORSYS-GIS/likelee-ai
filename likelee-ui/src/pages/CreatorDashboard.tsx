@@ -26,6 +26,14 @@ import {
   listTalentLicensingRequests,
   markTalentAssetRequestViewed,
   scrapeInstagramProfile,
+  createCreatorBillingPortal,
+  getPayoutsAccountStatus,
+  getPayoutBalance,
+  getHistory,
+  getCreatorTransferStatus,
+  exchangeStripeOAuthCode,
+  getStripeOAuthUrl,
+  requestTalentPayout,
 } from "@/api/functions";
 import { getCacheItem, setCacheItem } from "@/lib/localStorageCache";
 import { Button } from "@/components/ui/button";
@@ -701,7 +709,6 @@ export default function CreatorDashboard() {
   const handleManageSubscription = async () => {
     try {
       setPortalLoading(true);
-      const { createCreatorBillingPortal } = await import("@/api/functions");
       const res = await createCreatorBillingPortal();
       // base44Client returns the payload directly
       const url =
@@ -3325,12 +3332,7 @@ export default function CreatorDashboard() {
   const fetchPayoutStatus = async () => {
     if (!initialized || !authenticated || !user?.id) return;
     try {
-      const {
-        getPayoutsAccountStatus,
-        getPayoutBalance,
-        getHistory,
-        getCreatorTransferStatus,
-      } = await import("@/api/functions");
+      // Statically imported payout functions
       const [statusRes, balanceRes, historyRes, transfersRes] =
         await Promise.all([
           getPayoutsAccountStatus(user.id),
@@ -3352,7 +3354,6 @@ export default function CreatorDashboard() {
     if (loadingCreatorTransfers) return;
     setLoadingCreatorTransfers(true);
     try {
-      const { getCreatorTransferStatus } = await import("@/api/functions");
       const res = await getCreatorTransferStatus();
       setCreatorTransfers((res as any)?.transfers ?? []);
     } catch (_) {
@@ -3437,7 +3438,6 @@ export default function CreatorDashboard() {
 
         try {
           setIsLoadingPayout(true);
-          const { exchangeStripeOAuthCode } = await import("@/api/functions");
           const res = await exchangeStripeOAuthCode(code, user.id);
 
           if (res.data.status === "ok") {
@@ -15052,8 +15052,6 @@ export default function CreatorDashboard() {
                     try {
                       setIsLoadingPayout(true);
                       if (!user?.id) throw new Error("Not authenticated");
-                      const { getStripeOAuthUrl } =
-                        await import("@/api/functions");
                       const res = await getStripeOAuthUrl(user.id);
 
                       // Handle both possible response formats
@@ -15087,8 +15085,6 @@ export default function CreatorDashboard() {
                       const profileId = user?.id;
                       if (!profileId) throw new Error("Not authenticated");
 
-                      const { getStripeOAuthUrl } =
-                        await import("@/api/functions");
                       const res = await getStripeOAuthUrl(profileId);
 
                       const url = res?.data?.url || res?.url;
@@ -15291,8 +15287,6 @@ export default function CreatorDashboard() {
               onClick={async () => {
                 try {
                   setIsLoadingPayout(true);
-                  const { requestTalentPayout } =
-                    await import("@/api/functions");
                   const amountCents = Math.round(
                     parseFloat(requestPayoutAmount) * 100,
                   );

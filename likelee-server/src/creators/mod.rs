@@ -1,12 +1,11 @@
-//! Creators module.
-//!
-//! Phase 2 migration note:
-//! - `legacy` contains the former `creators.rs` implementation.
+//! creators module.
 
 pub mod dashboard;
-pub mod legacy;
+pub mod dto;
+pub mod handlers;
+pub mod routes;
+pub mod service;
 
-// Re-export legacy handlers and functions for backward compatibility.
-pub use dashboard::*;
-pub use legacy::*;
-
+pub use dto::*;
+pub use handlers::*;
+pub use service::*;

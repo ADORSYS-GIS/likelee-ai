@@ -1,10 +1,5 @@
 //! Pricing defaults helpers.
-//!
-//! Phase 2 migration note:
-//! - `legacy` contains the former `pricing_defaults.rs` implementation.
 
-pub mod legacy;
+pub mod service;
 
-// Re-export legacy helpers for backward compatibility.
-pub use legacy::*;
-
+pub use service::*;

@@ -819,6 +819,17 @@ export default function OrganizationSignup() {
       const newId = created?.user_id || created?.id;
       setProfileId(newId);
 
+      // If the user's email is already confirmed (e.g. auto-confirmed by the
+      // server or via OAuth), skip the OTP dialog and move to step 2.
+      if (user?.email_confirmed_at) {
+        setStep(2);
+        toast({
+          title: t("organizationSignup.toasts.accountCreated.title"),
+          description: t("organizationSignup.toasts.accountCreated.description"),
+        });
+        return;
+      }
+
       // Trigger email confirmation from the client and keep verification in-app.
       try {
         await handleOrganizationOtpResend(false);

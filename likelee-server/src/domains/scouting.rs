@@ -1,4 +1,4 @@
-pub use crate::catalogs::legacy::*;
+pub use crate::catalogs::*;
 pub use crate::jobs::*;
-pub use crate::packages::legacy::*;
+pub use crate::packages::*;
 pub use crate::scouting::*;

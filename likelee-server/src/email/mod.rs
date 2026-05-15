@@ -1,6 +1,12 @@
-//! Email module (Phase 3 - Cross-cutting).
+//! email module.
 
-mod legacy;
+pub mod dto;
+pub mod handlers;
+pub mod service;
+pub mod routes;
 pub mod templates;
 
-pub use legacy::*;
+pub use dto::*;
+pub use handlers::*;
+pub use service::*;
+pub use templates::*;

@@ -48,6 +48,9 @@ import { searchLocations } from "@/components/scouting/map/geocoding";
 import { CreatePackageWizard } from "@/components/packages/CreatePackageWizard";
 import { PackagesView } from "@/components/packages/PackagesView";
 import { CatalogsView } from "@/components/catalogs/CatalogsView";
+import { BookingsView } from "@/components/Bookings/BookingsView";
+import { CommunicationHub } from "@/components/chat/CommunicationHub";
+import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
 import { supabase } from "@/lib/supabase";
 import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
 import { AnimatePresence, motion } from "framer-motion";
@@ -150,21 +153,11 @@ import { useUnreadMessages } from "@/hooks/useChat";
 import i18n from "@/i18n";
 // ----------- LAZY TAB COMPONENTS -----------
 const t = i18n.t.bind(i18n);
-const CommunicationHub = lazy(() =>
-  import("@/components/chat/CommunicationHub").then((m) => ({
-    default: m.CommunicationHub,
-  })),
-);
 // Each import is split into its own JS chunk by Vite.
 // The browser only downloads these when the user navigates to that tab.
 const AgencyDeliverablesView = lazy(() =>
   import("@/components/agency/AgencyDeliverablesView").then((m) => ({
     default: m.AgencyDeliverablesView,
-  })),
-);
-const BookingsView = lazy(() =>
-  import("@/components/Bookings/BookingsView").then((m) => ({
-    default: m.BookingsView,
   })),
 );
 const GeneralSettingsView = lazy(
@@ -191,9 +184,6 @@ const BrandConnectionsView = lazy(
 );
 const AgencyJobInvitesView = lazy(
   () => import("@/components/agency/AgencyJobInvitesView"),
-);
-const MarketplaceSection = lazy(
-  () => import("@/components/marketplace/MarketplaceSection"),
 );
 const PerformanceTiers = lazy(
   () => import("@/components/dashboard/PerformanceTiers"),

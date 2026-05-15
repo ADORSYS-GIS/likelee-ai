@@ -1,15 +1,13 @@
-//! KYC module (Phase 3 - Cross-cutting).
+//! kyc module.
 
-mod legacy;
+pub mod dto;
+pub mod handlers;
 pub mod liveness;
 pub mod moderation;
+pub mod routes;
+pub mod service;
 pub mod voice;
 
-// Re-export from legacy (the real implementations)
-pub use legacy::{create_session, get_status, SessionRequest, SessionResponse, veriff_webhook, ProfileVerification, StatusQuery};
-
-// Re-export from liveness (liveness-specific types, but NOT create_session to avoid ambiguity)
-pub use liveness::{LivenessCreateRequest, LivenessCreateResponse, LivenessResultRequest, LivenessResultResponse, liveness_result};
-
-// Re-export moderation
-pub use moderation::*;
+pub use dto::*;
+pub use handlers::*;
+pub use service::*;

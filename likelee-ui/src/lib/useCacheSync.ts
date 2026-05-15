@@ -20,6 +20,8 @@ import {
   type MergeStrategy,
   type CacheEntry,
 } from "./localStorageCache";
+import { base44 } from "@/api/base44Client";
+import { getAgencyRoster } from "@/api/functions";
 
 interface UseCachedQueryOptions<T extends { id: string }> extends Omit<
   UseQueryOptions<T[], Error, T[]>,
@@ -131,7 +133,6 @@ export function useAgencyRosterCache(agencyId: string | undefined) {
     queryKey: ["agency-roster", agencyId],
     queryFn: async () => {
       // This will be replaced with actual API call
-      const { getAgencyRoster } = await import("@/api/functions");
       const resp = await getAgencyRoster();
       return (resp as any)?.talents ?? [];
     },
@@ -158,7 +159,6 @@ export function useMarketplaceCache(
     queryKey: ["marketplace", filters],
     queryFn: async () => {
       // This will be replaced with actual API call
-      const { base44 } = await import("@/api/base44Client");
       const resp = await base44.get<{ items?: any[] }>("/api/marketplace", {
         params: filters,
       });
@@ -182,7 +182,6 @@ export function useJobsCache(agencyId: string | undefined) {
     cacheKey,
     queryKey: ["jobs", agencyId],
     queryFn: async () => {
-      const { base44 } = await import("@/api/base44Client");
       const resp = await base44.get<{ jobs?: any[] }>("/api/jobs", {
         params: { limit: 100 },
       });

@@ -1998,8 +1998,9 @@ export default function BrandDashboard() {
         { package_id: packageId },
       );
 
-      queryClient.setQueryData(["brand-inbox-packages", user?.id], (prev: any) =>
-        prev?.filter((p: any) => p.id !== packageId) ?? [],
+      queryClient.setQueryData(
+        ["brand-inbox-packages", user?.id],
+        (prev: any) => prev?.filter((p: any) => p.id !== packageId) ?? [],
       );
       toast({
         title: "Package deleted",
