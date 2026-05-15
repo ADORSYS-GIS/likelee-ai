@@ -1998,7 +1998,9 @@ export default function BrandDashboard() {
         { package_id: packageId },
       );
 
-      setInboxPackages((prev) => prev.filter((p) => p.id !== packageId));
+      queryClient.setQueryData(["brand-inbox-packages", user?.id], (prev: any) =>
+        prev?.filter((p: any) => p.id !== packageId) ?? [],
+      );
       toast({
         title: "Package deleted",
         description: `"${packageToDelete.title || "Package"}" has been removed.`,
@@ -5255,17 +5257,21 @@ export default function BrandDashboard() {
 
       // Reactive Update: Update the offer in brandOfferItems if escrow status has changed.
       if (escrow?.id && escrow?.escrow_status) {
-        setBrandOfferItems((prev) =>
-          prev.map((o) => {
-            if (String(o.id) === String(escrow.id)) {
-              return {
-                ...o,
-                escrow_status: escrow.escrow_status,
-                payment_status: escrow.payment_status || o.payment_status,
-              };
-            }
-            return o;
-          }),
+        queryClient.setQueryData(
+          ["brand-campaign-offers", user?.id],
+          (prev: any) => {
+            if (!prev) return prev;
+            return prev.map((o: any) => {
+              if (String(o.id) === String(escrow.id)) {
+                return {
+                  ...o,
+                  escrow_status: escrow.escrow_status,
+                  payment_status: escrow.payment_status || o.payment_status,
+                };
+              }
+              return o;
+            });
+          },
         );
       }
       if (action === "approve" && escrow) {
@@ -9058,6 +9064,7 @@ export default function BrandDashboard() {
   );
 
   const renderContractDetail = () => {
+    const contract: any = selectedContract;
     // Contracts are now loaded from real API data
     return (
       <div className="space-y-6">
@@ -13912,8 +13919,10 @@ export default function BrandDashboard() {
                       `/api/campaign-offers/${encodeURIComponent(offerId)}/packages/${encodeURIComponent(packageId)}/dismiss`,
                       {},
                     );
-                    setInboxPackages((prev: any[]) =>
-                      prev.filter((p: any) => p.id !== packageId),
+                    queryClient.setQueryData(
+                      ["brand-inbox-packages", user?.id],
+                      (prev: any) =>
+                        prev?.filter((p: any) => p.id !== packageId) ?? [],
                     );
                     setDismissingPkg(null);
                     toast({
@@ -14166,7 +14175,8 @@ export default function BrandDashboard() {
                   const response = await base44.get<{ packages?: any[] }>(
                     "/api/brand/inbox/packages",
                   );
-                  setInboxPackages(
+                  queryClient.setQueryData(
+                    ["brand-inbox-packages", user?.id],
                     Array.isArray(response?.packages) ? response.packages : [],
                   );
                   toast({

@@ -2006,6 +2006,28 @@ export default function BrandCampaignDashboard({
   const deliverableFileSrc = (deliverable: any) =>
     deliverablePreviewSrc(deliverable);
 
+  const getPublicUrl = (
+    del: any,
+    options: { thumbnail?: boolean; download?: boolean } = {},
+  ) => {
+    const path = typeof del === "string" ? del : del?.asset_url;
+    if (!path) return "";
+    if (path.startsWith("http")) return path;
+
+    if (typeof del === "object" && del?.id && del?.offer_id) {
+      const proxyUrl = `/api/campaign-offers/${del.offer_id}/deliverables/${del.id}/file`;
+      const queryParams = new URLSearchParams();
+      if (authToken) queryParams.set("token", authToken);
+      if (options.thumbnail) queryParams.set("thumbnail", "true");
+      if (options.download) queryParams.set("download", "true");
+
+      const queryString = queryParams.toString();
+      return queryString ? `${proxyUrl}?${queryString}` : proxyUrl;
+    }
+
+    return "";
+  };
+
   const handleSendOffer = async () => {
     if (savingCampaign) return;
     if (!canUseCampaignCollaboration) {
@@ -4703,7 +4725,7 @@ export default function BrandCampaignDashboard({
                                   setPreviewIndex(idx);
                                   setPreviewImage({
                                     ...deliverable,
-                                    payment_status: offer?.payment_status,
+                                    payment_status: deliverable?.payment_status,
                                   });
                                 }}
                               >

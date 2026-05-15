@@ -12328,7 +12328,7 @@ const OpenCallsTab = ({
                     className="h-7 text-red-500 font-bold hover:bg-red-50 hover:text-red-600 transition-all text-[11px] px-3 rounded-md border border-transparent"
                     onClick={(e) => {
                       e.stopPropagation();
-                      onDeleteEvent(event);
+                      handleDeleteEvent(event);
                     }}
                   >
                     <Trash2 className="w-3.5 h-3.5 mr-1" />

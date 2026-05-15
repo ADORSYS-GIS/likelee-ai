@@ -210,6 +210,7 @@ export function CatalogBuilderWizard({
     client_email: "",
     licensing_request_id: "",
     expires_at: "",
+    notes: "",
     items: {},
   });
 
