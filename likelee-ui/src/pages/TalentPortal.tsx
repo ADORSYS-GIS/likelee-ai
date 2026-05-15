@@ -901,6 +901,13 @@ export default function TalentPortal({
     if (embedded) {
       setEmbeddedMode(next);
       if (!embeddedTab) setEmbeddedTab("overview");
+      const nextParams = new URLSearchParams(location.search);
+      nextParams.set("mode", next);
+      if (!nextParams.get("tab")) nextParams.set("tab", "overview");
+      navigate(
+        { pathname: location.pathname, search: `?${nextParams.toString()}` },
+        { replace: true },
+      );
       return;
     }
     const nextParams = new URLSearchParams(location.search);
@@ -915,6 +922,13 @@ export default function TalentPortal({
   const setSettingsTab = (nextSettingsTab: string) => {
     if (embedded) {
       setEmbeddedSettingsTab(nextSettingsTab);
+      const nextParams = new URLSearchParams(location.search);
+      nextParams.set("tab", "settings");
+      nextParams.set("settings", nextSettingsTab);
+      navigate(
+        { pathname: location.pathname, search: `?${nextParams.toString()}` },
+        { replace: true },
+      );
       return;
     }
     const nextParams = new URLSearchParams(location.search);
@@ -930,6 +944,15 @@ export default function TalentPortal({
     if (embedded) {
       setEmbeddedTab(nextTab);
       if (nextTab !== "settings") setEmbeddedSettingsTab("profile");
+      const nextParams = new URLSearchParams(location.search);
+      nextParams.set("tab", nextTab);
+      if (nextTab !== "settings") {
+        nextParams.delete("settings");
+      }
+      navigate(
+        { pathname: location.pathname, search: `?${nextParams.toString()}` },
+        { replace: true },
+      );
       return;
     }
     const nextParams = new URLSearchParams(location.search);
@@ -1688,48 +1711,6 @@ export default function TalentPortal({
                   )}
                 </div>
               </Card>
-
-              <Card className="p-5 rounded-xl shadow-sm border-0 bg-gradient-to-r from-indigo-50 to-blue-50">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4 min-w-0">
-                    <div className="h-14 w-14 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center overflow-hidden">
-                      {agencyUser?.agency_logo_url ? (
-                        <img
-                          src={agencyUser.agency_logo_url}
-                          alt=""
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <Briefcase className="h-6 w-6 text-gray-400" />
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-base font-semibold text-gray-900 truncate">
-                        {agencyName ||
-                          t("talentPortal.content.irl.overview.yourAgency")}
-                      </div>
-                      <div className="text-sm text-gray-500 truncate">
-                        {t("talentPortal.content.irl.overview.connectedSince", {
-                          date: new Date().toLocaleDateString(),
-                        })}
-                      </div>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-[#32C8D1] text-white hover:bg-[#2AB8C1] transition-colors">
-                          {t("talentPortal.content.irl.overview.editProfile")}
-                        </button>
-                        <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors">
-                          {t(
-                            "talentPortal.content.irl.overview.manageCampaigns",
-                          )}
-                        </button>
-                        <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-amber-400 text-white hover:bg-amber-500 transition-colors">
-                          {t("talentPortal.content.irl.overview.viewEarnings")}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Card>
             </>
           )}
 
@@ -2323,7 +2304,9 @@ export default function TalentPortal({
               >
                 {createIrlPayoutRequestMutation.isPending
                   ? t("payouts.requesting")
-                  : t("payouts.cashOutEarnings")}
+                  : t("payouts.cashOutEarnings", {
+                      defaultValue: "Cash Out Earnings",
+                    })}
               </button>
             </div>
           )}

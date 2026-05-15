@@ -1,4 +1,10 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useMemo,
+  useCallback,
+} from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { DobInput } from "@/components/ui/DobInput";
@@ -605,6 +611,30 @@ export default function CreatorDashboard() {
   };
   const [activeSection, setActiveSection] = useState("dashboard");
   const [settingsTab, setSettingsTab] = useState("profile"); // 'profile' | 'rules' | 'billing'
+
+  const updateDashboardSearchParams = useCallback(
+    (updates: Record<string, string | null | undefined>) => {
+      const nextParams = new URLSearchParams(window.location.search);
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === undefined || value === "") {
+          nextParams.delete(key);
+        } else {
+          nextParams.set(key, value);
+        }
+      });
+      const nextSearch = nextParams.toString();
+      const currentSearch = window.location.search.replace(/^\?/, "");
+      if (nextSearch === currentSearch) return;
+      navigate(
+        {
+          pathname: window.location.pathname,
+          search: nextSearch ? `?${nextSearch}` : "",
+        },
+        { replace: true },
+      );
+    },
+    [navigate],
+  );
 
   // ── Billing — multi-layer cache ──────────────────────────────────────────
   // Layer 1: localStorage — survives page refresh, seeds initial state instantly
@@ -3993,6 +4023,15 @@ export default function CreatorDashboard() {
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    updateDashboardSearchParams({ section: activeSection });
+  }, [activeSection, updateDashboardSearchParams]);
+
+  useEffect(() => {
+    if (activeSection !== "settings") return;
+    updateDashboardSearchParams({ settings: settingsTab });
+  }, [activeSection, settingsTab, updateDashboardSearchParams]);
+
   const creatorPlanTier = String(creatorBilling?.plan_tier || "free");
   const trialActive = !!creatorBilling?.trial_active;
   const effectivePlanTier = String(
@@ -4550,11 +4589,17 @@ export default function CreatorDashboard() {
   };
 
   const renderTalentPortal = () => {
+    const talentPortalTab = searchParams.get("tab") || "settings";
+    const talentPortalSettings = searchParams.get("settings") || "profile";
+    const talentPortalMode =
+      (searchParams.get("mode") || "ai").toLowerCase() === "irl" ? "irl" : "ai";
+
     return (
       <TalentPortal
         embedded
-        initialTab="settings"
-        initialSettingsTab="profile"
+        initialTab={talentPortalTab}
+        initialSettingsTab={talentPortalSettings}
+        initialMode={talentPortalMode}
       />
     );
   };
@@ -5598,12 +5643,20 @@ export default function CreatorDashboard() {
         errorMessage = error.message;
       }
 
+      const normalizedError = String(errorMessage || "").toLowerCase();
+      const isVoiceLimitReached =
+        normalizedError.includes("voice_limit_reached") ||
+        normalizedError.includes("maximum amount of custom voices") ||
+        normalizedError.includes("custom voice limit");
+
       toast({
         variant: "destructive",
         title: t("creatorDashboard.toasts.voiceErrorTitle"),
-        description: t("creatorDashboard.toasts.voiceErrorDesc", {
-          error: errorMessage,
-        }),
+        description: isVoiceLimitReached
+          ? "You’ve reached your custom voice limit for your current ElevenLabs plan. Upgrade your ElevenLabs subscription or remove an existing custom voice, then try again."
+          : t("creatorDashboard.toasts.voiceErrorDesc", {
+              error: errorMessage,
+            }),
       });
     } finally {
       setGeneratingVoiceId(null);
@@ -7077,60 +7130,6 @@ export default function CreatorDashboard() {
               </strong>{" "}
               {t("creatorDashboard.myLikenessSection.qualityStandards.text")}
             </p>
-          </div>
-        </Card>
-
-        {/* Content Guidelines */}
-        <Card className="p-6 bg-white border border-gray-200">
-          <h3 className="text-2xl font-bold text-gray-900 mb-4">
-            {t("creatorDashboard.usageGuidelines.title")}
-          </h3>
-          <p className="text-gray-600 mb-6">
-            {t("creatorDashboard.usageGuidelines.subtitle")}
-          </p>
-
-          <div className="space-y-6">
-            <div>
-              <Label className="text-lg font-semibold text-gray-900 block mb-3">
-                {t("creatorDashboard.usageGuidelines.comfortableWith")}
-              </Label>
-              <div className="flex flex-wrap gap-2">
-                {contentPreferences.comfortable.map((item) => (
-                  <Badge
-                    key={item}
-                    variant="outline"
-                    className="bg-green-100 text-green-700 border border-green-300 px-3 py-2"
-                  >
-                    {t(`common.contentTypes.${item}`, { defaultValue: item })}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <Label className="text-lg font-semibold text-gray-900 block mb-3">
-                {t("creatorDashboard.usageGuidelines.notComfortableWith")}
-              </Label>
-              <div className="flex flex-wrap gap-2">
-                {contentPreferences.not_comfortable.map((item) => (
-                  <Badge
-                    key={item}
-                    variant="outline"
-                    className="bg-red-100 text-red-700 border border-red-300 px-3 py-2"
-                  >
-                    ✗ {t(`common.contentTypes.${item}`, { defaultValue: item })}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            <Button
-              variant="outline"
-              className="w-full border-2 border-gray-300"
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              {t("creatorDashboard.usageGuidelines.editPreferences")}
-            </Button>
           </div>
         </Card>
 
@@ -10347,7 +10346,9 @@ export default function CreatorDashboard() {
 
           <Card className="p-3 sm:p-5 border border-[#DDE5EF] shadow-sm flex flex-col">
             <div className="text-xs text-gray-500 h-8 sm:h-10">
-              {t("creatorDashboard.approvals.deliverableFeedback")}
+              {t("creatorDashboard.approvals.deliverableFeedback", {
+                defaultValue: "Deliverable feedback",
+              })}
             </div>
             <div className="text-2xl sm:text-3xl font-bold text-gray-900 flex-1">
               {pendingDeliverables.length}
@@ -10356,7 +10357,9 @@ export default function CreatorDashboard() {
               className="mt-3 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white text-[10px] sm:text-sm h-9 sm:h-10 whitespace-normal leading-tight px-1 sm:px-3"
               onClick={() => openBrandConnectionSubTab("deliverables")}
             >
-              {t("creatorDashboard.approvals.viewFeedback")}
+              {t("creatorDashboard.approvals.viewFeedback", {
+                defaultValue: "View feedback",
+              })}
             </Button>
           </Card>
         </div>
@@ -10620,49 +10623,6 @@ export default function CreatorDashboard() {
                     </div>
                   </div>
                 </div>
-
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Switch
-                      checked={campaign.show_on_portfolio}
-                      className="data-[state=checked]:bg-gray-900"
-                      onCheckedChange={(checked) => {
-                        // For examples, just show a message
-                        if (campaign.isExample) {
-                          toast({
-                            title: "Demo Mode",
-                            description:
-                              "This is an example campaign. In the real app, toggling this would update your portfolio visibility settings.",
-                          });
-                          return;
-                        }
-                        // For real campaigns, update the state
-                        // TODO: Add API call to update portfolio visibility
-                        console.log(
-                          `Toggle portfolio visibility for ${campaign.id}: ${checked}`,
-                        );
-                      }}
-                    />
-                    <div>
-                      <p className="font-semibold text-gray-900">
-                        {t("creatorDashboard.archive.showOnPortfolio")}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {campaign.show_on_portfolio
-                          ? t("creatorDashboard.archive.visibleOnPortfolio")
-                          : t("creatorDashboard.archive.hiddenFromPortfolio")}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    className="border-2 border-gray-300"
-                    disabled={campaign.isExample}
-                  >
-                    <Eye className="w-4 h-4 mr-2" />
-                    {t("creatorDashboard.archive.viewDetails")}
-                  </Button>
-                </div>
               </Card>
             ))}
           </div>
@@ -10672,6 +10632,46 @@ export default function CreatorDashboard() {
   };
 
   const renderContracts = () => {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900">
+            {t("creatorDashboard.contracts.title")}
+          </h2>
+          <p className="text-gray-600 mt-1">
+            {t("creatorDashboard.contracts.subtitle")}
+          </p>
+        </div>
+
+        <Card className="overflow-hidden border border-[#DDE5EF] bg-white shadow-sm">
+          <div className="border-b border-[#E7EDF5] bg-gradient-to-r from-[#F9FBFE] to-[#F5F8FC] px-6 py-5">
+            <div className="flex items-center gap-3">
+              <Badge className="border border-[#BFEAF0] bg-[#ECFAFC] text-[#136B86]">
+                {t("creatorDashboard.content.comingSoon")}
+              </Badge>
+              <div className="text-sm font-medium text-[#5B667A]">
+                Feature preview
+              </div>
+            </div>
+          </div>
+          <div className="p-8 sm:p-10">
+            <div className="mx-auto max-w-2xl text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#ECFAFC] text-[#136B86]">
+                <FileText className="h-8 w-8" />
+              </div>
+              <h3 className="mt-6 text-2xl font-bold text-[#142033]">
+                Licenses & Contracts is coming soon
+              </h3>
+              <p className="mt-3 text-base text-[#5B667A]">
+                We’re preparing a dedicated space for contract visibility,
+                license tracking, and agreement history.
+              </p>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+
     if (showContractDetails && selectedContract) {
       const contract = normalizedContracts.find(
         (c) => c.id === selectedContract,
