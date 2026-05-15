@@ -323,6 +323,10 @@ export default function BrandDashboard() {
   const queryClient = useQueryClient();
   const [activeSection, setActiveSection] = useState(() => {
     if (typeof window !== "undefined") {
+      const section = new URLSearchParams(window.location.search).get(
+        "section",
+      );
+      if (section) return section === "campaigns" ? "campaigns-hub" : section;
       const saved = localStorage.getItem("brandDashboard_activeSection");
       return saved || "home";
     }
@@ -353,6 +357,16 @@ export default function BrandDashboard() {
     "active" | "pending_approval" | "completed" | "inbox" | "jobs"
   >(() => {
     if (typeof window !== "undefined") {
+      const tab = new URLSearchParams(window.location.search).get("tab");
+      if (
+        tab === "active" ||
+        tab === "pending_approval" ||
+        tab === "completed" ||
+        tab === "inbox" ||
+        tab === "jobs"
+      ) {
+        return tab;
+      }
       const saved = localStorage.getItem("brandDashboard_campaignHubTab");
       return (saved as any) || "active";
     }
@@ -521,6 +535,7 @@ export default function BrandDashboard() {
     options?: {
       campaignHubTab?: "active" | "pending_approval" | "completed" | "jobs";
       campaignView?: "active" | "pending" | "completed";
+      settingsTab?: string;
       replace?: boolean;
     },
   ) => {
@@ -533,12 +548,23 @@ export default function BrandDashboard() {
       if (options?.campaignView) {
         setCampaignView(options.campaignView);
       }
+      if (options?.settingsTab) {
+        setActiveSettingsTab(options.settingsTab);
+      }
     });
     const params = new URLSearchParams(location.search);
     params.set(
       "section",
       nextSection === "campaigns-hub" ? "campaigns" : nextSection,
     );
+    if (nextSection === "settings") {
+      params.set("tab", options?.settingsTab || activeSettingsTab);
+    } else {
+      params.delete("tab");
+    }
+    if (nextSection === "campaigns-hub" && options?.campaignHubTab) {
+      params.set("tab", options.campaignHubTab);
+    }
     setSearchParams(params, { replace: options?.replace ?? false });
   };
 
@@ -582,8 +608,7 @@ export default function BrandDashboard() {
       return;
     }
     // Navigate to Settings → Team tab to manage team members
-    setActiveSettingsTab("team");
-    navigateToSection("settings", { replace: false });
+    navigateToSection("settings", { replace: false, settingsTab: "team" });
   };
 
   const formatRelativeTime = (value?: string | null) => {
@@ -808,7 +833,24 @@ export default function BrandDashboard() {
   const [showSessionAudit, setShowSessionAudit] = useState(false);
   const [selectedCreator, setSelectedCreator] = useState(null);
   const [showLicenseRequestModal, setShowLicenseRequestModal] = useState(false);
-  const [activeSettingsTab, setActiveSettingsTab] = useState("profile");
+  const [activeSettingsTab, setActiveSettingsTab] = useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      return (
+        params.get("tab") ||
+        localStorage.getItem("brandDashboard_settingsTab") ||
+        "profile"
+      );
+    }
+    return "profile";
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("brandDashboard_settingsTab", activeSettingsTab);
+    }
+  }, [activeSettingsTab]);
+
   const [selectedLicenseCreator, setSelectedLicenseCreator] =
     useState<MarketplaceProfile | null>(null);
   const [creatingLicenseRequest, setCreatingLicenseRequest] = useState(false);
@@ -1234,6 +1276,9 @@ export default function BrandDashboard() {
     const sectionFromQuery = String(
       new URLSearchParams(location.search).get("section") || "",
     ).trim();
+    const tabFromQuery = String(
+      new URLSearchParams(location.search).get("tab") || "",
+    ).trim();
     const mappedSectionFromQuery =
       sectionFromQuery === "campaigns" ? "campaigns-hub" : sectionFromQuery;
     if (pendingSectionOverrideRef.current) {
@@ -1244,11 +1289,17 @@ export default function BrandDashboard() {
     }
     if (mappedSectionFromQuery) {
       const targetSection = mappedSectionFromQuery;
-      if (
-        targetSection === "campaigns-hub" &&
-        campaignHubTabRef.current !== "active"
-      ) {
-        setCampaignHubTab("active");
+      if (targetSection === "campaigns-hub") {
+        const nextCampaignTab =
+          tabFromQuery === "pending_approval" ||
+          tabFromQuery === "completed" ||
+          tabFromQuery === "inbox" ||
+          tabFromQuery === "jobs"
+            ? tabFromQuery
+            : "active";
+        if (campaignHubTabRef.current !== nextCampaignTab) {
+          setCampaignHubTab(nextCampaignTab as any);
+        }
       }
       if (activeSectionRef.current !== targetSection) {
         setActiveSection(targetSection);
@@ -8156,28 +8207,48 @@ export default function BrandDashboard() {
             <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
-                onClick={() => setCampaignHubTab("active")}
+                onClick={() =>
+                  navigateToSection("campaigns-hub", {
+                    campaignHubTab: "active",
+                    replace: true,
+                  })
+                }
                 className={`border-2 rounded-none text-xs sm:text-sm h-8 sm:h-10 px-3 sm:px-4 ${campaignHubTab === "active" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
                 Active
               </Button>
               <Button
                 variant="outline"
-                onClick={() => setCampaignHubTab("pending_approval")}
+                onClick={() =>
+                  navigateToSection("campaigns-hub", {
+                    campaignHubTab: "pending_approval",
+                    replace: true,
+                  })
+                }
                 className={`border-2 rounded-none text-xs sm:text-sm h-8 sm:h-10 px-3 sm:px-4 ${campaignHubTab === "pending_approval" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
                 Pending
               </Button>
               <Button
                 variant="outline"
-                onClick={() => setCampaignHubTab("completed")}
+                onClick={() =>
+                  navigateToSection("campaigns-hub", {
+                    campaignHubTab: "completed",
+                    replace: true,
+                  })
+                }
                 className={`border-2 rounded-none text-xs sm:text-sm h-8 sm:h-10 px-3 sm:px-4 ${campaignHubTab === "completed" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
                 Expired
               </Button>
               <Button
                 variant="outline"
-                onClick={() => setCampaignHubTab("jobs")}
+                onClick={() =>
+                  navigateToSection("campaigns-hub", {
+                    campaignHubTab: "jobs",
+                    replace: true,
+                  })
+                }
                 className={`border-2 rounded-none text-xs sm:text-sm h-8 sm:h-10 px-3 sm:px-4 ${campaignHubTab === "jobs" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
                 Jobs
@@ -10872,7 +10943,13 @@ export default function BrandDashboard() {
 
       <Tabs
         value={activeSettingsTab}
-        onValueChange={setActiveSettingsTab}
+        onValueChange={(tab) => {
+          setActiveSettingsTab(tab);
+          const params = new URLSearchParams(location.search);
+          params.set("section", "settings");
+          params.set("tab", tab);
+          setSearchParams(params, { replace: true });
+        }}
         className="w-full"
       >
         <TabsList className="w-full flex justify-start bg-gray-100/50 p-1 mb-6 overflow-x-auto no-scrollbar rounded-none border-b border-gray-200 h-auto">
