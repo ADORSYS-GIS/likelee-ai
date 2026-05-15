@@ -18,6 +18,7 @@ import {
   updateBrandLicensingRequestsStatus,
   deleteBrandLicensingRequests,
   getBrandProfile,
+  updateBrandProfile,
   listOfferDeliverables,
   reviewOfferDeliverable,
   getBrandBillingStatus,
@@ -320,7 +321,13 @@ export default function BrandDashboard() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
-  const [activeSection, setActiveSection] = useState("home");
+  const [activeSection, setActiveSection] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("brandDashboard_activeSection");
+      return saved || "home";
+    }
+    return "home";
+  });
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showCampaignSubtabs, setShowCampaignSubtabs] = useState(true);
   const [inboxSubTab, setInboxSubTab] = useState<
@@ -329,7 +336,14 @@ export default function BrandDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [brand, setBrand] = useState<any>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [campaignView, setCampaignView] = useState("active");
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [campaignView, setCampaignView] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("brandDashboard_campaignView");
+      return saved || "active";
+    }
+    return "active";
+  });
   const [openCampaignModalSignal, setOpenCampaignModalSignal] = useState(0);
   const [campaignBuilderContext, setCampaignBuilderContext] =
     useState<any>(null);
@@ -337,7 +351,13 @@ export default function BrandDashboard() {
   // "Expired" is deadline-based; "Done" is tracked separately via completed_at.
   const [campaignHubTab, setCampaignHubTab] = useState<
     "active" | "pending_approval" | "completed" | "inbox" | "jobs"
-  >("active");
+  >(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("brandDashboard_campaignHubTab");
+      return (saved as any) || "active";
+    }
+    return "active";
+  });
   const activeSectionRef = useRef(activeSection);
   const campaignHubTabRef = useRef(campaignHubTab);
   const pendingSectionOverrideRef = useRef<string | null>(null);
@@ -361,6 +381,27 @@ export default function BrandDashboard() {
   useEffect(() => {
     campaignHubTabRef.current = campaignHubTab;
   }, [campaignHubTab]);
+
+  // Save activeSection to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("brandDashboard_activeSection", activeSection);
+    }
+  }, [activeSection]);
+
+  // Save campaignHubTab to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("brandDashboard_campaignHubTab", campaignHubTab);
+    }
+  }, [campaignHubTab]);
+
+  // Save campaignView to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("brandDashboard_campaignView", campaignView);
+    }
+  }, [campaignView]);
 
   // Handle billing success - refresh profile to ensure subscription is active
   useEffect(() => {
@@ -2472,8 +2513,31 @@ export default function BrandDashboard() {
     }
   };
 
-  const handleSaveProfile = () => {
-    toast({ title: "Success", description: "Profile updated! (Demo mode)" });
+  const handleSaveProfile = async () => {
+    if (isSavingProfile) return;
+    setIsSavingProfile(true);
+    try {
+      await updateBrandProfile({
+        company_name: brand?.name,
+        industry: brand?.industry,
+        website: brand?.website,
+        logo_url: brand?.logo,
+      });
+      toast({
+        title: "Success",
+        description: "Profile updated successfully!",
+      });
+      // Refresh profile data to ensure UI is in sync
+      await refreshProfile();
+    } catch (e: any) {
+      toast({
+        title: "Failed to save profile",
+        description: e?.message || "Please try again.",
+        variant: "destructive" as any,
+      });
+    } finally {
+      setIsSavingProfile(false);
+    }
   };
 
   const handleToggleNotificationPref = async (
@@ -10942,9 +11006,17 @@ export default function BrandDashboard() {
             <div className="mt-12">
               <Button
                 onClick={handleSaveProfile}
+                disabled={isSavingProfile}
                 className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-black uppercase tracking-widest px-6 sm:px-12 h-11 sm:h-14 shadow-[8px_8px_0px_rgba(247,183,80,0.3)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none w-full sm:w-auto"
               >
-                {t("dashboard.settingsPage.profile.saveProfileChanges")}
+                {isSavingProfile ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  t("dashboard.settingsPage.profile.saveProfileChanges")
+                )}
               </Button>
             </div>
           </Card>
