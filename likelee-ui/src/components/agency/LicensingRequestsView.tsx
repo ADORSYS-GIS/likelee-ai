@@ -135,6 +135,14 @@ const LicensingRequestsView = ({
     if (status === "approved") return "bg-green-100 text-green-700";
     if (status === "rejected" || status === "declined")
       return "bg-red-100 text-red-700";
+    if (status === "signed" || status === "completed")
+      return "bg-green-100 text-green-700";
+    if (status === "sent" || status === "client_pending")
+      return "bg-blue-100 text-blue-700";
+    if (status === "agency_pending") return "bg-purple-100 text-purple-700";
+    if (status === "opened") return "bg-yellow-100 text-yellow-700";
+    if (status === "archived" || status === "expired")
+      return "bg-gray-100 text-gray-700";
     return "bg-gray-100 text-gray-700";
   };
 
@@ -142,6 +150,43 @@ const LicensingRequestsView = ({
     t(`agencyDashboard.licensingRequests.status.${status}`, {
       defaultValue: status,
     });
+
+  const submissionStatusLabel = (status: string) => {
+    const translationKeys: Record<string, string> = {
+      draft: "draft",
+      sent: "sent",
+      opened: "opened",
+      signed: "signed",
+      completed: "signed",
+      declined: "declined",
+      archived: "archived",
+      expired: "expired",
+      client_pending: "clientPending",
+      agency_pending: "agencyPending",
+    };
+    const normalized = status.toLowerCase();
+    const translationKey = translationKeys[normalized];
+    if (!translationKey) return status;
+    return t(`agencyDashboard.licenseSubmissions.status.${translationKey}`, {
+      defaultValue: status,
+    });
+  };
+
+  const getDisplayStatus = (group: any) => {
+    const submissionStatus = String(group?.submission_status || "")
+      .trim()
+      .toLowerCase();
+    if (submissionStatus) {
+      return {
+        value: submissionStatus,
+        label: submissionStatusLabel(submissionStatus),
+      };
+    }
+    return {
+      value: String(group?.status || "pending").toLowerCase(),
+      label: statusLabel(group?.status || "pending"),
+    };
+  };
 
   const formatLicenseFee = (fee?: number | null) => {
     if (typeof fee !== "number" || !Number.isFinite(fee)) return "—";
@@ -844,44 +889,46 @@ const LicensingRequestsView = ({
             )}
 
           {activeRequestTab !== "Brand Requests" &&
-            filteredRegularData.map((group: any) => (
-              <Card
-                key={group.group_key}
-                className="p-8 bg-white border-2 border-gray-900 rounded-none overflow-hidden relative"
-              >
-                <div className="flex justify-between items-start mb-6">
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-1">
-                      {group.brand_name ||
-                        t("agencyDashboard.licensingRequests.unknownBrand")}
-                    </h3>
-                    <p className="text-gray-500 font-medium">
-                      {(group.campaign_title || "").trim() || "\u2014"}
-                    </p>
+            filteredRegularData.map((group: any) => {
+              const displayStatus = getDisplayStatus(group);
+              return (
+                <Card
+                  key={group.group_key}
+                  className="p-8 bg-white border-2 border-gray-900 rounded-none overflow-hidden relative"
+                >
+                  <div className="flex justify-between items-start mb-6">
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-1">
+                        {group.brand_name ||
+                          t("agencyDashboard.licensingRequests.unknownBrand")}
+                      </h3>
+                      <p className="text-gray-500 font-medium">
+                        {(group.campaign_title || "").trim() || "\u2014"}
+                      </p>
+                    </div>
+                    <span
+                      className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${statusStyle(displayStatus.value)}`}
+                    >
+                      {displayStatus.label}
+                    </span>
                   </div>
-                  <span
-                    className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${statusStyle(group.status)}`}
-                  >
-                    {statusLabel(group.status)}
-                  </span>
-                </div>
 
-                <div className="flex flex-wrap gap-2 mb-8">
-                  {(group.talents || []).map((t: any) => {
-                    const names = (t.talent_name || "")
-                      .split(",")
-                      .map((s: string) => s.trim())
-                      .filter(Boolean);
-                    return names.map((name: string, i: number) => (
-                      <span
-                        key={`${t.licensing_request_id}-${i}`}
-                        className="px-3 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded uppercase"
-                      >
-                        {name || entitySingularTitle}
-                      </span>
-                    ));
-                  })}
-                </div>
+                  <div className="flex flex-wrap gap-2 mb-8">
+                    {(group.talents || []).map((t: any) => {
+                      const names = (t.talent_name || "")
+                        .split(",")
+                        .map((s: string) => s.trim())
+                        .filter(Boolean);
+                      return names.map((name: string, i: number) => (
+                        <span
+                          key={`${t.licensing_request_id}-${i}`}
+                          className="px-3 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded uppercase"
+                        >
+                          {name || entitySingularTitle}
+                        </span>
+                      ));
+                    })}
+                  </div>
 
                 <div className="mb-8 grid grid-cols-2 gap-3">
                   <DetailMetric
@@ -1026,45 +1073,11 @@ const LicensingRequestsView = ({
                     </Button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Button
-                      onClick={() => updateGroupStatus(group, "approved")}
-                      className="bg-green-600 hover:bg-green-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
-                    >
-                      <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
-                        <span className="text-[10px] font-bold">✓</span>
-                      </div>
-                      {t("agencyDashboard.licensingRequests.actions.approve")}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setGroupToCounter(group);
-                        setCounterOfferModalOpen(true);
-                      }}
-                      className="border-gray-300 text-gray-700 font-bold h-11 rounded-md"
-                    >
-                      {t(
-                        "agencyDashboard.licensingRequests.actions.counterOffer",
-                      )}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setGroupToDecline(group);
-                        setShowDeclineConfirm(true);
-                      }}
-                      className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
-                    >
-                      <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
-                        <X className="w-3 h-3" />
-                      </div>
-                      {t("agencyDashboard.licensingRequests.actions.decline")}
-                    </Button>
-                  </div>
+                  null
                 )}
               </Card>
-            ))}
+              );
+            })}
 
           {activeRequestTab === "Brand Requests" &&
             !isLoadingBrandRequests &&

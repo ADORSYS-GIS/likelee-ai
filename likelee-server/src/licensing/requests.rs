@@ -45,6 +45,8 @@ pub struct LicensingRequestGroup {
     pub notes: Option<String>,
     pub created_at: String,
     pub status: String,
+    pub submission_id: Option<String>,
+    pub submission_status: Option<String>,
     pub pay_set: bool,
     pub payment_link_url: Option<String>,
     pub payment_link_id: Option<String>,
@@ -354,6 +356,17 @@ pub async fn list_for_agency(
             .or(talent_name_field)
             .unwrap_or_else(|| "Assigned Talent".to_string());
 
+        let submission_id = r
+            .get("submission_id")
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.trim().is_empty())
+            .map(|s| s.to_string());
+        let submission_status_opt = if submission_status.is_empty() {
+            None
+        } else {
+            Some(submission_status.clone())
+        };
+
         let key = created_at_group_key(brand_key, &created_at);
 
         let entry = groups
@@ -379,6 +392,8 @@ pub async fn list_for_agency(
                 notes: notes.clone(),
                 created_at: created_at.clone(),
                 status: "pending".to_string(),
+                submission_id: submission_id.clone(),
+                submission_status: submission_status_opt.clone(),
                 pay_set: false,
                 payment_link_url: None,
                 payment_link_id: None,
