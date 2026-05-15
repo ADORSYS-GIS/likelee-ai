@@ -1,18 +1,10 @@
-use crate::agencies::talent_refs::resolve_agency_talent_ref;
-use crate::{
-    auth::AuthUser,
-    state::AppState,
-    team::{permissions::Permission, require_agency_access, require_agency_permission},
-};
+use crate::state::AppState;
 use axum::{
-    extract::{Path, Query, State},
-    http::{HeaderMap, StatusCode},
+    extract::{Path, State},
+    http::StatusCode,
     Json,
 };
 use serde::{Deserialize, Serialize};
-
-
-use super::*;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TalentPackage {
@@ -34,7 +26,6 @@ pub struct TalentPackage {
     pub updated_at: Option<String>,
     pub meta: Option<serde_json::Value>,
 }
-
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CreatePackageRequest {
@@ -59,13 +50,11 @@ pub struct CreatePackageRequest {
     pub meta: Option<serde_json::Value>,
 }
 
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PackageItemRequest {
     pub talent_id: String,
     pub asset_ids: Vec<PackageAssetRequest>,
 }
-
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PackageAssetRequest {
@@ -73,12 +62,10 @@ pub struct PackageAssetRequest {
     pub asset_type: String,
 }
 
-
 #[derive(Debug, Deserialize)]
 pub struct ListPackagesQuery {
     pub is_template: Option<bool>,
 }
-
 
 #[derive(Debug, Deserialize)]
 pub struct PublicPackageFullAssetsRequest {
@@ -87,7 +74,6 @@ pub struct PublicPackageFullAssetsRequest {
     pub message: Option<String>,
 }
 
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DeleteInteractionRequest {
     pub talent_id: Option<String>,
@@ -95,7 +81,6 @@ pub struct DeleteInteractionRequest {
     #[serde(rename = "type")]
     pub r#type: String,
 }
-
 
 pub async fn create_interaction(
     State(state): State<AppState>,
@@ -279,4 +264,3 @@ pub async fn create_interaction(
 
     Ok((StatusCode::CREATED, Json(created_interaction)))
 }
-

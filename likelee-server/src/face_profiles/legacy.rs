@@ -1,7 +1,7 @@
+use crate::billing::entitlements::{brand_allows_campaign_collaboration, get_brand_plan_tier};
 use crate::campaigns::activity::log_activity_event_with_subject;
 use crate::campaigns::{resolve_agency_name, resolve_brand_name, resolve_creator_name};
 use crate::state::AppState;
-use crate::billing::entitlements::{brand_allows_campaign_collaboration, get_brand_plan_tier};
 
 use crate::errors::sanitize_db_error;
 use crate::pricing_defaults::{is_default_pricing, should_default_visibility_on};

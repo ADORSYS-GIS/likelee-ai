@@ -118,8 +118,7 @@ pub async fn list_brand_notifications(
         return Err(sanitize_db_error(status.as_u16(), text));
     }
 
-    serde_json::from_str(&text)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
+    serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
 }
 
 pub async fn mark_notification_read(

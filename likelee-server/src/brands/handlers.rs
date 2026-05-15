@@ -176,7 +176,9 @@ pub async fn update(
             });
 
             repository::update_brand_profile(&state, &brand_id, &update_payload).await?;
-            return Ok(Json(repository::get_brand_profile(&state, &brand_id).await?));
+            return Ok(Json(
+                repository::get_brand_profile(&state, &brand_id).await?,
+            ));
         }
 
         map.insert("onboarding_step".into(), json!("complete"));
@@ -201,7 +203,9 @@ pub async fn update(
     repository::update_brand_profile(&state, &brand_id, &v).await?;
     let _ = ensure_owner_membership(&state, &user, OrganizationType::Brand, &brand_id).await;
 
-    Ok(Json(repository::get_brand_profile(&state, &brand_id).await?))
+    Ok(Json(
+        repository::get_brand_profile(&state, &brand_id).await?,
+    ))
 }
 
 pub async fn get_by_user(
@@ -209,7 +213,9 @@ pub async fn get_by_user(
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let brand_id = resolve_effective_brand_id(&state, &user).await?;
-    Ok(Json(repository::get_brand_profile(&state, &brand_id).await?))
+    Ok(Json(
+        repository::get_brand_profile(&state, &brand_id).await?,
+    ))
 }
 
 pub async fn list_notifications(
@@ -219,7 +225,9 @@ pub async fn list_notifications(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let brand_id = resolve_effective_brand_id(&state, &user).await?;
     let limit = q.limit.unwrap_or(50).min(200);
-    Ok(Json(repository::list_brand_notifications(&state, &brand_id, limit).await?))
+    Ok(Json(
+        repository::list_brand_notifications(&state, &brand_id, limit).await?,
+    ))
 }
 
 pub async fn mark_notification_read(

@@ -1,3 +1,4 @@
+use super::*;
 use crate::auth::{AuthUser, RoleGuard};
 use crate::state::AppState;
 use axum::{
@@ -6,12 +7,8 @@ use axum::{
     Json,
 };
 use chrono::{DateTime, Utc};
-use serde::Serialize;
 use serde_json::json;
 use std::collections::{HashMap, HashSet};
-
-
-use super::*;
 
 pub async fn get_clients_campaigns_analytics(
     State(state): State<AppState>,
@@ -496,7 +493,6 @@ pub async fn get_clients_campaigns_analytics(
         client_acquisition,
     }))
 }
-
 
 pub async fn get_roster_insights(
     State(state): State<AppState>,
@@ -1201,7 +1197,6 @@ pub async fn get_roster_insights(
     }))
 }
 
-
 pub async fn get_royalties_payouts(
     State(state): State<AppState>,
     Query(_q): Query<AnalyticsModeQuery>, // Accepted for consistency
@@ -1335,7 +1330,6 @@ pub async fn get_royalties_payouts(
 /// GET /api/agency/analytics/expired-licenses
 /// Returns approved licensing_requests whose `deadline` has already passed in the current month.
 /// Excludes licenses that have been renewed (status = "renewed").
-
 pub async fn get_expired_licenses(
     State(state): State<AppState>,
     auth_user: AuthUser,
@@ -1499,4 +1493,3 @@ pub async fn get_expired_licenses(
 
     Ok(Json(json!(result)))
 }
-

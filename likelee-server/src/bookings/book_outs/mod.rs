@@ -1,8 +1,5 @@
 use crate::agencies::talent_refs::resolve_agency_talent_ref;
-use crate::{
-    auth::AuthUser, state::AppState,
-    team::resolve_effective_agency_id,
-};
+use crate::{auth::AuthUser, state::AppState, team::resolve_effective_agency_id};
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,

@@ -68,7 +68,10 @@ pub async fn moderate_image_bytes(
         confidence_threshold: 0.0,
         request_id: None,
     };
-    Err((StatusCode::NOT_IMPLEMENTED, serde_json::to_string(&out).unwrap()))
+    Err((
+        StatusCode::NOT_IMPLEMENTED,
+        serde_json::to_string(&out).unwrap(),
+    ))
 }
 
 pub async fn moderate_image(
@@ -90,5 +93,8 @@ pub async fn moderate_image(
         confidence_threshold: 0.0,
         request_id: None,
     };
-    Err((StatusCode::NOT_IMPLEMENTED, serde_json::to_string(&out).unwrap()))
+    Err((
+        StatusCode::NOT_IMPLEMENTED,
+        serde_json::to_string(&out).unwrap(),
+    ))
 }

@@ -40,7 +40,10 @@ pub async fn liveness_result(
         score: None,
         passed: false,
     };
-    Err((StatusCode::NOT_IMPLEMENTED, serde_json::to_string(&out).unwrap()))
+    Err((
+        StatusCode::NOT_IMPLEMENTED,
+        serde_json::to_string(&out).unwrap(),
+    ))
 }
 
 pub async fn create_session(
@@ -51,5 +54,8 @@ pub async fn create_session(
     let out = LivenessCreateResponse {
         session_id: "".into(),
     };
-    Err((StatusCode::NOT_IMPLEMENTED, serde_json::to_string(&out).unwrap()))
+    Err((
+        StatusCode::NOT_IMPLEMENTED,
+        serde_json::to_string(&out).unwrap(),
+    ))
 }

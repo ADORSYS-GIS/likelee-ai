@@ -1,9 +1,9 @@
 #![allow(clippy::uninlined_format_args)]
 
 pub mod admin;
-pub mod app;
 pub mod agencies;
 pub mod analytics;
+pub mod app;
 pub mod auth;
 pub mod billing;
 pub mod bookings;
@@ -18,6 +18,7 @@ pub mod creators;
 pub mod digitals;
 pub mod email;
 
+pub mod domains;
 pub mod errors;
 pub mod face_profiles;
 pub mod health;
@@ -28,7 +29,6 @@ pub mod messaging;
 pub mod notifications;
 pub mod packages;
 pub mod pricing_defaults;
-pub mod domains;
 pub mod reference_images;
 pub mod scouting;
 pub mod services;
@@ -39,4 +39,3 @@ pub mod studio;
 pub mod talent;
 pub mod team;
 pub mod utils;
-

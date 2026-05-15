@@ -1,25 +1,8 @@
-use crate::{
-    auth::AuthUser,
-    state::AppState,
-    team::{resolve_effective_agency_id, resolve_effective_brand_id},
-};
-use axum::{
-    extract::{Query, State},
-    http::StatusCode,
-    Json,
-};
-use chrono::Utc;
-use hmac::{Hmac, Mac};
+use hmac::Hmac;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use sha2::Sha256;
-use tracing::{debug, error, info, warn};
-
-
-use super::*;
 
 pub type HmacSha256 = Hmac<Sha256>;
-
 
 #[derive(Deserialize)]
 pub struct SessionRequest {
@@ -30,14 +13,12 @@ pub struct SessionRequest {
     pub return_url: Option<String>,
 }
 
-
 #[derive(Serialize)]
 pub struct SessionResponse {
     pub session_id: String,
     pub session_url: String,
     pub provider: String,
 }
-
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct ProfileVerification {
@@ -49,7 +30,6 @@ pub struct ProfileVerification {
     pub kyc_rejection_reason: Option<String>,
     pub kyc_rejection_code: Option<String>,
 }
-
 
 #[derive(Serialize)]
 pub struct VeriffVerification<'a> {
@@ -63,19 +43,16 @@ pub struct VeriffVerification<'a> {
     pub features: Option<serde_json::Value>,
 }
 
-
 #[derive(Serialize)]
 pub struct VeriffCreateSessionBody<'a> {
     pub verification: VeriffVerification<'a>,
 }
-
 
 #[derive(Deserialize)]
 pub struct StatusQuery {
     pub user_id: Option<String>,
     pub organization_id: Option<String>,
 }
-
 
 #[allow(dead_code)]
 #[derive(Deserialize)]
@@ -97,5 +74,3 @@ pub struct VeriffWebhookBody {
     pub session: Option<VeriffWebhookSession>,
     pub decision: Option<VeriffWebhookDecision>,
 }
-
-

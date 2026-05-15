@@ -1,17 +1,8 @@
 use crate::email;
 use crate::errors::sanitize_db_error;
-use crate::team::{permissions::Permission, require_agency_permission};
-use crate::{auth::AuthUser, auth::RoleGuard, state::AppState};
-use axum::{
-    extract::{Path, State},
-    http::StatusCode,
-    Json,
-};
-use serde::{Deserialize, Serialize};
+use crate::{auth::AuthUser, state::AppState};
+use axum::http::StatusCode;
 use serde_json::json;
-
-
-use super::*;
 
 pub async fn upsert_agency_talent_connection(
     state: &AppState,
@@ -77,7 +68,6 @@ pub async fn upsert_agency_talent_connection(
     Ok(())
 }
 
-
 pub async fn get_latest_contract_for_connection(
     state: &AppState,
     agency_id: &str,
@@ -88,7 +78,6 @@ pub async fn get_latest_contract_for_connection(
     )
     .await
 }
-
 
 pub async fn notify_agency_about_disconnect_request(
     state: &AppState,
@@ -124,7 +113,6 @@ pub async fn notify_agency_about_disconnect_request(
     let _ = email::send_plain_text_email(state, &agency_email, &subject, &body, Some(&agency_name));
 }
 
-
 pub async fn resolve_effective_creator_id(
     state: &AppState,
     user: &AuthUser,
@@ -159,4 +147,3 @@ pub async fn resolve_effective_creator_id(
 
     Ok(mapped.unwrap_or_else(|| user.id.clone()))
 }
-

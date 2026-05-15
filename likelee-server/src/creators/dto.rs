@@ -1,21 +1,4 @@
-use crate::{
-    auth::AuthUser,
-    state::AppState,
-    billing::entitlements::{
-        creator_category_limit, creator_has_cameo_uploads, creator_has_likeness_access,
-        get_creator_entitlement_tier_for_user, PlanTier,
-    },
-};
-use axum::{
-    extract::{Query, State},
-    http::StatusCode,
-    Json,
-};
 use serde::{Deserialize, Serialize};
-use tracing::warn;
-
-
-use super::*;
 
 #[derive(Deserialize)]
 pub struct EmailQuery {
@@ -27,14 +10,12 @@ pub struct EmailAvailability {
     pub available: bool,
 }
 
-
 #[derive(Deserialize)]
 pub struct PhotoUploadQuery {
     pub user_id: String,
 }
 
 /// Handles the profile photo upload and updates the user's profile.
-
 #[derive(Deserialize, Debug)]
 pub struct FaceSearchQuery {
     pub age_min: Option<i32>,
@@ -53,7 +34,6 @@ pub struct FaceSearchQuery {
     pub page_size: Option<u32>,
 }
 
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FaceSummary {
     pub id: String,
@@ -68,7 +48,6 @@ pub struct FaceSummary {
     pub weight_kg: Option<i32>,
     pub facial_features: Option<Vec<String>>,
 }
-
 
 #[derive(Serialize)]
 pub struct FaceSearchResponse {

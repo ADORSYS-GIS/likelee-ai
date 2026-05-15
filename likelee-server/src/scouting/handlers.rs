@@ -11,9 +11,9 @@ use std::time::Duration;
 use tracing::{error, info, warn};
 
 use crate::auth::AuthUser;
-use crate::state::AppState;
 use crate::billing::entitlements::{docuseal_template_limit, get_agency_plan_tier};
 use crate::services::docuseal::DocuSealClient;
+use crate::state::AppState;
 
 async fn get_template_count(
     state: &AppState,

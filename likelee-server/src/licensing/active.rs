@@ -1,5 +1,5 @@
 use crate::{
-    auth::AuthUser, state::AppState, errors::sanitize_db_error, team::permissions::Permission,
+    auth::AuthUser, errors::sanitize_db_error, state::AppState, team::permissions::Permission,
     team::require_agency_permission,
 };
 use axum::{

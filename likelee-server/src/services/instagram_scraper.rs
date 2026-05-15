@@ -1,7 +1,7 @@
 use crate::{
     auth::AuthUser,
-    state::AppState,
     services::apify::{ApifyService, InstagramProfileData},
+    state::AppState,
 };
 use axum::http::StatusCode;
 use axum::{

@@ -8,7 +8,7 @@ use base64::Engine;
 use jsonwebtoken::{decode, decode_header, Algorithm, DecodingKey, Validation};
 use serde_json::{json, Value};
 
-use super::{repository, Claims, AuthUser};
+use super::{repository, AuthUser, Claims};
 
 #[async_trait]
 impl<S> FromRequestParts<S> for AuthUser
@@ -137,7 +137,8 @@ where
                 match decode::<Claims>(&token, &key, &validation) {
                     Ok(data) => data,
                     Err(es256_err) => {
-                        let key = DecodingKey::from_secret(app_state.supabase_jwt_secret.as_bytes());
+                        let key =
+                            DecodingKey::from_secret(app_state.supabase_jwt_secret.as_bytes());
                         let mut validation = Validation::default();
                         validation.set_audience(&["authenticated"]);
                         match decode::<Claims>(&token, &key, &validation) {

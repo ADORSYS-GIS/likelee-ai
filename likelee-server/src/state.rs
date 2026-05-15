@@ -156,4 +156,3 @@ pub struct AppState {
     // JWKS cache for JWT Signing Keys (Supabase)
     pub jwks_cache: Arc<crate::auth::JwksCache>,
 }
-

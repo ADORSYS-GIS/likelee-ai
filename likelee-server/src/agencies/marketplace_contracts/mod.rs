@@ -1,9 +1,9 @@
 use crate::auth::{AuthUser, RoleGuard};
-use crate::state::AppState;
 use crate::email;
 use crate::errors::sanitize_db_error;
 use crate::face_profiles::MarketplaceConnectPayload;
 use crate::services::docuseal::{DocuSealClient, Submitter};
+use crate::state::AppState;
 use axum::{
     extract::{Path, State},
     http::StatusCode,

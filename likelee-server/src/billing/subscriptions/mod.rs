@@ -15,7 +15,6 @@ use tracing::{info, warn};
 
 use crate::{
     auth::AuthUser,
-    state::AppState,
     billing::entitlements::{
         creator_category_limit, creator_has_active_campaigns_access,
         creator_has_advanced_analytics, creator_has_agency_connection_access,
@@ -26,6 +25,7 @@ use crate::{
         creator_has_voice_profiles, creator_voice_tone_limit,
         get_creator_entitlement_tier_for_user, get_creator_plan_tier_for_user, PlanTier,
     },
+    state::AppState,
     team::{self, permissions::Permission},
     utils::parse_budget_cents,
 };
@@ -1667,56 +1667,6 @@ pub async fn create_agency_subscription_checkout(
         invoice_status: None,
         invoice_url: None,
     }))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{
-        normalize_interval, normalize_optional_self_serve_plan, normalize_self_serve_plan,
-    };
-
-    #[test]
-    fn normalize_interval_defaults_to_month() {
-        let v = normalize_interval(None).expect("should default");
-        assert_eq!(v, "month");
-    }
-
-    #[test]
-    fn normalize_interval_accepts_month_and_year() {
-        assert_eq!(normalize_interval(Some("month")).unwrap(), "month");
-        assert_eq!(normalize_interval(Some("year")).unwrap(), "year");
-        assert_eq!(normalize_interval(Some(" MONTH ")).unwrap(), "month");
-        assert_eq!(normalize_interval(Some("YeAr")).unwrap(), "year");
-    }
-
-    #[test]
-    fn normalize_interval_rejects_other_values() {
-        assert!(normalize_interval(Some("weekly")).is_err());
-        assert!(normalize_interval(Some("")).is_err());
-    }
-
-    #[test]
-    fn normalize_self_serve_plan_accepts_basic_and_pro() {
-        assert_eq!(normalize_self_serve_plan("basic").unwrap(), "basic");
-        assert_eq!(normalize_self_serve_plan(" pro ").unwrap(), "pro");
-        assert_eq!(normalize_self_serve_plan("BASIC").unwrap(), "basic");
-    }
-
-    #[test]
-    fn normalize_self_serve_plan_rejects_enterprise_and_unknown() {
-        assert!(normalize_self_serve_plan("enterprise").is_err());
-        assert!(normalize_self_serve_plan("free").is_err());
-        assert!(normalize_self_serve_plan("").is_err());
-    }
-
-    #[test]
-    fn normalize_optional_self_serve_plan_handles_none_and_valid_values() {
-        assert_eq!(normalize_optional_self_serve_plan(None).unwrap(), None);
-        assert_eq!(
-            normalize_optional_self_serve_plan(Some("basic")).unwrap(),
-            Some("basic".to_string())
-        );
-    }
 }
 
 pub async fn change_agency_subscription_plan(
@@ -5595,4 +5545,54 @@ pub async fn delete_brand_payment_method(
         })?;
 
     Ok(StatusCode::OK)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        normalize_interval, normalize_optional_self_serve_plan, normalize_self_serve_plan,
+    };
+
+    #[test]
+    fn normalize_interval_defaults_to_month() {
+        let v = normalize_interval(None).expect("should default");
+        assert_eq!(v, "month");
+    }
+
+    #[test]
+    fn normalize_interval_accepts_month_and_year() {
+        assert_eq!(normalize_interval(Some("month")).unwrap(), "month");
+        assert_eq!(normalize_interval(Some("year")).unwrap(), "year");
+        assert_eq!(normalize_interval(Some(" MONTH ")).unwrap(), "month");
+        assert_eq!(normalize_interval(Some("YeAr")).unwrap(), "year");
+    }
+
+    #[test]
+    fn normalize_interval_rejects_other_values() {
+        assert!(normalize_interval(Some("weekly")).is_err());
+        assert!(normalize_interval(Some("")).is_err());
+    }
+
+    #[test]
+    fn normalize_self_serve_plan_accepts_basic_and_pro() {
+        assert_eq!(normalize_self_serve_plan("basic").unwrap(), "basic");
+        assert_eq!(normalize_self_serve_plan(" pro ").unwrap(), "pro");
+        assert_eq!(normalize_self_serve_plan("BASIC").unwrap(), "basic");
+    }
+
+    #[test]
+    fn normalize_self_serve_plan_rejects_enterprise_and_unknown() {
+        assert!(normalize_self_serve_plan("enterprise").is_err());
+        assert!(normalize_self_serve_plan("free").is_err());
+        assert!(normalize_self_serve_plan("").is_err());
+    }
+
+    #[test]
+    fn normalize_optional_self_serve_plan_handles_none_and_valid_values() {
+        assert_eq!(normalize_optional_self_serve_plan(None).unwrap(), None);
+        assert_eq!(
+            normalize_optional_self_serve_plan(Some("basic")).unwrap(),
+            Some("basic".to_string())
+        );
+    }
 }

@@ -1,3 +1,4 @@
+use super::*;
 use crate::agencies::talent_refs::resolve_agency_talent_ref;
 use crate::{
     auth::AuthUser,
@@ -9,10 +10,6 @@ use axum::{
     http::{HeaderMap, StatusCode},
     Json,
 };
-use serde::{Deserialize, Serialize};
-
-
-use super::*;
 
 pub async fn list_packages(
     State(state): State<AppState>,
@@ -60,7 +57,6 @@ pub async fn list_packages(
 
     Ok(Json(packages))
 }
-
 
 pub async fn create_package(
     State(state): State<AppState>,
@@ -401,7 +397,6 @@ pub async fn create_package(
     Ok(Json(package.clone()))
 }
 
-
 pub async fn update_package(
     State(state): State<AppState>,
     user: AuthUser,
@@ -722,7 +717,6 @@ pub async fn update_package(
     Ok(Json(package))
 }
 
-
 pub async fn create_public_package_full_assets_request(
     State(state): State<AppState>,
     Path(token): Path<String>,
@@ -917,7 +911,6 @@ pub async fn create_public_package_full_assets_request(
     Ok(Json(serde_json::json!({ "ok": true })))
 }
 
-
 pub async fn get_package(
     State(state): State<AppState>,
     user: AuthUser,
@@ -959,7 +952,6 @@ pub async fn get_package(
     Ok(Json(package))
 }
 
-
 pub async fn delete_package(
     State(state): State<AppState>,
     user: AuthUser,
@@ -979,7 +971,6 @@ pub async fn delete_package(
 
     Ok(StatusCode::NO_CONTENT)
 }
-
 
 pub async fn get_dashboard_stats(
     State(state): State<AppState>,
@@ -1223,7 +1214,6 @@ pub async fn get_public_package(
     Ok(Json(package))
 }
 
-
 pub async fn delete_interaction(
     State(state): State<AppState>,
     Path(token): Path<String>,
@@ -1302,5 +1292,3 @@ pub async fn delete_interaction(
 
     Ok(StatusCode::NO_CONTENT)
 }
-
-

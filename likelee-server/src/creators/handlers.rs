@@ -1,21 +1,18 @@
+use super::*;
 use crate::{
     auth::AuthUser,
-    state::AppState,
     billing::entitlements::{
         creator_category_limit, creator_has_cameo_uploads, creator_has_likeness_access,
         get_creator_entitlement_tier_for_user, PlanTier,
     },
+    state::AppState,
 };
 use axum::{
     extract::{Query, State},
     http::StatusCode,
     Json,
 };
-use serde::{Deserialize, Serialize};
 use tracing::warn;
-
-
-use super::*;
 
 pub async fn upsert_profile(
     State(state): State<AppState>,
@@ -337,7 +334,6 @@ pub async fn upsert_profile(
     }
 }
 
-
 pub async fn check_email(
     State(state): State<AppState>,
     Query(q): Query<EmailQuery>,
@@ -381,7 +377,6 @@ pub async fn check_email(
         }
     }
 }
-
 
 pub async fn upload_profile_photo(
     State(state): State<AppState>,
@@ -490,7 +485,6 @@ pub async fn upload_profile_photo(
         "profile": profile,
     })))
 }
-
 
 pub async fn search_faces(
     State(state): State<AppState>,
@@ -645,4 +639,3 @@ pub async fn search_faces(
         page_size,
     }))
 }
-

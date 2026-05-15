@@ -12,6 +12,26 @@ use tracing::{info, warn};
 
 use super::dto::BrandFileUploadResponse;
 
+pub struct BrandFileListParams<'a> {
+    pub folder_id: Option<&'a str>,
+    pub root_only: bool,
+    pub limit: Option<u32>,
+    pub offset: Option<u32>,
+    pub mime_type: Option<&'a str>,
+    pub source_type: Option<&'a str>,
+}
+
+pub struct BrandFileUploadInput {
+    pub user_id: String,
+    pub file_name: String,
+    pub mime_type: Option<String>,
+    pub folder_id: Option<String>,
+    pub visibility: StorageVisibility,
+    pub source_type: Option<String>,
+    pub generation_id: Option<String>,
+    pub bytes: Vec<u8>,
+}
+
 pub fn normalize_brand_folder_row(row: &serde_json::Value, file_count: i64) -> serde_json::Value {
     let obj = row.as_object().cloned().unwrap_or_default();
     serde_json::json!({
@@ -401,12 +421,7 @@ pub async fn update_brand_folder(
 pub async fn list_brand_files(
     state: &AppState,
     brand_id: &str,
-    folder_id: Option<&str>,
-    root_only: bool,
-    limit: Option<u32>,
-    offset: Option<u32>,
-    mime_type: Option<&str>,
-    source_type: Option<&str>,
+    params: BrandFileListParams<'_>,
 ) -> Result<serde_json::Value, (StatusCode, String)> {
     let mut req = state
         .pg
@@ -414,20 +429,20 @@ pub async fn list_brand_files(
         .select("id,file_name,storage_bucket,storage_path,public_url,folder_id,size_bytes,mime_type,source_type,generation_id,created_at")
         .eq("brand_id", brand_id)
         .order("created_at.desc");
-    if let Some(fid) = folder_id.filter(|s| !s.is_empty()) {
+    if let Some(fid) = params.folder_id.filter(|s| !s.is_empty()) {
         req = req.eq("folder_id", fid);
-    } else if root_only {
+    } else if params.root_only {
         req = req.is("folder_id", "null");
     }
-    if let Some(mt) = mime_type.filter(|s| !s.is_empty()) {
+    if let Some(mt) = params.mime_type.filter(|s| !s.is_empty()) {
         req = req.eq("mime_type", mt);
     }
-    if let Some(st) = source_type.filter(|s| !s.is_empty()) {
+    if let Some(st) = params.source_type.filter(|s| !s.is_empty()) {
         req = req.eq("source_type", st);
     }
-    if limit.is_some() || offset.is_some() {
-        let lim = limit.unwrap_or(50) as usize;
-        let off = offset.unwrap_or(0) as usize;
+    if params.limit.is_some() || params.offset.is_some() {
+        let lim = params.limit.unwrap_or(50) as usize;
+        let off = params.offset.unwrap_or(0) as usize;
         let to = off.saturating_add(lim.saturating_sub(1));
         req = req.range(off, to);
     }
@@ -496,18 +511,11 @@ pub async fn get_brand_storage_file_signed_url(
 pub async fn upload_brand_storage_file(
     state: &AppState,
     brand_id: &str,
-    user_id: &str,
-    file_name: &str,
-    mime_type: Option<&str>,
-    folder_id: Option<String>,
-    visibility: StorageVisibility,
-    source_type: Option<String>,
-    generation_id: Option<String>,
-    bytes: Vec<u8>,
+    input: BrandFileUploadInput,
 ) -> Result<BrandFileUploadResponse, (StatusCode, String)> {
     let limit = ensure_brand_storage_settings_row(state, brand_id).await?;
     let used = get_brand_used_storage_bytes(state, brand_id).await?;
-    let new_size = bytes.len() as i64;
+    let new_size = input.bytes.len() as i64;
     if used + new_size > limit {
         return Err((
             StatusCode::PAYLOAD_TOO_LARGE,
@@ -515,15 +523,25 @@ pub async fn upload_brand_storage_file(
         ));
     }
 
-    let fname = file_name.to_string();
+    let fname = input.file_name;
     let sanitized = sanitize_file_name(&fname);
-    let folder_segment = folder_id.clone().unwrap_or_else(|| "root".to_string());
+    let folder_segment = input
+        .folder_id
+        .clone()
+        .unwrap_or_else(|| "root".to_string());
     let path = canonical_object_path(
         &format!("brands/{brand_id}/storage/{folder_segment}"),
         &sanitized,
         chrono::Utc::now().timestamp_millis(),
     );
-    let uploaded = upload_object(state, visibility, &path, bytes, mime_type).await?;
+    let uploaded = upload_object(
+        state,
+        input.visibility,
+        &path,
+        input.bytes,
+        input.mime_type.as_deref(),
+    )
+    .await?;
     let public_url = uploaded.public_url.clone();
     let insert = serde_json::json!({
         "brand_id": brand_id,
@@ -531,11 +549,14 @@ pub async fn upload_brand_storage_file(
         "storage_bucket": uploaded.bucket,
         "storage_path": uploaded.path,
         "public_url": public_url,
-        "folder_id": folder_id,
+        "folder_id": input.folder_id,
         "size_bytes": new_size,
-        "mime_type": mime_type,
-        "source_type": source_type.unwrap_or_else(|| "upload".to_string()),
-        "generation_id": generation_id,
+        "mime_type": input.mime_type,
+        "source_type": input
+            .source_type
+            .clone()
+            .unwrap_or_else(|| "upload".to_string()),
+        "generation_id": input.generation_id,
     });
     let resp = state
         .pg
@@ -563,15 +584,15 @@ pub async fn upload_brand_storage_file(
         owner_type: StorageOwnerType::Brand,
         owner_id: brand_id.to_string(),
         context_type: StorageContextType::BrandStorage,
-        context_id: folder_id.clone(),
-        visibility,
+        context_id: input.folder_id.clone(),
+        visibility: input.visibility,
         object_path: insert
             .get("storage_path")
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .to_string(),
         original_file_name: Some(fname.clone()),
-        mime_type: mime_type.map(|s| s.to_string()),
+        mime_type: input.mime_type.clone(),
         size_bytes: Some(new_size),
         checksum_sha256: None,
         source_table: Some("brand_files".to_string()),
@@ -580,7 +601,7 @@ pub async fn upload_brand_storage_file(
         } else {
             Some(id.clone())
         },
-        created_by: Some(user_id.to_string()),
+        created_by: Some(input.user_id),
         counts_toward_quota: true,
     };
     if let Err(err) = insert_asset_record(state, &storage_record).await {
@@ -608,7 +629,10 @@ pub async fn upload_brand_storage_file(
             .and_then(|v| v.as_str())
             .unwrap_or("upload")
             .to_string(),
-        generation_id,
+        generation_id: insert
+            .get("generation_id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
         created_at: None,
     })
 }

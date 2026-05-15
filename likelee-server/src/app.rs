@@ -190,9 +190,18 @@ pub fn build_router(state: AppState) -> Router {
             "/api/payouts/account_status",
             get(crate::billing::payouts::get_account_status),
         )
-        .route("/api/payouts/balance", get(crate::billing::payouts::get_balance))
-        .route("/api/payouts/request", post(crate::billing::payouts::request_payout))
-        .route("/api/payouts/history", get(crate::billing::payouts::get_history))
+        .route(
+            "/api/payouts/balance",
+            get(crate::billing::payouts::get_balance),
+        )
+        .route(
+            "/api/payouts/request",
+            post(crate::billing::payouts::request_payout),
+        )
+        .route(
+            "/api/payouts/history",
+            get(crate::billing::payouts::get_history),
+        )
         // Talent-Specific Payouts (Portal variants)
         .route(
             "/api/talent/payouts/account-status",
@@ -326,7 +335,10 @@ pub fn build_router(state: AppState) -> Router {
             "/api/agency/analytics/expired-licenses",
             get(crate::analytics::get_expired_licenses),
         )
-        .route("/api/agency/roster", get(crate::agencies::roster::get_roster))
+        .route(
+            "/api/agency/roster",
+            get(crate::agencies::roster::get_roster),
+        )
         .route(
             "/api/agency/talent",
             post(crate::agencies::roster::create_talent),
@@ -390,7 +402,8 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route(
             "/api/agency/licensing-requests",
-            get(crate::licensing::requests::list_for_agency).post(crate::licensing::requests::create),
+            get(crate::licensing::requests::list_for_agency)
+                .post(crate::licensing::requests::create),
         )
         .route(
             "/api/agency/licensing-requests/status",
@@ -975,10 +988,7 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route("/api/jobs/:job_id", put(crate::jobs::update_job))
         .route("/api/jobs/my", get(crate::jobs::list_my_jobs))
-        .route(
-            "/api/jobs/:job_id/apply",
-            post(crate::jobs::apply_job),
-        )
+        .route("/api/jobs/:job_id/apply", post(crate::jobs::apply_job))
         .route(
             "/api/jobs/:job_id/decline",
             post(crate::jobs::decline_job_invite),
@@ -1014,7 +1024,10 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route("/api/kyc/organization/status", get(crate::kyc::get_status))
         // --- Creators, Faces, Moderation ---
-        .route("/api/dashboard", get(crate::creators::dashboard::get_dashboard)) // Common dashboard
+        .route(
+            "/api/dashboard",
+            get(crate::creators::dashboard::get_dashboard),
+        ) // Common dashboard
         .route("/api/profile", post(crate::creators::upsert_profile))
         .route(
             "/api/profile/photo-upload",
@@ -1045,7 +1058,8 @@ pub fn build_router(state: AppState) -> Router {
         // --- Voice ---
         .route(
             "/api/voice/recordings",
-            get(crate::kyc::voice::list_voice_recordings).post(crate::kyc::voice::upload_voice_recording),
+            get(crate::kyc::voice::list_voice_recordings)
+                .post(crate::kyc::voice::upload_voice_recording),
         )
         .route(
             "/api/voice/recordings/signed-url",
@@ -1156,7 +1170,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::billing::create_checkout_session_legacy),
         )
         // --- Webhooks ---
-        .route("/webhooks/stripe", post(crate::billing::payouts::stripe_webhook))
+        .route(
+            "/webhooks/stripe",
+            post(crate::billing::payouts::stripe_webhook),
+        )
         .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))
         .route(
             "/webhooks/calendly",

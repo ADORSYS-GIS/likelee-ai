@@ -1374,7 +1374,8 @@ pub async fn request_creator_payout(
 
     // Verify currency is allowed
     if !state
-        .payout.allowed_currencies
+        .payout
+        .allowed_currencies
         .contains(&currency.to_uppercase())
     {
         return Err((

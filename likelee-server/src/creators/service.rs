@@ -1,21 +1,4 @@
-use crate::{
-    auth::AuthUser,
-    state::AppState,
-    billing::entitlements::{
-        creator_category_limit, creator_has_cameo_uploads, creator_has_likeness_access,
-        get_creator_entitlement_tier_for_user, PlanTier,
-    },
-};
-use axum::{
-    extract::{Query, State},
-    http::StatusCode,
-    Json,
-};
-use serde::{Deserialize, Serialize};
 use tracing::warn;
-
-
-use super::*;
 
 pub fn sanitize_db_error(error_text: &str) -> String {
     // Log the full error for debugging
@@ -35,14 +18,12 @@ pub fn sanitize_db_error(error_text: &str) -> String {
     }
 }
 
-
 pub fn visibility_maps_to_public_profile(visibility: &str) -> bool {
     matches!(
         visibility.trim().to_lowercase().as_str(),
         "public" | "brands" | "visible_to_brands" | "true"
     )
 }
-
 
 pub fn sync_public_profile_visibility(body: &mut serde_json::Value) {
     let explicit_public_visibility = body.get("public_profile_visible").and_then(|v| v.as_bool());
@@ -65,7 +46,6 @@ pub fn sync_public_profile_visibility(body: &mut serde_json::Value) {
     }
 }
 
-
 pub fn normalized_string_array(values: Option<&serde_json::Value>) -> Vec<String> {
     values
         .and_then(|v| v.as_array())
@@ -78,5 +58,3 @@ pub fn normalized_string_array(values: Option<&serde_json::Value>) -> Vec<String
         })
         .unwrap_or_default()
 }
-
-

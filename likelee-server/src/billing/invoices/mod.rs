@@ -2,9 +2,9 @@ mod dto;
 
 use crate::{
     auth::AuthUser,
-    state::AppState,
     email,
     email::templates::{load_active_email_template, render_placeholders},
+    state::AppState,
     team::{permissions::Permission, require_agency_permission},
 };
 use axum::{

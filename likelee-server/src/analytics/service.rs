@@ -1,16 +1,3 @@
-use crate::auth::{AuthUser, RoleGuard};
-use crate::state::AppState;
-use axum::{
-    extract::{Query, State},
-    http::StatusCode,
-    Json,
-};
-use chrono::{DateTime, Utc};
-use serde::Serialize;
-use serde_json::json;
-use std::collections::{HashMap, HashSet};
-
-
 use super::*;
 
 pub fn parse_mode(mode: Option<&str>) -> AnalyticsMode {
@@ -19,7 +6,6 @@ pub fn parse_mode(mode: Option<&str>) -> AnalyticsMode {
         _ => AnalyticsMode::Irl,
     }
 }
-
 
 pub fn format_currency(cents: i64) -> String {
     let dollars = (cents as f64 / 100.0).round() as i64;
@@ -40,5 +26,3 @@ pub fn format_currency(cents: i64) -> String {
         format!("${}", formatted)
     }
 }
-
-

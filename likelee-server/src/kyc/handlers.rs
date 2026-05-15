@@ -1,3 +1,4 @@
+use super::*;
 use crate::{
     auth::AuthUser,
     state::AppState,
@@ -9,14 +10,8 @@ use axum::{
     Json,
 };
 use chrono::Utc;
-use hmac::{Hmac, Mac};
-use serde::{Deserialize, Serialize};
 use serde_json::json;
-use sha2::Sha256;
 use tracing::{debug, error, info, warn};
-
-
-use super::*;
 
 pub async fn create_session(
     State(state): State<AppState>,
@@ -181,7 +176,6 @@ pub async fn create_session(
     }))
 }
 
-
 pub async fn get_status(
     State(state): State<AppState>,
     user: AuthUser,
@@ -322,7 +316,6 @@ pub async fn get_status(
     Ok(Json(rows))
 }
 
-
 pub async fn veriff_webhook(
     State(state): State<AppState>,
     headers: axum::http::HeaderMap,
@@ -395,4 +388,3 @@ pub async fn veriff_webhook(
         .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e))?;
     Ok(axum::http::StatusCode::OK)
 }
-

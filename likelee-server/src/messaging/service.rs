@@ -1,16 +1,6 @@
-use axum::{
-    extract::{Path, State},
-    http::StatusCode,
-    Json,
-};
-use serde::Deserialize;
-use serde_json::json;
-use uuid::Uuid;
+use axum::http::StatusCode;
 
 use crate::{auth::AuthUser, state::AppState};
-
-
-use super::*;
 
 pub async fn resolve_effective_creator_id(
     state: &AppState,
@@ -105,5 +95,3 @@ pub async fn resolve_effective_creator_id(
 // ---------------------------------------------------------------------------
 // Request / Response types
 // ---------------------------------------------------------------------------
-
-

@@ -208,7 +208,8 @@ pub async fn get_roster(
 ) -> Result<Json<AgencyRosterResponse>, (StatusCode, String)> {
     let access = require_agency_access(&state, &user).await?;
     let agency_id = &access.organization_id;
-    crate::agencies::marketplace_contracts::sync_open_contracts_for_agency(&state, agency_id).await?;
+    crate::agencies::marketplace_contracts::sync_open_contracts_for_agency(&state, agency_id)
+        .await?;
     let talent_refs = list_agency_talent_refs(&state, agency_id, None).await?;
     let mut ref_by_key: HashMap<String, crate::agencies::talent_refs::AgencyTalentRef> =
         HashMap::new();

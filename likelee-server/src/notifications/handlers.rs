@@ -1,18 +1,8 @@
+use crate::{auth::AuthUser, state::AppState};
 use axum::{
     extract::{Query, State},
     http::StatusCode,
     Json,
-};
-use serde::Deserialize;
-use serde_json::json;
-use tracing::{info, warn};
-
-use crate::{
-    auth::AuthUser,
-    bookings::calendly,
-    state::AppState,
-    email,
-    email::templates::{load_active_email_template, render_placeholders},
 };
 
 use super::*;
@@ -50,5 +40,3 @@ pub async fn list_booking_notifications(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(v))
 }
-
-

@@ -165,7 +165,9 @@ async fn main() {
             creator_pro_annual_price_id: cfg.stripe_creator_pro_annual_price_id.clone(),
             agency_pro_base_annual_price_id: cfg.stripe_agency_pro_base_annual_price_id.clone(),
             agency_pro_headcount_price_id: cfg.stripe_agency_pro_headcount_price_id.clone(),
-            agency_pro_headcount_annual_price_id: cfg.stripe_agency_pro_headcount_annual_price_id.clone(),
+            agency_pro_headcount_annual_price_id: cfg
+                .stripe_agency_pro_headcount_annual_price_id
+                .clone(),
             agency_irl_booking_price_id: cfg.stripe_agency_irl_booking_price_id.clone(),
             agency_irl_booking_annual_price_id: cfg
                 .stripe_agency_irl_booking_annual_price_id
@@ -261,7 +263,9 @@ async fn main() {
             instant_enabled: cfg.instant_payouts_enabled,
             fee_bps: cfg.payout_fee_bps,
             currency: cfg.payout_currency.clone(),
-            allowed_currencies: cfg.payout_allowed_currencies.split(',')
+            allowed_currencies: cfg
+                .payout_allowed_currencies
+                .split(',')
                 .map(|s| s.trim().to_uppercase())
                 .filter(|s| !s.is_empty())
                 .collect(),

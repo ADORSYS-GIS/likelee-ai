@@ -28,11 +28,8 @@ pub async fn create(
         ));
     }
 
-    let created = repository::create_brand_license_request(
-        &state,
-        &effective_brand_id,
-        &payload,
-    ).await?;
+    let created =
+        repository::create_brand_license_request(&state, &effective_brand_id, &payload, &user.access_token).await?;
 
     Ok(Json(json!({
         "status": "ok",
@@ -80,7 +77,8 @@ pub async fn list_for_brand(
         &state,
         &effective_brand_id,
         &user.access_token,
-    ).await?;
+    )
+    .await?;
 
     Ok(Json(BrandLicenseRequestListResponse { requests: rows }))
 }
@@ -114,7 +112,8 @@ pub async fn update_status_for_agency(
         &payload.brand_request_ids,
         &payload.status,
         payload.decline_reason.as_deref(),
-    ).await?;
+    )
+    .await?;
 
     Ok(Json(json!({"status":"ok"})))
 }

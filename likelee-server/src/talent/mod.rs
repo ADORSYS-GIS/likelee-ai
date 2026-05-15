@@ -7,4 +7,3 @@ pub mod legacy;
 
 // Re-export legacy handlers and functions for backward compatibility.
 pub use legacy::*;
-

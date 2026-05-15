@@ -1,8 +1,5 @@
 use crate::{
-    auth::AuthUser,
-    state::AppState,
-    storage::StorageVisibility,
-    team::require_brand_access,
+    auth::AuthUser, state::AppState, storage::StorageVisibility, team::require_brand_access,
 };
 use axum::{
     extract::{Multipart, Path, Query, State},
@@ -36,7 +33,9 @@ pub async fn list_brand_folders(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let access = require_brand_access(&state, &user).await?;
     let brand_id = &access.organization_id;
-    Ok(Json(repository::list_brand_folders(&state, brand_id, q.limit, q.offset).await?))
+    Ok(Json(
+        repository::list_brand_folders(&state, brand_id, q.limit, q.offset).await?,
+    ))
 }
 
 pub async fn create_brand_folder(
@@ -46,7 +45,9 @@ pub async fn create_brand_folder(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let access = require_brand_access(&state, &user).await?;
     let brand_id = &access.organization_id;
-    Ok(Json(repository::create_brand_folder(&state, brand_id, &input.name, input.parent_id).await?))
+    Ok(Json(
+        repository::create_brand_folder(&state, brand_id, &input.name, input.parent_id).await?,
+    ))
 }
 
 pub async fn delete_brand_folder(
@@ -72,7 +73,9 @@ pub async fn update_brand_folder(
     if name.is_empty() {
         return Err((StatusCode::BAD_REQUEST, "name is required".into()));
     }
-    Ok(Json(repository::update_brand_folder(&state, brand_id, &folder_id, &name).await?))
+    Ok(Json(
+        repository::update_brand_folder(&state, brand_id, &folder_id, &name).await?,
+    ))
 }
 
 pub async fn list_brand_files(
@@ -82,16 +85,21 @@ pub async fn list_brand_files(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let access = require_brand_access(&state, &user).await?;
     let brand_id = &access.organization_id;
-    Ok(Json(repository::list_brand_files(
-        &state,
-        brand_id,
-        q.folder_id.as_deref(),
-        q.root_only.unwrap_or(true),
-        q.limit,
-        q.offset,
-        q.mime_type.as_deref(),
-        q.source_type.as_deref(),
-    ).await?))
+    Ok(Json(
+        repository::list_brand_files(
+            &state,
+            brand_id,
+            repository::BrandFileListParams {
+                folder_id: q.folder_id.as_deref(),
+                root_only: q.root_only.unwrap_or(true),
+                limit: q.limit,
+                offset: q.offset,
+                mime_type: q.mime_type.as_deref(),
+                source_type: q.source_type.as_deref(),
+            },
+        )
+        .await?,
+    ))
 }
 
 pub async fn get_brand_storage_file_signed_url(
@@ -184,15 +192,18 @@ pub async fn upload_brand_storage_file(
     let response = repository::upload_brand_storage_file(
         &state,
         &brand_id,
-        &user.id,
-        &fname,
-        mime_type.as_deref(),
-        folder_id,
-        visibility,
-        source_type,
-        generation_id,
-        bytes,
-    ).await?;
+        repository::BrandFileUploadInput {
+            user_id: user.id.clone(),
+            file_name: fname,
+            mime_type,
+            folder_id,
+            visibility,
+            source_type,
+            generation_id,
+            bytes,
+        },
+    )
+    .await?;
 
     Ok(Json(response))
 }
@@ -214,5 +225,7 @@ pub async fn get_brand_storage_analytics(
 ) -> Result<Json<super::dto::BrandStorageAnalytics>, (StatusCode, String)> {
     let access = require_brand_access(&state, &user).await?;
     let brand_id = &access.organization_id;
-    Ok(Json(repository::get_brand_storage_analytics(&state, brand_id).await?))
+    Ok(Json(
+        repository::get_brand_storage_analytics(&state, brand_id).await?,
+    ))
 }

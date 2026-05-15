@@ -3,14 +3,11 @@ use axum::{
     http::StatusCode,
     Json,
 };
-use serde::Deserialize;
 use serde_json::json;
 use uuid::Uuid;
 
-use crate::{auth::AuthUser, state::AppState};
-
-
 use super::*;
+use crate::{auth::AuthUser, state::AppState};
 
 pub async fn list_conversations(
     State(state): State<AppState>,
@@ -563,4 +560,3 @@ pub async fn delete_message(
 
     Ok(Json(json!({ "success": true })))
 }
-

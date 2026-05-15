@@ -21,7 +21,8 @@ use serde_json::json;
 use tracing::warn;
 
 use super::dto::{
-    BookingFilePath, BookingFileUploadResponse, CreateBookingPayload, ListParams, UpdateBookingPayload,
+    BookingFilePath, BookingFileUploadResponse, CreateBookingPayload, ListParams,
+    UpdateBookingPayload,
 };
 
 // Create a booking and attach uploaded files (multipart):

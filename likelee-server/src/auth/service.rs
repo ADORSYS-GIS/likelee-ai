@@ -23,11 +23,8 @@ pub async fn ensure_signup_email_available(
     email: &str,
 ) -> Result<String, (StatusCode, String)> {
     let normalized = normalize_signup_email(email)?;
-    if let Some(role) = crate::auth::repository::existing_profile_role_for_email(
-        state,
-        normalized.as_str(),
-    )
-    .await?
+    if let Some(role) =
+        crate::auth::repository::existing_profile_role_for_email(state, normalized.as_str()).await?
     {
         return Err((
             StatusCode::CONFLICT,
@@ -86,8 +83,7 @@ pub async fn admin_only(
     } else {
         (
             StatusCode::FORBIDDEN,
-            "You do not have permission to access this resource (Admin role required)"
-                .to_string(),
+            "You do not have permission to access this resource (Admin role required)".to_string(),
         )
             .into_response()
     }

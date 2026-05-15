@@ -12,8 +12,14 @@ pub fn routes() -> Router<AppState> {
         .route("/bookings/with-files", post(super::create_with_files))
         .route("/bookings/:id", post(super::update))
         .route("/bookings/:id/cancel", post(super::cancel))
-        .route("/bookings/:id/files/upload", post(super::upload_booking_file))
-        .route("/bookings/:id/files/:file_id", get(super::serve_booking_file))
+        .route(
+            "/bookings/:id/files/upload",
+            post(super::upload_booking_file),
+        )
+        .route(
+            "/bookings/:id/files/:file_id",
+            get(super::serve_booking_file),
+        )
         .route(
             "/bookings-campaigns",
             get(crate::bookings::campaigns::list).post(crate::bookings::campaigns::create),

@@ -1,22 +1,10 @@
-use crate::{
-    auth::AuthUser,
-    state::AppState,
-    team::{resolve_effective_agency_id, resolve_effective_brand_id},
-};
-use axum::{
-    extract::{Query, State},
-    http::StatusCode,
-    Json,
-};
-use chrono::Utc;
-use hmac::{Hmac, Mac};
-use serde::{Deserialize, Serialize};
-use serde_json::json;
-use sha2::Sha256;
-use tracing::{debug, error, info, warn};
-
-
 use super::*;
+use crate::{auth::AuthUser, state::AppState};
+use axum::http::StatusCode;
+use chrono::Utc;
+use hmac::Mac;
+use serde_json::json;
+use tracing::{info, warn};
 
 pub async fn resolve_profile_id_for_role(
     state: &AppState,
@@ -149,7 +137,6 @@ pub async fn resolve_profile_id_for_role(
     Ok(resolved)
 }
 
-
 pub async fn update_verification_status(
     state: &AppState,
     profile_id: &str,
@@ -181,7 +168,6 @@ pub async fn update_verification_status(
     Ok(())
 }
 
-
 pub fn table_for_role(role: &str) -> &'static str {
     match role {
         "agency" => "agencies",
@@ -189,7 +175,6 @@ pub fn table_for_role(role: &str) -> &'static str {
         _ => "creators",
     }
 }
-
 
 pub async fn get_current_kyc_status(
     state: &AppState,
@@ -230,7 +215,6 @@ pub async fn get_current_kyc_status(
         .filter(|value| !value.is_empty()))
 }
 
-
 pub fn compute_hmac_hex(secret: &str, body: &[u8]) -> String {
     let mut mac =
         HmacSha256::new_from_slice(secret.as_bytes()).expect("HMAC can take key of any size");
@@ -239,11 +223,9 @@ pub fn compute_hmac_hex(secret: &str, body: &[u8]) -> String {
     hex::encode(result)
 }
 
-
 pub fn normalize_veriff_status(status: &str) -> String {
     status.trim().to_lowercase()
 }
-
 
 pub fn map_veriff_status(status: &str) -> &'static str {
     match normalize_veriff_status(status).as_str() {
@@ -252,7 +234,6 @@ pub fn map_veriff_status(status: &str) -> &'static str {
         _ => "pending",
     }
 }
-
 
 pub fn humanize_machine_text(value: &str) -> String {
     let normalized = value
@@ -288,13 +269,11 @@ pub fn humanize_machine_text(value: &str) -> String {
         .join(" ")
 }
 
-
 pub fn json_get_string(v: &serde_json::Value, path: &[&str]) -> Option<String> {
     json_get_str(v, path)
         .map(|value| value.trim().to_string())
         .filter(|value| !value.is_empty())
 }
-
 
 pub fn fallback_veriff_reason(status: &str) -> Option<String> {
     match normalize_veriff_status(status).as_str() {
@@ -307,7 +286,6 @@ pub fn fallback_veriff_reason(status: &str) -> Option<String> {
         _ => None,
     }
 }
-
 
 pub fn extract_veriff_rejection_details(
     v: &serde_json::Value,
@@ -333,7 +311,6 @@ pub fn extract_veriff_rejection_details(
     (reason, reason_code)
 }
 
-
 pub fn json_get_str<'a>(v: &'a serde_json::Value, path: &[&str]) -> Option<&'a str> {
     let mut cur = v;
     for p in path {
@@ -341,7 +318,6 @@ pub fn json_get_str<'a>(v: &'a serde_json::Value, path: &[&str]) -> Option<&'a s
     }
     cur.as_str()
 }
-
 
 pub fn constant_time_eq(a: &str, b: &str) -> bool {
     if a.len() != b.len() {
@@ -353,5 +329,3 @@ pub fn constant_time_eq(a: &str, b: &str) -> bool {
     }
     res == 0
 }
-
-

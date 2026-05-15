@@ -9,11 +9,8 @@ use axum::{
     http::StatusCode,
     Json,
 };
-use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tracing::info;
-
-
 
 use super::*;
 
@@ -128,7 +125,6 @@ pub async fn list_catalogs(
 // ============================================================================
 // List eligible signed licensing requests
 // ============================================================================
-
 
 pub async fn list_eligible_requests(
     State(state): State<AppState>,
@@ -780,7 +776,6 @@ pub async fn list_eligible_requests(
 // Create catalog
 // ============================================================================
 
-
 pub async fn create_catalog(
     State(state): State<AppState>,
     user: AuthUser,
@@ -1053,7 +1048,6 @@ pub async fn create_catalog(
 // Delete catalog
 // ============================================================================
 
-
 pub async fn delete_catalog(
     State(state): State<AppState>,
     user: AuthUser,
@@ -1084,7 +1078,6 @@ pub async fn delete_catalog(
 // ============================================================================
 // Public catalog view  GET /api/public/catalogs/:token
 // ============================================================================
-
 
 pub async fn get_public_catalog(
     State(state): State<AppState>,
@@ -1577,4 +1570,3 @@ pub async fn get_public_catalog(
 }
 
 // Helper: generate a 24-hour signed URL for a private storage object
-

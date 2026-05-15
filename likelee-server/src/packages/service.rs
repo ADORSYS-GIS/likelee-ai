@@ -1,18 +1,6 @@
 use crate::agencies::talent_refs::resolve_agency_talent_ref;
-use crate::{
-    auth::AuthUser,
-    state::AppState,
-    team::{permissions::Permission, require_agency_access, require_agency_permission},
-};
-use axum::{
-    extract::{Path, Query, State},
-    http::{HeaderMap, StatusCode},
-    Json,
-};
-use serde::{Deserialize, Serialize};
-
-
-use super::*;
+use crate::state::AppState;
+use axum::http::StatusCode;
 
 pub async fn resolve_effective_agency_talent_id(
     state: &AppState,
@@ -25,7 +13,6 @@ pub async fn resolve_effective_agency_talent_id(
         .clone()
         .unwrap_or_else(|| talent_ref.id.clone()))
 }
-
 
 pub async fn fetch_agency_name(state: &AppState, agency_id: &str) -> Result<String, String> {
     let resp = state
@@ -47,5 +34,3 @@ pub async fn fetch_agency_name(state: &AppState, agency_id: &str) -> Result<Stri
         .map(|s| s.to_string())
         .ok_or_else(|| "Agency not found".to_string())
 }
-
-

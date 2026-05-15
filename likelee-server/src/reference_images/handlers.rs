@@ -159,11 +159,15 @@ pub async fn upload_reference_image(
     let db_result = repository::insert_reference_image(&state, &payload).await;
     let mut source_id: Option<String> = None;
     if let Ok(value) = db_result {
-        source_id = value.as_array().and_then(|rows| rows.first()).cloned().and_then(|row| {
-            row.get("id")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string())
-        });
+        source_id = value
+            .as_array()
+            .and_then(|rows| rows.first())
+            .cloned()
+            .and_then(|row| {
+                row.get("id")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+            });
     } else {
         info!("insert reference_images failed; continuing");
     }

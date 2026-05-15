@@ -10,7 +10,10 @@ use super::handlers;
 pub fn routes() -> Router<AppState> {
     Router::new()
         // Agency-side
-        .route("/api/agency/campaigns/:id", post(handlers::update_campaign_split))
+        .route(
+            "/api/agency/campaigns/:id",
+            post(handlers::update_campaign_split),
+        )
         // Brand billing analytics (implemented in campaigns)
         .route(
             "/api/brand/billing/spend",
@@ -59,7 +62,10 @@ pub fn routes() -> Router<AppState> {
             "/api/campaign-offers/:offer_id/respond",
             post(handlers::respond_to_campaign_offer),
         )
-        .route("/api/campaign-offers/my", get(handlers::list_my_campaign_offers))
+        .route(
+            "/api/campaign-offers/my",
+            get(handlers::list_my_campaign_offers),
+        )
         .route(
             "/api/campaign-offers/:offer_id/contracts",
             post(handlers::create_offer_contract).get(handlers::list_offer_contracts),
@@ -221,4 +227,3 @@ pub fn routes() -> Router<AppState> {
             post(handlers::handle_webhook),
         )
 }
-

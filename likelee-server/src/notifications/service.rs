@@ -1,21 +1,8 @@
-use axum::{
-    extract::{Query, State},
-    http::StatusCode,
-    Json,
-};
-use serde::Deserialize;
+use axum::http::StatusCode;
+
+use crate::notifications::BrandNotificationRequest;
+use crate::state::AppState;
 use serde_json::json;
-use tracing::{info, warn};
-
-use crate::{
-    auth::AuthUser,
-    bookings::calendly,
-    state::AppState,
-    email,
-    email::templates::{load_active_email_template, render_placeholders},
-};
-
-use super::*;
 
 pub fn classify_calendly_failure(error: &str) -> &'static str {
     let normalized = error.to_ascii_lowercase();
@@ -57,14 +44,12 @@ pub fn classify_calendly_failure(error: &str) -> &'static str {
     }
 }
 
-
 pub fn non_empty_string(value: Option<&str>) -> Option<String> {
     value
         .map(str::trim)
         .filter(|value| !value.is_empty())
         .map(str::to_string)
 }
-
 
 pub async fn is_notification_enabled(
     state: &AppState,
@@ -135,7 +120,6 @@ pub async fn is_notification_enabled(
 
     enabled
 }
-
 
 pub async fn send_brand_notification(
     state: &AppState,
@@ -208,7 +192,6 @@ pub async fn send_brand_notification(
     Ok(())
 }
 
-
 pub async fn notify_brand_if_enabled(
     state: &AppState,
     request: BrandNotificationRequest<'_>,
@@ -253,4 +236,3 @@ pub async fn notify_brand_if_enabled(
     )
     .await
 }
-

@@ -402,8 +402,7 @@ pub async fn get_account_status(
                 match stripe_sdk::Account::retrieve(&client, &parsed, &["external_accounts"]).await
                 {
                     Ok(acct) => {
-                        payouts_enabled =
-                            payouts_enabled || acct.payouts_enabled.unwrap_or(false);
+                        payouts_enabled = payouts_enabled || acct.payouts_enabled.unwrap_or(false);
                         details_submitted = acct.details_submitted.unwrap_or(false);
                         if let Some(ref caps) = acct.capabilities {
                             if let Some(tr) = caps.transfers {
@@ -754,8 +753,7 @@ pub async fn get_agency_account_status(
                 match stripe_sdk::Account::retrieve(&client, &parsed, &["external_accounts"]).await
                 {
                     Ok(acct) => {
-                        payouts_enabled =
-                            payouts_enabled || acct.payouts_enabled.unwrap_or(false);
+                        payouts_enabled = payouts_enabled || acct.payouts_enabled.unwrap_or(false);
                         if let Some(ref caps) = acct.capabilities {
                             if let Some(tr) = caps.transfers {
                                 transfers_enabled = tr == stripe_sdk::CapabilityStatus::Active;
@@ -874,7 +872,8 @@ pub async fn get_balance(
             let mut rows: Vec<BalanceRow> = serde_json::from_value(json!(v)).unwrap_or_default();
             rows.retain(|r| {
                 state
-                    .payout.allowed_currencies
+                    .payout
+                    .allowed_currencies
                     .iter()
                     .any(|c| c == &r.currency.to_uppercase())
             });
@@ -927,7 +926,8 @@ pub async fn get_balance(
     // filter to allowed currencies
     rows.retain(|r| {
         state
-            .payout.allowed_currencies
+            .payout
+            .allowed_currencies
             .iter()
             .any(|c| c == &r.currency.to_uppercase())
     });
@@ -1020,7 +1020,8 @@ pub async fn request_payout(
         "creator_payout_request_received"
     );
     if !state
-        .payout.allowed_currencies
+        .payout
+        .allowed_currencies
         .iter()
         .any(|c| c == &currency)
     {
@@ -5353,7 +5354,8 @@ pub async fn request_agency_payout(
 
     // Validate currency
     if !state
-        .payout.allowed_currencies
+        .payout
+        .allowed_currencies
         .iter()
         .any(|c| c == &currency)
     {

@@ -1,8 +1,4 @@
-use axum::{
-    extract::{Query, State},
-    http::StatusCode,
-    Json,
-};
+use axum::{extract::State, http::StatusCode, Json};
 use serde::Deserialize;
 use serde_json::json;
 use tracing::{info, warn};
@@ -10,9 +6,9 @@ use tracing::{info, warn};
 use crate::{
     auth::AuthUser,
     bookings::calendly,
-    state::AppState,
     email,
     email::templates::{load_active_email_template, render_placeholders},
+    state::AppState,
 };
 
 use super::*;
@@ -22,12 +18,10 @@ pub struct BookingCreatedEmailRequest {
     pub booking_id: String,
 }
 
-
 #[derive(Deserialize)]
 pub struct ListBookingNotificationsQuery {
     pub limit: Option<u32>,
 }
-
 
 pub async fn booking_created_email(
     State(state): State<AppState>,
@@ -552,7 +546,6 @@ pub async fn booking_created_email(
     Ok(Json(json!({"status":"toggle_off_skipped"})))
 }
 
-
 pub struct BrandNotificationRequest<'a> {
     pub brand_id: &'a str,
     pub agency_id: Option<&'a str>,
@@ -562,5 +555,3 @@ pub struct BrandNotificationRequest<'a> {
     pub meta_json: serde_json::Value,
     pub notify_email: bool,
 }
-
-

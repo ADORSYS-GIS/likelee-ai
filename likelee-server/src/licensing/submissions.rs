@@ -1,7 +1,7 @@
-use crate::auth::AuthUser;
-use crate::state::AppState;
 use super::templates::LicenseTemplate;
+use crate::auth::AuthUser;
 use crate::services::docuseal::DocuSealClient;
+use crate::state::AppState;
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
@@ -138,7 +138,7 @@ pub async fn create_draft(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let license_template: LicenseTemplate = serde_json::from_str(&template_text)
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     // Licensing only: docuseal_template_id is optional in draft stage.
     let docuseal_template_id = req
@@ -385,7 +385,7 @@ pub async fn preview(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let license_template: LicenseTemplate = serde_json::from_str(&template_text)
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     // 3. Merge override values (request > submission record > template)
     let client_name = req
@@ -642,7 +642,7 @@ pub async fn finalize(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let license_template: LicenseTemplate = serde_json::from_str(&template_text)
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     // 3. Prepare values for DocuSeal (matching create_builder_token pattern)
     let license_fee = submission_data["license_fee"]

@@ -28,8 +28,12 @@ pub async fn get_creator_rates(
         return Err((code, sanitized));
     }
 
-    serde_json::from_str::<Vec<CustomRate>>(&text)
-        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Failed to parse rates from response".to_string()))
+    serde_json::from_str::<Vec<CustomRate>>(&text).map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to parse rates from response".to_string(),
+        )
+    })
 }
 
 pub async fn upsert_creator_rates(

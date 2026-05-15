@@ -1,7 +1,4 @@
-use crate::{
-    errors::sanitize_db_error,
-    state::AppState,
-};
+use crate::{errors::sanitize_db_error, state::AppState};
 use axum::http::StatusCode;
 use serde_json::{json, Value};
 use std::collections::HashMap;
@@ -11,6 +8,7 @@ pub async fn create_brand_license_request(
     state: &AppState,
     brand_id: &str,
     payload: &serde_json::Value,
+    access_token: &str,
 ) -> Result<serde_json::Value, (StatusCode, String)> {
     let creator_id = payload
         .get("creator_id")
@@ -325,9 +323,7 @@ pub async fn create_brand_license_request(
 
                 if status.is_success() {
                     crate::team::invalidate_brand_agency_connection_cache(
-                        state,
-                        brand_id,
-                        &agency_id,
+                        state, brand_id, &agency_id,
                     );
                 } else if crate::face_profiles::is_missing_relation_error(
                     &text,
@@ -420,7 +416,7 @@ pub async fn create_brand_license_request(
     let create_resp = state
         .pg
         .from("brand_license_requests")
-        .auth(payload.get("access_token").and_then(|v| v.as_str()).unwrap_or("").to_string())
+        .auth(access_token)
         .insert(insert_payload.to_string())
         .select("id")
         .single()
@@ -448,7 +444,7 @@ pub async fn list_brand_license_requests_for_brand(
     let resp = state
         .pg
         .from("brand_license_requests")
-        .auth(access_token.to_string())
+        .auth(access_token)
         .select("id,brand_id,agency_id,creator_id,talent_id,talent_name,campaign_title,description,category,exclusivity,modifications_allowed,territory,usage_scope,license_fee,duration_days,license_start_date,license_end_date,status,decline_reason,submission_id,notes,created_at,agencies(agency_name,logo_url),creators(full_name,email),license_submission:license_submissions!brand_license_requests_submission_id_fkey(id,docuseal_slug,client_submitter_slug,status,created_at),license_submissions!license_submissions_brand_request_id_fkey(id,docuseal_slug,client_submitter_slug,status,created_at)")
         .eq("brand_id", brand_id)
         .order("created_at.desc")

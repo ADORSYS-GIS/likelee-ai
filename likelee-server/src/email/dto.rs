@@ -1,15 +1,4 @@
-use axum::{extract::State, http::StatusCode, Json};
-use base64::{engine::general_purpose, Engine as _};
-use lettre::message::{Attachment as LettreAttachment, MultiPart, SinglePart};
-use lettre::transport::smtp::client::{Tls, TlsParameters};
-use lettre::{message::Mailbox, Message, SmtpTransport, Transport};
 use serde::Deserialize;
-use serde_json::json;
-use crate::state::AppState;
-
-use super::*;
-
-
 
 #[derive(Deserialize)]
 pub struct SendEmailRequest {
@@ -48,4 +37,3 @@ pub struct EmailSendOptions<'a> {
     pub from_name: Option<&'a str>,
     pub reply_to: Option<&'a str>,
 }
-

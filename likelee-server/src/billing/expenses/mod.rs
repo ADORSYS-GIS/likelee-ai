@@ -1,6 +1,6 @@
 mod dto;
 
-use crate::{auth::AuthUser, state::AppState, errors::sanitize_db_error};
+use crate::{auth::AuthUser, errors::sanitize_db_error, state::AppState};
 use axum::{
     extract::{Query, State},
     http::StatusCode,

@@ -1,17 +1,16 @@
-use crate::auth::{AuthUser, RoleGuard};
-use crate::state::AppState;
+use super::*;
+use crate::{
+    auth::{AuthUser, RoleGuard},
+    state::AppState,
+};
 use axum::{
     extract::{Query, State},
     http::StatusCode,
     Json,
 };
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use serde::Serialize;
-use serde_json::json;
 use std::collections::{HashMap, HashSet};
-
-
-use super::*;
 
 #[derive(Debug, Serialize)]
 pub struct AnalyticsDashboard {
@@ -22,19 +21,16 @@ pub struct AnalyticsDashboard {
     pub consent_status: ConsentStatusBreakdown,
 }
 
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AnalyticsMode {
     Ai,
     Irl,
 }
 
-
 #[derive(Debug, serde::Deserialize)]
 pub struct AnalyticsModeQuery {
     pub mode: Option<String>,
 }
-
 
 #[derive(Debug, Serialize)]
 pub struct OverviewMetrics {
@@ -49,14 +45,12 @@ pub struct OverviewMetrics {
     pub top_scope: String,
 }
 
-
 #[derive(Debug, Serialize)]
 pub struct CampaignStatusBreakdown {
     pub in_progress: i64,
     pub ready_to_launch: i64,
     pub completed: i64,
 }
-
 
 #[derive(Debug, Serialize)]
 pub struct AIUsageMetrics {
@@ -67,14 +61,12 @@ pub struct AIUsageMetrics {
     pub usage_by_type: AIUsageByType,
 }
 
-
 #[derive(Debug, Serialize)]
 pub struct AIUsageByType {
     pub image: i64,
     pub video: i64,
     pub voice: i64,
 }
-
 
 #[derive(Debug, Serialize)]
 pub struct MonthlyTrend {
@@ -83,7 +75,6 @@ pub struct MonthlyTrend {
     pub campaigns: i64,
     pub usages: i64,
 }
-
 
 #[derive(Debug, Serialize)]
 pub struct ConsentStatusBreakdown {
@@ -97,7 +88,6 @@ pub struct ConsentStatusBreakdown {
 }
 
 /// GET /api/agency/analytics/dashboard
-
 pub async fn get_analytics_dashboard(
     State(state): State<AppState>,
     Query(q): Query<AnalyticsModeQuery>,
@@ -1111,7 +1101,6 @@ pub async fn get_analytics_dashboard(
     }))
 }
 
-
 #[derive(Debug, Serialize)]
 pub struct ClientsCampaignsResponse {
     pub earnings_by_client: Vec<ClientEarning>,
@@ -1122,7 +1111,6 @@ pub struct ClientsCampaignsResponse {
     pub client_acquisition: i64,
 }
 
-
 #[derive(Debug, Serialize)]
 pub struct ClientEarning {
     pub name: String,
@@ -1130,14 +1118,12 @@ pub struct ClientEarning {
     pub color: String,
 }
 
-
 #[derive(Debug, Serialize)]
 pub struct GeoMetric {
     pub name: String,
     pub value: f64,
     pub color: String,
 }
-
 
 #[derive(Debug, Serialize)]
 pub struct ClientPerformance {
@@ -1157,7 +1143,6 @@ pub struct RosterInsightsResponse {
     pub talent_metrics: Vec<TalentPerformanceMetric>,
 }
 
-
 #[derive(Debug, Serialize)]
 pub struct TalentMetric {
     pub talent_id: uuid::Uuid,
@@ -1166,7 +1151,6 @@ pub struct TalentMetric {
     pub sub_text: String,
     pub image_url: Option<String>,
 }
-
 
 #[derive(Debug, Serialize)]
 pub struct TalentPerformanceMetric {

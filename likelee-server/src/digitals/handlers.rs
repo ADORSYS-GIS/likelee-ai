@@ -62,7 +62,9 @@ pub async fn create_talent_digital(
 
     let inserted_val = repository::create_talent_digital(&state, &talent_id, body).await?;
 
-    if let Err((code, msg)) = repository::recompute_total_assets_for_talent(&state, &user.id, &talent_id).await {
+    if let Err((code, msg)) =
+        repository::recompute_total_assets_for_talent(&state, &user.id, &talent_id).await
+    {
         warn!(talent_id = %talent_id, error = %msg, "failed to recompute total_assets after digitals create");
         return Err((code, msg));
     }
@@ -105,7 +107,9 @@ pub async fn update_digital(
 
     let updated_val = repository::update_digital(&state, &id, v).await?;
 
-    if let Err((code, msg)) = repository::recompute_total_assets_for_talent(&state, &user.id, &first.talent_id).await {
+    if let Err((code, msg)) =
+        repository::recompute_total_assets_for_talent(&state, &user.id, &first.talent_id).await
+    {
         warn!(talent_id = %first.talent_id, error = %msg, "failed to recompute total_assets after digitals update");
         return Err((code, msg));
     }

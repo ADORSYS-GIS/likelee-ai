@@ -1,4 +1,4 @@
-use crate::email;
+use super::*;
 use crate::errors::sanitize_db_error;
 use crate::team::{permissions::Permission, require_agency_permission};
 use crate::{auth::AuthUser, auth::RoleGuard, state::AppState};
@@ -7,11 +7,7 @@ use axum::{
     http::StatusCode,
     Json,
 };
-use serde::{Deserialize, Serialize};
 use serde_json::json;
-
-
-use super::*;
 
 pub async fn list_invites(
     State(state): State<AppState>,
@@ -65,7 +61,6 @@ pub async fn list_invites(
         invites,
     }))
 }
-
 
 pub async fn decline_invite(
     State(state): State<AppState>,
@@ -135,7 +130,6 @@ pub async fn decline_invite(
         status: "ok".to_string(),
     }))
 }
-
 
 pub async fn accept_invite(
     State(state): State<AppState>,
@@ -268,7 +262,6 @@ pub async fn accept_invite(
     }))
 }
 
-
 pub async fn list_connections(
     State(state): State<AppState>,
     user: AuthUser,
@@ -311,7 +304,6 @@ pub async fn list_connections(
         connections,
     }))
 }
-
 
 pub async fn disconnect_agency(
     State(state): State<AppState>,
@@ -423,7 +415,6 @@ pub async fn disconnect_agency(
     }))
 }
 
-
 pub async fn approve_disconnect_request(
     State(state): State<AppState>,
     user: AuthUser,
@@ -433,7 +424,8 @@ pub async fn approve_disconnect_request(
     let access =
         require_agency_permission(&state, &user, Permission::DisconnectBrandConnections).await?;
     let agency_id = &access.organization_id;
-    crate::agencies::marketplace_contracts::sync_open_contracts_for_agency(&state, agency_id).await?;
+    crate::agencies::marketplace_contracts::sync_open_contracts_for_agency(&state, agency_id)
+        .await?;
     let contract_row = get_latest_contract_for_connection(&state, agency_id, &creator_id)
         .await?
         .ok_or((StatusCode::NOT_FOUND, "contract not found".to_string()))?;
@@ -491,7 +483,6 @@ pub async fn approve_disconnect_request(
     }))
 }
 
-
 pub async fn reject_disconnect_request(
     State(state): State<AppState>,
     user: AuthUser,
@@ -540,14 +531,14 @@ pub async fn reject_disconnect_request(
     }))
 }
 
-
 pub async fn get_agency_contract_summary(
     State(state): State<AppState>,
     user: AuthUser,
     Path(creator_id): Path<String>,
 ) -> Result<Json<ContractSummaryResponse>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&user.role)?;
-    crate::agencies::marketplace_contracts::sync_open_contracts_for_agency(&state, &user.id).await?;
+    crate::agencies::marketplace_contracts::sync_open_contracts_for_agency(&state, &user.id)
+        .await?;
     let contract = crate::agencies::marketplace_contracts::get_latest_live_contract_for_pair(
         &state,
         &user.id,
@@ -559,5 +550,3 @@ pub async fn get_agency_contract_summary(
         contract,
     }))
 }
-
-
