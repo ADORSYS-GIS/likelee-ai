@@ -1146,7 +1146,13 @@ export default function BrandDashboard() {
     brandAllowsCampaignCollaboration(profile);
   const brandHasIncludedStudio = brandIncludesStudioAccess(profile);
   const brandCanSelfServeStudioAddon = brandCanPurchaseStudioAddon(profile);
-  const brandTrialEndsAt = formatBillingDate(profile?.subscription_trial_end);
+  const brandIsTrialing =
+    String(profile?.subscription_status || "")
+      .trim()
+      .toLowerCase() === "trialing";
+  const brandTrialEndsAt = brandIsTrialing
+    ? formatBillingDate(profile?.subscription_trial_end)
+    : null;
   const brandCurrentPeriodEnd = formatBillingDate(
     profile?.subscription_current_period_end,
   );

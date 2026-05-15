@@ -628,7 +628,12 @@ export default function BrandSubscribe() {
     planTier === "free"
       ? t("brandPricing.planNames.free")
       : t(`brandPricing.planNames.${planTier}`);
-  const trialEndsAt = formatDateLabel(profile?.subscription_trial_end);
+  const trialEndsAt =
+    String(profile?.subscription_status || "")
+      .trim()
+      .toLowerCase() === "trialing"
+      ? formatDateLabel(profile?.subscription_trial_end)
+      : null;
   const currentPeriodEnd = formatDateLabel(
     profile?.subscription_current_period_end,
   );
