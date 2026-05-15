@@ -1,0 +1,787 @@
+use crate::{
+    auth::AuthUser,
+    state::AppState,
+    team::{resolve_effective_agency_id, resolve_effective_brand_id},
+};
+use axum::{
+    extract::{Query, State},
+    http::StatusCode,
+    Json,
+};
+use chrono::Utc;
+use hmac::{Hmac, Mac};
+use serde::{Deserialize, Serialize};
+use serde_json::json;
+use sha2::Sha256;
+use tracing::{debug, error, info, warn};
+
+type HmacSha256 = Hmac<Sha256>;
+
+#[derive(Deserialize)]
+pub struct SessionRequest {
+    pub user_id: Option<String>,
+    pub organization_id: Option<String>,
+    #[allow(dead_code)]
+    #[serde(default)]
+    pub return_url: Option<String>,
+}
+
+#[derive(Serialize)]
+pub struct SessionResponse {
+    pub session_id: String,
+    pub session_url: String,
+    pub provider: String,
+}
+
+#[derive(Serialize, Deserialize, Default)]
+pub struct ProfileVerification {
+    pub kyc_status: Option<String>,
+    pub liveness_status: Option<String>,
+    pub kyc_provider: Option<String>,
+    pub kyc_session_id: Option<String>,
+    pub verified_at: Option<String>,
+    pub kyc_rejection_reason: Option<String>,
+    pub kyc_rejection_code: Option<String>,
+}
+
+async fn resolve_profile_id_for_role(
+    state: &AppState,
+    user: &AuthUser,
+    requested_profile_id: &str,
+) -> Result<String, (StatusCode, String)> {
+    if user.role != "creator" {
+        return Ok(requested_profile_id.to_string());
+    }
+
+    // For creators, historically some rows may have been created with a random UUID
+    // rather than auth.users.id. If id lookup fails, fall back to email lookup.
+    let by_id = state
+        .pg
+        .from("creators")
+        .select("id")
+        .eq("id", requested_profile_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text = by_id
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let rows: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let found = rows.as_array().map(|a| !a.is_empty()).unwrap_or(false);
+    if found {
+        return Ok(requested_profile_id.to_string());
+    }
+
+    let email = user.email.as_deref().ok_or((
+        StatusCode::BAD_REQUEST,
+        "missing email for creator profile lookup".to_string(),
+    ))?;
+    let by_email = state
+        .pg
+        .from("creators")
+        .select("id")
+        .eq("email", email)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text2 = by_email
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let rows2: serde_json::Value = serde_json::from_str(&text2)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if let Some(resolved) = rows2
+        .as_array()
+        .and_then(|a| a.first())
+        .and_then(|r| r.get("id"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+    {
+        return Ok(resolved);
+    }
+
+    let now = Utc::now().to_rfc3339();
+    let stub_profile = json!({
+        "id": requested_profile_id,
+        "email": email,
+        "created_at": now,
+        "updated_at": now,
+    });
+    let insert_resp = state
+        .pg
+        .from("creators")
+        .insert(stub_profile.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let insert_status = insert_resp.status();
+    let insert_text = insert_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if insert_status.is_success() {
+        info!(
+            profile_id = %requested_profile_id,
+            "Created placeholder creator profile for KYC"
+        );
+        return Ok(requested_profile_id.to_string());
+    }
+
+    warn!(
+        profile_id = %requested_profile_id,
+        status = %insert_status,
+        body = %insert_text,
+        "Failed to create placeholder creator profile; retrying email lookup"
+    );
+
+    let retry_resp = state
+        .pg
+        .from("creators")
+        .select("id")
+        .eq("email", email)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let retry_status = retry_resp.status();
+    let retry_text = retry_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !retry_status.is_success() {
+        return Err((
+            StatusCode::from_u16(retry_status.as_u16())
+                .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+            retry_text,
+        ));
+    }
+    let retry_rows: serde_json::Value = serde_json::from_str(&retry_text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let resolved = retry_rows
+        .as_array()
+        .and_then(|a| a.first())
+        .and_then(|r| r.get("id"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .ok_or((
+            StatusCode::NOT_FOUND,
+            "creator profile not found".to_string(),
+        ))?;
+
+    Ok(resolved)
+}
+
+async fn update_verification_status(
+    state: &AppState,
+    profile_id: &str,
+    role: &str,
+    payload: &ProfileVerification,
+) -> Result<(), String> {
+    let table = table_for_role(role);
+
+    let body = serde_json::to_string(payload).map_err(|e| e.to_string())?;
+    match state
+        .pg
+        .from(table)
+        .eq("id", profile_id)
+        .update(body)
+        .execute()
+        .await
+    {
+        Ok(_) => {}
+        Err(e) => {
+            let msg = e.to_string();
+            // If it's a "column does not exist" error, it might be an older migration state
+            if msg.contains("42703") || (msg.contains("column") && msg.contains("does not exist")) {
+                warn!(%msg, table, "Table missing verification columns; skipping update");
+                return Ok(());
+            }
+            return Err(msg);
+        }
+    }
+    Ok(())
+}
+
+fn table_for_role(role: &str) -> &'static str {
+    match role {
+        "agency" => "agencies",
+        "brand" => "brands",
+        _ => "creators",
+    }
+}
+
+async fn get_current_kyc_status(
+    state: &AppState,
+    profile_id: &str,
+    role: &str,
+) -> Result<Option<String>, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from(table_for_role(role))
+        .select("kyc_status")
+        .eq("id", profile_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !status.is_success() {
+        let code =
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
+    }
+
+    let rows: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(rows
+        .as_array()
+        .and_then(|items| items.first())
+        .and_then(|row| row.get("kyc_status"))
+        .and_then(|value| value.as_str())
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty()))
+}
+
+#[derive(Serialize)]
+struct VeriffVerification<'a> {
+    #[serde(rename = "vendorData")]
+    vendor_data: &'a str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    lang: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    callback: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    features: Option<serde_json::Value>,
+}
+
+#[derive(Serialize)]
+struct VeriffCreateSessionBody<'a> {
+    verification: VeriffVerification<'a>,
+}
+
+fn compute_hmac_hex(secret: &str, body: &[u8]) -> String {
+    let mut mac =
+        HmacSha256::new_from_slice(secret.as_bytes()).expect("HMAC can take key of any size");
+    mac.update(body);
+    let result = mac.finalize().into_bytes();
+    hex::encode(result)
+}
+
+fn normalize_veriff_status(status: &str) -> String {
+    status.trim().to_lowercase()
+}
+
+fn map_veriff_status(status: &str) -> &'static str {
+    match normalize_veriff_status(status).as_str() {
+        "approved" => "approved",
+        "declined" | "expired" | "abandoned" => "rejected",
+        _ => "pending",
+    }
+}
+
+fn humanize_machine_text(value: &str) -> String {
+    let normalized = value
+        .trim()
+        .replace(['_', '-'], " ")
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ");
+
+    if normalized.is_empty() {
+        return normalized;
+    }
+
+    let looks_like_code = normalized
+        .chars()
+        .all(|ch| ch.is_ascii_uppercase() || ch.is_ascii_digit() || ch == ' ');
+
+    if !looks_like_code {
+        return normalized;
+    }
+
+    normalized
+        .to_lowercase()
+        .split_whitespace()
+        .map(|word| {
+            let mut chars = word.chars();
+            match chars.next() {
+                Some(first) => format!("{}{}", first.to_uppercase(), chars.as_str()),
+                None => String::new(),
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn json_get_string(v: &serde_json::Value, path: &[&str]) -> Option<String> {
+    json_get_str(v, path)
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
+}
+
+fn fallback_veriff_reason(status: &str) -> Option<String> {
+    match normalize_veriff_status(status).as_str() {
+        "declined" => Some("Verification was not approved.".to_string()),
+        "expired" => Some("Verification session expired before completion.".to_string()),
+        "abandoned" => Some("Verification was started but not completed.".to_string()),
+        "resubmission_requested" => {
+            Some("Additional verification is required before approval.".to_string())
+        }
+        _ => None,
+    }
+}
+
+fn extract_veriff_rejection_details(
+    v: &serde_json::Value,
+    raw_status: &str,
+) -> (Option<String>, Option<String>) {
+    let status = normalize_veriff_status(raw_status);
+    if status == "approved" || status == "pending" || status == "review" {
+        return (None, None);
+    }
+
+    let reason_code = json_get_string(v, &["verification", "reasonCode"])
+        .or_else(|| json_get_string(v, &["verification", "decision", "reasonCode"]))
+        .or_else(|| json_get_string(v, &["decision", "reasonCode"]))
+        .or_else(|| json_get_string(v, &["reasonCode"]));
+
+    let reason = json_get_string(v, &["verification", "reason"])
+        .or_else(|| json_get_string(v, &["verification", "decision", "reason"]))
+        .or_else(|| json_get_string(v, &["decision", "reason"]))
+        .or_else(|| json_get_string(v, &["reason"]))
+        .or_else(|| reason_code.as_deref().map(humanize_machine_text))
+        .or_else(|| fallback_veriff_reason(&status));
+
+    (reason, reason_code)
+}
+
+pub async fn create_session(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(req): Json<SessionRequest>,
+) -> Result<Json<SessionResponse>, (StatusCode, String)> {
+    // For agencies and brands, resolve the effective organization ID so team members
+    // can create KYC sessions for their organization (not just their own user ID).
+    // This ensures team members share the same KYC verification as the organization owner.
+    let profile_id = if user.role == "agency" {
+        // Use resolved organization ID for agencies (team members get org ID)
+        resolve_effective_agency_id(&state, &user).await?
+    } else if user.role == "brand" {
+        // For brands, also resolve organization ID
+        resolve_effective_brand_id(&state, &user).await?
+    } else {
+        // For creators and other roles, use the requested or user ID
+        let requested = req.organization_id.as_ref().unwrap_or(&user.id);
+        resolve_profile_id_for_role(&state, &user, requested).await?
+    };
+
+    let current_status = get_current_kyc_status(&state, &profile_id, &user.role).await?;
+    if current_status
+        .as_deref()
+        .map(normalize_veriff_status)
+        .as_deref()
+        == Some("approved")
+    {
+        return Err((StatusCode::CONFLICT, "kyc_already_approved".to_string()));
+    }
+
+    debug!(profile_id = %profile_id, "Creating Veriff session");
+    let vendor_data = format!("{}:{}", user.role, profile_id);
+    let callback_url = req.return_url.as_deref().and_then(|url| {
+        if url.starts_with("https://") {
+            Some(url)
+        } else {
+            warn!(
+                "Skipping Veriff return_url because it is not HTTPS: {}",
+                url
+            );
+            None
+        }
+    });
+
+    let veriff_body = VeriffCreateSessionBody {
+        verification: VeriffVerification {
+            vendor_data: &vendor_data,
+            lang: None,
+            callback: callback_url,
+            features: None,
+        },
+    };
+    let body_str = serde_json::to_string(&veriff_body)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let sig = compute_hmac_hex(&state.veriff.shared_secret, body_str.as_bytes());
+
+    let client = reqwest::Client::new();
+    let url = format!(
+        "{}/v1/sessions",
+        state.veriff.base_url.trim_end_matches('/')
+    );
+    info!(endpoint = %url, "POST Veriff create session");
+    let res = client
+        .post(&url)
+        .header("x-auth-client", &state.veriff.api_key)
+        .header("x-hmac-signature", sig)
+        .header("content-type", "application/json")
+        .body(body_str)
+        .send()
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::BAD_GATEWAY,
+                format!("veriff request error: {e}"),
+            )
+        })?;
+
+    if !res.status().is_success() {
+        let status = res.status();
+        let text = res.text().await.unwrap_or_default();
+        error!(%status, body = %text, "Veriff create session failed");
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            format!("veriff error: {status} {text}"),
+        ));
+    }
+
+    let body_text = res
+        .text()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    debug!(body = %body_text, "Veriff create session success body");
+    let v: serde_json::Value = serde_json::from_str(&body_text).map_err(|e| {
+        (
+            StatusCode::BAD_GATEWAY,
+            format!("error decoding response body: {e}"),
+        )
+    })?;
+    let (session_id, session_url) = if let (Some(id), Some(url)) = (
+        v.get("session")
+            .and_then(|s| s.get("id"))
+            .and_then(|x| x.as_str()),
+        v.get("session")
+            .and_then(|s| s.get("url"))
+            .and_then(|x| x.as_str()),
+    ) {
+        (id.to_string(), url.to_string())
+    } else if let (Some(id), Some(url)) = (
+        v.get("verification")
+            .and_then(|s| s.get("id"))
+            .and_then(|x| x.as_str()),
+        v.get("verification")
+            .and_then(|s| s.get("url"))
+            .and_then(|x| x.as_str()),
+    ) {
+        (id.to_string(), url.to_string())
+    } else if let Some(url) = v.get("url").and_then(|x| x.as_str()) {
+        ("".to_string(), url.to_string())
+    } else {
+        error!(body = %body_text, "Unable to extract session id/url from Veriff response");
+        return Err((StatusCode::BAD_GATEWAY, "unexpected veriff response".into()));
+    };
+    info!(%session_id, "Veriff session created");
+
+    // Track usage (agency monthly caps) - use resolved organization ID
+    // so that team members' KYC sessions count against the org's cap
+    if user.role == "agency" && !session_id.is_empty() {
+        let row = json!({
+            "agency_id": profile_id,
+            "veriff_session_id": session_id,
+        });
+        let _ = state
+            .pg
+            .from("agency_veriff_sessions")
+            .insert(row.to_string())
+            .execute()
+            .await;
+    }
+
+    let payload = ProfileVerification {
+        kyc_status: Some("pending".into()),
+        liveness_status: Some("pending".into()),
+        kyc_provider: Some("veriff".into()),
+        kyc_session_id: if session_id.is_empty() {
+            None
+        } else {
+            Some(session_id.clone())
+        },
+        verified_at: None,
+        kyc_rejection_reason: None,
+        kyc_rejection_code: None,
+    };
+    update_verification_status(&state, &profile_id, &user.role, &payload)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
+
+    Ok(Json(SessionResponse {
+        session_id,
+        session_url,
+        provider: "veriff".into(),
+    }))
+}
+
+#[derive(Deserialize)]
+pub struct StatusQuery {
+    pub user_id: Option<String>,
+    pub organization_id: Option<String>,
+}
+
+pub async fn get_status(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Query(q): Query<StatusQuery>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    // For agencies and brands, resolve the effective organization ID so team members
+    // can view the organization's KYC status (not their own, which doesn't exist).
+    let profile_id = if user.role == "agency" {
+        resolve_effective_agency_id(&state, &user).await?
+    } else if user.role == "brand" {
+        resolve_effective_brand_id(&state, &user).await?
+    } else {
+        let requested = q.organization_id.as_ref().unwrap_or(&user.id);
+        resolve_profile_id_for_role(&state, &user, requested).await?
+    };
+    let table = match user.role.as_str() {
+        "agency" => "agencies",
+        "brand" => "brands",
+        _ => "creators",
+    };
+
+    let resp = state
+        .pg
+        .from(table)
+        .select("kyc_status,liveness_status,kyc_provider,kyc_session_id,verified_at,kyc_rejection_reason,kyc_rejection_code")
+        .eq("id", &profile_id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let mut rows: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let should_poll = rows
+        .as_array()
+        .and_then(|a| a.first())
+        .and_then(|r| r.get("kyc_status").and_then(|s| s.as_str()))
+        .map(|s| s == "pending")
+        .unwrap_or(false)
+        && rows
+            .as_array()
+            .and_then(|a| a.first())
+            .and_then(|r| r.get("kyc_session_id").and_then(|s| s.as_str()))
+            .is_some();
+
+    if should_poll {
+        let session_id = rows
+            .as_array()
+            .and_then(|a| a.first())
+            .and_then(|r| r.get("kyc_session_id").and_then(|s| s.as_str()))
+            .unwrap_or("")
+            .to_string();
+        let url = format!(
+            "{}/v1/sessions/{}/decision",
+            state.veriff.base_url.trim_end_matches('/'),
+            session_id
+        );
+        info!(endpoint = %url, "GET Veriff decision");
+        let client = reqwest::Client::new();
+        // Veriff expects HMAC of the query ID (session/verification id) for decision GET
+        let sig = compute_hmac_hex(&state.veriff.shared_secret, session_id.as_bytes());
+        match client
+            .get(&url)
+            .header("x-auth-client", &state.veriff.api_key)
+            .header("x-hmac-signature", sig)
+            .send()
+            .await
+        {
+            Ok(res) => {
+                if res.status().is_success() {
+                    let body = res.text().await.unwrap_or_default();
+                    debug!(body = %body, "Veriff decision body");
+                    let v: serde_json::Value =
+                        serde_json::from_str(&body).unwrap_or(serde_json::json!({}));
+                    // Try multiple shapes: { decision: { status } } or { verification: { decision: { status } } }
+                    let status = v
+                        .get("decision")
+                        .and_then(|d| d.get("status"))
+                        .and_then(|s| s.as_str())
+                        .or_else(|| {
+                            v.get("verification")
+                                .and_then(|vv| vv.get("decision"))
+                                .and_then(|d| d.get("status"))
+                                .and_then(|s| s.as_str())
+                        })
+                        .or_else(|| {
+                            v.get("verification")
+                                .and_then(|vv| vv.get("status"))
+                                .and_then(|s| s.as_str())
+                        })
+                        .unwrap_or("pending")
+                        .to_lowercase();
+                    let approved = status == "approved";
+                    let mapped = map_veriff_status(&status);
+                    let (rejection_reason, rejection_code) =
+                        extract_veriff_rejection_details(&v, &status);
+                    let payload = ProfileVerification {
+                        kyc_status: Some(mapped.into()),
+                        liveness_status: Some(mapped.into()),
+                        kyc_provider: Some("veriff".into()),
+                        kyc_session_id: Some(session_id.clone()),
+                        verified_at: approved.then(|| chrono::Utc::now().to_rfc3339()),
+                        kyc_rejection_reason: rejection_reason,
+                        kyc_rejection_code: rejection_code,
+                    };
+                    let _ =
+                        update_verification_status(&state, &profile_id, &user.role, &payload).await;
+                    let resp2 = state
+                        .pg
+                        .from(table)
+                        .select(
+                            "kyc_status,liveness_status,kyc_provider,kyc_session_id,verified_at,kyc_rejection_reason,kyc_rejection_code",
+                        )
+                        .eq("id", &profile_id)
+                        .execute()
+                        .await
+                        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                    let text2 = resp2
+                        .text()
+                        .await
+                        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                    rows = serde_json::from_str(&text2)
+                        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                } else {
+                    let status = res.status();
+                    let body = res.text().await.unwrap_or_default();
+                    warn!(%status, body = %body, "Veriff decision request failed");
+                }
+            }
+            Err(e) => {
+                debug!(error = %e, "Veriff decision request error");
+            }
+        }
+    }
+    Ok(Json(rows))
+}
+
+#[allow(dead_code)]
+#[derive(Deserialize)]
+struct VeriffWebhookDecision {
+    status: String,
+}
+#[allow(dead_code)]
+#[derive(Deserialize)]
+struct VeriffWebhookSession {
+    id: String,
+}
+#[allow(dead_code)]
+#[derive(Deserialize)]
+struct VeriffWebhookBody {
+    #[serde(rename = "vendorData")]
+    vendor_data: Option<String>,
+    session: Option<VeriffWebhookSession>,
+    decision: Option<VeriffWebhookDecision>,
+}
+
+fn json_get_str<'a>(v: &'a serde_json::Value, path: &[&str]) -> Option<&'a str> {
+    let mut cur = v;
+    for p in path {
+        cur = cur.get(*p)?;
+    }
+    cur.as_str()
+}
+
+fn constant_time_eq(a: &str, b: &str) -> bool {
+    if a.len() != b.len() {
+        return false;
+    }
+    let mut res = 0u8;
+    for (x, y) in a.bytes().zip(b.bytes()) {
+        res |= x ^ y;
+    }
+    res == 0
+}
+
+pub async fn veriff_webhook(
+    State(state): State<AppState>,
+    headers: axum::http::HeaderMap,
+    body_bytes: axum::body::Bytes,
+) -> Result<axum::http::StatusCode, (axum::http::StatusCode, String)> {
+    let sig_hdr = headers
+        .get("x-hmac-signature")
+        .or_else(|| headers.get("vrf-hmac-signature"))
+        .or_else(|| headers.get("x-veriff-signature"));
+    let provided = sig_hdr.and_then(|v| v.to_str().ok()).ok_or((
+        axum::http::StatusCode::UNAUTHORIZED,
+        "missing signature".to_string(),
+    ))?;
+    let computed = compute_hmac_hex(&state.veriff.shared_secret, &body_bytes);
+    if !constant_time_eq(&computed, provided) {
+        warn!("Invalid webhook signature");
+        return Err((
+            axum::http::StatusCode::UNAUTHORIZED,
+            "invalid signature".into(),
+        ));
+    }
+
+    // Veriff webhook payload can have multiple shapes. We accept:
+    // 1) { vendorData, decision: { status }, session: { id } }
+    // 2) { verification: { vendorData, status, id, ... }, status: "success" }
+    let v: serde_json::Value = serde_json::from_slice(&body_bytes)
+        .map_err(|e| (axum::http::StatusCode::BAD_REQUEST, e.to_string()))?;
+    debug!(body = %v, "Veriff webhook payload");
+
+    let vendor_data_raw = json_get_str(&v, &["vendorData"])
+        .or_else(|| json_get_str(&v, &["verification", "vendorData"]))
+        .ok_or((
+            axum::http::StatusCode::BAD_REQUEST,
+            "missing vendorData".into(),
+        ))?;
+
+    // vendor_data format: "role:id"
+    let parts: Vec<&str> = vendor_data_raw.splitn(2, ':').collect();
+    let (role, profile_id) = if parts.len() == 2 {
+        (parts[0], parts[1])
+    } else {
+        ("creator", parts[0]) // fallback for legacy sessions
+    };
+
+    let status = json_get_str(&v, &["decision", "status"])
+        .or_else(|| json_get_str(&v, &["verification", "decision", "status"]))
+        .or_else(|| json_get_str(&v, &["verification", "status"]))
+        .unwrap_or("pending")
+        .to_lowercase();
+    let approved = status == "approved";
+    let mapped_status = map_veriff_status(&status);
+    let (rejection_reason, rejection_code) = extract_veriff_rejection_details(&v, &status);
+    info!(%profile_id, %role, %mapped_status, "Received Veriff decision webhook");
+
+    let session_id = json_get_str(&v, &["session", "id"])
+        .or_else(|| json_get_str(&v, &["verification", "id"]))
+        .map(|s| s.to_string());
+
+    let payload = ProfileVerification {
+        kyc_status: Some(mapped_status.into()),
+        liveness_status: Some(mapped_status.into()),
+        kyc_provider: Some("veriff".into()),
+        kyc_session_id: session_id,
+        verified_at: approved.then(|| Utc::now().to_rfc3339()),
+        kyc_rejection_reason: rejection_reason,
+        kyc_rejection_code: rejection_code,
+    };
+    update_verification_status(&state, profile_id, role, &payload)
+        .await
+        .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e))?;
+    Ok(axum::http::StatusCode::OK)
+}

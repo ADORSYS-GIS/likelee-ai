@@ -1,6 +1,6 @@
 use super::support::internal_error;
 use super::types::BrandAgencyConnection;
-use crate::{config::AppState, errors::sanitize_db_error};
+use crate::{state::AppState, errors::sanitize_db_error};
 use axum::http::StatusCode;
 use std::time::Duration as StdDuration;
 

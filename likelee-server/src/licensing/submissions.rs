@@ -1,0 +1,2888 @@
+use crate::auth::AuthUser;
+use crate::state::AppState;
+use super::templates::LicenseTemplate;
+use crate::services::docuseal::DocuSealClient;
+use axum::{
+    extract::{Path, Query, State},
+    http::StatusCode,
+    Json,
+};
+use postgrest::Postgrest;
+use serde::{Deserialize, Serialize};
+use serde_json::json;
+use tracing::{error, info};
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct LicenseSubmission {
+    pub id: String,
+    pub agency_id: String,
+    pub client_id: Option<String>,
+    pub template_id: String,
+    pub licensing_request_id: Option<String>,
+    pub brand_request_id: Option<String>,
+    pub docuseal_submission_id: Option<i32>,
+    pub docuseal_slug: Option<String>,
+    pub docuseal_template_id: Option<i32>,
+    pub client_name: Option<String>,
+    pub client_email: Option<String>,
+    pub license_fee: Option<i64>,
+    pub duration_days: Option<i32>,
+    pub start_date: Option<String>,
+    pub custom_terms: Option<String>,
+    pub status: String,
+    pub sent_at: Option<String>,
+    pub opened_at: Option<String>,
+    pub signed_at: Option<String>,
+    pub declined_at: Option<String>,
+    pub decline_reason: Option<String>,
+    pub signed_document_url: Option<String>,
+    pub requires_agency_signature: Option<bool>,
+    pub agency_submitter_id: Option<i64>,
+    pub agency_submitter_slug: Option<String>,
+    pub agency_embed_src: Option<String>,
+    pub agency_signed_at: Option<String>,
+    pub client_submitter_id: Option<i64>,
+    pub client_submitter_slug: Option<String>,
+    pub talent_id: Option<String>,
+    pub talent_names: Option<String>,
+    pub template_name: Option<String>, // Added for UI display
+    pub created_at: Option<String>,
+    pub updated_at: Option<String>,
+}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreateSubmissionRequest {
+    pub template_id: String,
+    pub client_id: Option<String>,
+    pub client_email: String,
+    pub client_name: String,
+    pub docuseal_template_id: Option<i32>,
+    pub talent_id: Option<String>,
+    pub talent_ids: Option<Vec<String>>,
+    pub talent_names: Option<String>,
+    pub license_fee: Option<i64>,
+    pub duration_days: Option<i32>,
+    pub start_date: Option<String>,
+    pub custom_terms: Option<String>,
+    pub requires_agency_signature: Option<bool>,
+    pub licensing_request_id: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ListQuery {
+    pub status: Option<String>,
+    pub client_id: Option<String>,
+}
+
+async fn resolve_agency_signer_email(
+    state: &AppState,
+    agency_id: &str,
+    auth_email: Option<&String>,
+) -> Option<String> {
+    if let Some(email) = auth_email {
+        if !email.trim().is_empty() {
+            return Some(email.trim().to_string());
+        }
+    }
+
+    let resp = state
+        .pg
+        .from("agencies")
+        .select("email")
+        .eq("id", agency_id)
+        .single()
+        .execute()
+        .await
+        .ok()?;
+    let txt = resp.text().await.ok()?;
+    let row: serde_json::Value = serde_json::from_str(&txt).ok()?;
+    row.get("email")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+}
+
+fn is_completed_status(s: &str) -> bool {
+    let v = s.to_lowercase();
+    v == "completed" || v == "signed"
+}
+
+/// POST /api/license-submissions/draft - Create a draft template for a deal
+pub async fn create_draft(
+    State(state): State<AppState>,
+    auth_user: AuthUser,
+    Json(req_val): Json<serde_json::Value>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let req: CreateSubmissionRequest = serde_json::from_value(req_val.clone()).map_err(|e| {
+        tracing::error!("JSON parse error: {} for value: {}", e, req_val);
+        (
+            StatusCode::BAD_REQUEST,
+            format!("Invalid JSON: {}. Payload: {}", e, req_val),
+        )
+    })?;
+    let agency_id = auth_user.effective_org_id().to_string();
+
+    // 1. Fetch License Template metadata
+    let template_resp = state
+        .pg
+        .from("license_templates")
+        .select("*")
+        .eq("id", &req.template_id)
+        .eq("agency_id", &agency_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let template_text = template_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let license_template: LicenseTemplate = serde_json::from_str(&template_text)
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    // Licensing only: docuseal_template_id is optional in draft stage.
+    let docuseal_template_id = req
+        .docuseal_template_id
+        .or(license_template.docuseal_template_id);
+
+    // 3. Create a draft record in Likelee
+    let client_name = if !req.client_name.is_empty() {
+        req.client_name.clone()
+    } else {
+        license_template.client_name.clone().unwrap_or_default()
+    };
+    let talent_names = req
+        .talent_names
+        .clone()
+        .filter(|s| !s.trim().is_empty())
+        .or_else(|| license_template.talent_name.clone())
+        .unwrap_or_default();
+    let start_date = req
+        .start_date
+        .clone()
+        .or(license_template.start_date.clone());
+
+    let mut incoming_talent_ids: Vec<String> = vec![];
+    if let Some(id) = req.talent_id.clone().filter(|s| !s.is_empty()) {
+        incoming_talent_ids.push(id);
+    }
+    if let Some(ids) = req.talent_ids.clone() {
+        for id in ids {
+            if !id.trim().is_empty() {
+                incoming_talent_ids.push(id);
+            }
+        }
+    }
+    incoming_talent_ids.sort();
+    incoming_talent_ids.dedup();
+
+    let mut resolved_talent_ids: Vec<String> = vec![];
+    if !incoming_talent_ids.is_empty() {
+        let ids_csv = incoming_talent_ids.join(",");
+        let lookup_resp = state
+            .pg
+            .from("agency_users")
+            .select("id,creator_id")
+            .eq("agency_id", &agency_id)
+            .or(format!("id.in.({}),creator_id.in.({})", ids_csv, ids_csv))
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let lookup_text = lookup_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let lookup_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&lookup_text).unwrap_or_default();
+        let mut map: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+        for row in lookup_rows {
+            if let Some(au_id) = row.get("id").and_then(|v| v.as_str()) {
+                let au_id = au_id.trim();
+                if !au_id.is_empty() {
+                    map.insert(au_id.to_string(), au_id.to_string());
+                }
+                if let Some(creator_id) = row.get("creator_id").and_then(|v| v.as_str()) {
+                    let creator_id = creator_id.trim();
+                    if !creator_id.is_empty() {
+                        map.insert(creator_id.to_string(), au_id.to_string());
+                    }
+                }
+            }
+        }
+
+        let unresolved_ids: Vec<String> = incoming_talent_ids
+            .iter()
+            .filter(|id| !map.contains_key(*id))
+            .cloned()
+            .collect();
+        if !unresolved_ids.is_empty() {
+            let unresolved_csv = unresolved_ids.join(",");
+            let rel_resp = state
+                .pg
+                .from("agency_talent_relationships")
+                .select("talent_id,creator_id")
+                .eq("agency_id", &agency_id)
+                .or(format!(
+                    "talent_id.in.({}),creator_id.in.({})",
+                    unresolved_csv, unresolved_csv
+                ))
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let rel_text = rel_resp
+                .text()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let rel_rows: Vec<serde_json::Value> =
+                serde_json::from_str(&rel_text).unwrap_or_default();
+            for row in rel_rows {
+                if let Some(talent_id) = row.get("talent_id").and_then(|v| v.as_str()) {
+                    let talent_id = talent_id.trim();
+                    if !talent_id.is_empty() {
+                        map.insert(talent_id.to_string(), talent_id.to_string());
+                    }
+                    if let Some(creator_id) = row.get("creator_id").and_then(|v| v.as_str()) {
+                        let creator_id = creator_id.trim();
+                        if !creator_id.is_empty() {
+                            map.insert(creator_id.to_string(), talent_id.to_string());
+                        }
+                    }
+                }
+            }
+        }
+
+        for id in &incoming_talent_ids {
+            if let Some(mapped) = map.get(id) {
+                if !resolved_talent_ids.contains(mapped) {
+                    resolved_talent_ids.push(mapped.clone());
+                }
+            }
+        }
+    }
+    let resolved_primary_talent_id = resolved_talent_ids.first().cloned();
+
+    let draft_data = json!({
+        "agency_id": agency_id,
+        "client_id": req.client_id,
+        "template_id": req.template_id,
+        "docuseal_template_id": docuseal_template_id,
+        "status": "draft",
+        "requires_agency_signature": req.requires_agency_signature.unwrap_or(false),
+        "client_name": client_name,
+        "client_email": req.client_email,
+        "talent_id": resolved_primary_talent_id,
+        "talent_ids": if resolved_talent_ids.is_empty() { serde_json::Value::Null } else { json!(resolved_talent_ids) },
+        "talent_names": talent_names,
+        "license_fee": req.license_fee,
+        "duration_days": req.duration_days,
+        "start_date": start_date,
+        "custom_terms": req.custom_terms,
+        "brand_request_id": req.licensing_request_id,
+    });
+
+    let resp = state
+        .pg
+        .from("license_submissions")
+        .insert(draft_data.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !status.is_success() {
+        return Err((
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+            text,
+        ));
+    }
+
+    let created: Vec<serde_json::Value> = serde_json::from_str(&text).map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!(
+                "Failed to parse created draft: {}. Raw response: {}",
+                e, text
+            ),
+        )
+    })?;
+    let draft = created.into_iter().next().ok_or((
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "Failed to create draft (empty response)".to_string(),
+    ))?;
+
+    Ok(Json(draft))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PreviewSubmissionRequest {
+    pub docuseal_template_id: Option<i32>,
+    pub client_name: Option<String>,
+    pub client_email: Option<String>,
+    pub talent_names: Option<String>,
+    pub license_fee: Option<i64>,
+    pub duration_days: Option<i32>,
+    pub start_date: Option<String>,
+    pub custom_terms: Option<String>,
+}
+
+/// POST /api/license-submissions/:id/preview - Create a DocuSeal submission for preview without emailing the client
+pub async fn preview(
+    State(state): State<AppState>,
+    auth_user: AuthUser,
+    Path(id): Path<String>,
+    Json(req): Json<PreviewSubmissionRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let agency_id = auth_user.effective_org_id().to_string();
+
+    // 1. Fetch the draft submission
+    let sub_resp = state
+        .pg
+        .from("license_submissions")
+        .select("*")
+        .eq("id", &id)
+        .eq("agency_id", &agency_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let sub_text = sub_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let submission_data: serde_json::Value = serde_json::from_str(&sub_text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if submission_data["status"] != "draft" {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "Only draft submissions can be previewed".to_string(),
+        ));
+    }
+
+    // 2. Fetch the License Template metadata for values
+    let template_id = submission_data["template_id"].as_str().ok_or((
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "Invalid template_id".to_string(),
+    ))?;
+    let template_resp = state
+        .pg
+        .from("license_templates")
+        .select("*")
+        .eq("id", template_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let template_text = template_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let license_template: LicenseTemplate = serde_json::from_str(&template_text)
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    // 3. Merge override values (request > submission record > template)
+    let client_name = req
+        .client_name
+        .clone()
+        .or_else(|| submission_data["client_name"].as_str().map(String::from))
+        .or_else(|| license_template.client_name.clone())
+        .unwrap_or_else(|| "Client".to_string());
+    let client_email = req
+        .client_email
+        .clone()
+        .or_else(|| submission_data["client_email"].as_str().map(String::from))
+        .unwrap_or_default();
+    let talent_names = req
+        .talent_names
+        .clone()
+        .or_else(|| submission_data["talent_names"].as_str().map(String::from))
+        .or_else(|| license_template.talent_name.clone())
+        .unwrap_or_default();
+
+    let license_fee = req
+        .license_fee
+        .or_else(|| submission_data["license_fee"].as_i64())
+        .or(license_template.license_fee);
+    let fee_str = license_fee
+        .map(|c| format!("${:.2}", c as f64 / 100.0))
+        .unwrap_or_default();
+
+    let duration_days = req
+        .duration_days
+        .or_else(|| submission_data["duration_days"].as_i64().map(|d| d as i32))
+        .unwrap_or(license_template.duration_days);
+
+    let start_date = req
+        .start_date
+        .clone()
+        .or_else(|| submission_data["start_date"].as_str().map(String::from))
+        .or_else(|| license_template.start_date.clone())
+        .unwrap_or_else(|| "-".to_string());
+
+    let combined_custom_terms = req
+        .custom_terms
+        .clone()
+        .or_else(|| submission_data["custom_terms"].as_str().map(String::from))
+        .filter(|s| !s.trim().is_empty())
+        .or_else(|| license_template.custom_terms.clone())
+        .unwrap_or_default();
+
+    // 4. Determine DocuSeal template id
+    let docuseal_template_id = req
+        .docuseal_template_id
+        .or_else(|| {
+            submission_data["docuseal_template_id"]
+                .as_i64()
+                .map(|i| i as i32)
+        })
+        .or(license_template.docuseal_template_id)
+        .ok_or((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Invalid DS template id".to_string(),
+        ))?;
+
+    // Build fields array for pre-filling (DocuSeal API standard format)
+    use crate::services::docuseal::SubmitterField;
+
+    let mut fields = vec![
+        SubmitterField {
+            name: "Client/Brand Name".to_string(),
+            default_value: Some(client_name.clone()),
+            readonly: Some(true),
+        },
+        SubmitterField {
+            name: "Talent Name".to_string(),
+            default_value: Some(talent_names.clone()),
+            readonly: Some(true),
+        },
+        SubmitterField {
+            name: "License Fee".to_string(),
+            default_value: Some(fee_str.clone()),
+            readonly: Some(true),
+        },
+        SubmitterField {
+            name: "Category".to_string(),
+            default_value: Some(license_template.category.clone()),
+            readonly: Some(true),
+        },
+    ];
+
+    if let Some(desc) = &license_template.description {
+        fields.push(SubmitterField {
+            name: "Description".to_string(),
+            default_value: Some(desc.clone()),
+            readonly: Some(true),
+        });
+    }
+
+    if let Some(scope) = &license_template.usage_scope {
+        fields.push(SubmitterField {
+            name: "Usage Scope".to_string(),
+            default_value: Some(scope.clone()),
+            readonly: Some(true),
+        });
+    }
+
+    fields.push(SubmitterField {
+        name: "Territory".to_string(),
+        default_value: Some(license_template.territory.clone()),
+        readonly: Some(true),
+    });
+
+    fields.push(SubmitterField {
+        name: "Exclusivity".to_string(),
+        default_value: Some(license_template.exclusivity.clone()),
+        readonly: Some(true),
+    });
+
+    fields.push(SubmitterField {
+        name: "Duration".to_string(),
+        default_value: Some(duration_days.to_string()),
+        readonly: Some(true),
+    });
+
+    fields.push(SubmitterField {
+        name: "Start Date".to_string(),
+        default_value: Some(start_date.to_string()),
+        readonly: Some(true),
+    });
+
+    fields.push(SubmitterField {
+        name: "Custom Terms".to_string(),
+        default_value: Some(combined_custom_terms.clone()),
+        readonly: Some(true),
+    });
+
+    fields.push(SubmitterField {
+        name: "Template Name".to_string(),
+        default_value: Some(license_template.template_name.clone()),
+        readonly: Some(true),
+    });
+
+    // 5. Create DocuSeal submission without sending email using fields-based pre-fill
+    let docuseal = DocuSealClient::new(
+        state.docuseal.api_key.clone(),
+        state.docuseal.base_url.clone(),
+    );
+    let docuseal_submission = docuseal
+        .create_submission_with_fields(
+            docuseal_template_id,
+            client_name.clone(),
+            client_email.clone(),
+            "First Party".to_string(),
+            fields,
+            false,
+        )
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("DocuSeal Error: {}", e),
+            )
+        })?;
+
+    // 6. Fetch submitter slug to construct preview URL
+    let details = docuseal
+        .get_submission(docuseal_submission.id)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("DocuSeal Error: {}", e),
+            )
+        })?;
+
+    let slug = details
+        .submitters
+        .first()
+        .map(|s| s.slug.clone())
+        .unwrap_or_else(|| docuseal_submission.slug);
+
+    let preview_url = format!("{}/s/{}", state.docuseal.app_url, slug);
+
+    Ok(Json(json!({
+        "docuseal_submission_id": docuseal_submission.id,
+        "docuseal_slug": slug,
+        "preview_url": preview_url,
+    })))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct FinalizeSubmissionRequest {
+    pub docuseal_template_id: Option<i32>,
+    pub client_name: Option<String>,
+    pub client_email: Option<String>,
+    pub talent_id: Option<String>,
+    pub talent_ids: Option<Vec<String>>,
+    pub talent_names: Option<String>,
+    pub requires_agency_signature: Option<bool>,
+    pub licensing_request_id: Option<String>,
+    pub old_license_id: Option<String>, // ID of expired license being renewed
+}
+
+/// POST /api/license-submissions/:id/finalize - Finalize and send a draft submission
+pub async fn finalize(
+    State(state): State<AppState>,
+    auth_user: AuthUser,
+    Path(id): Path<String>,
+    Json(req): Json<FinalizeSubmissionRequest>,
+) -> Result<Json<LicenseSubmission>, (StatusCode, String)> {
+    let agency_id = auth_user.effective_org_id().to_string();
+
+    // 1. Fetch the draft submission
+    let sub_resp = state
+        .pg
+        .from("license_submissions")
+        .select("*")
+        .eq("id", &id)
+        .eq("agency_id", &agency_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let sub_text = sub_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let submission_data: serde_json::Value = serde_json::from_str(&sub_text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if submission_data["status"] != "draft" {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "Submission is already finalized".to_string(),
+        ));
+    }
+
+    // 2. Fetch the License Template metadata for values
+    let template_id = submission_data["template_id"].as_str().ok_or((
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "Invalid template_id".to_string(),
+    ))?;
+    let template_resp = state
+        .pg
+        .from("license_templates")
+        .select("*")
+        .eq("id", template_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let template_text = template_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let license_template: LicenseTemplate = serde_json::from_str(&template_text)
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    // 3. Prepare values for DocuSeal (matching create_builder_token pattern)
+    let license_fee = submission_data["license_fee"]
+        .as_i64()
+        .or(license_template.license_fee);
+    let fee_str = license_fee
+        .map(|c| format!("${:.2}", c as f64 / 100.0))
+        .unwrap_or_default();
+
+    let duration_days = submission_data["duration_days"]
+        .as_i64()
+        .map(|d| d as i32)
+        .unwrap_or(license_template.duration_days);
+
+    // Build fields array for pre-filling (DocuSeal API standard format)
+    use crate::services::docuseal::SubmitterField;
+
+    let mut fields = Vec::new();
+
+    let client_name_str = submission_data["client_name"].as_str().unwrap_or("Client");
+    let talent_names_str = submission_data["talent_names"].as_str().unwrap_or("");
+
+    fields.push(SubmitterField {
+        name: "Client/Brand Name".to_string(),
+        default_value: Some(client_name_str.to_string()),
+        readonly: Some(true),
+    });
+
+    fields.push(SubmitterField {
+        name: "Talent Name".to_string(),
+        default_value: Some(talent_names_str.to_string()),
+        readonly: Some(true),
+    });
+
+    fields.push(SubmitterField {
+        name: "License Fee".to_string(),
+        default_value: Some(fee_str.clone()),
+        readonly: Some(true),
+    });
+
+    fields.push(SubmitterField {
+        name: "Category".to_string(),
+        default_value: Some(license_template.category.clone()),
+        readonly: Some(true),
+    });
+
+    if let Some(desc) = &license_template.description {
+        fields.push(SubmitterField {
+            name: "Description".to_string(),
+            default_value: Some(desc.clone()),
+            readonly: Some(true),
+        });
+    }
+
+    if let Some(scope) = &license_template.usage_scope {
+        fields.push(SubmitterField {
+            name: "Usage Scope".to_string(),
+            default_value: Some(scope.clone()),
+            readonly: Some(true),
+        });
+    }
+
+    fields.push(SubmitterField {
+        name: "Territory".to_string(),
+        default_value: Some(license_template.territory.clone()),
+        readonly: Some(true),
+    });
+
+    fields.push(SubmitterField {
+        name: "Exclusivity".to_string(),
+        default_value: Some(license_template.exclusivity.clone()),
+        readonly: Some(true),
+    });
+
+    fields.push(SubmitterField {
+        name: "Duration".to_string(),
+        default_value: Some(duration_days.to_string()),
+        readonly: Some(true),
+    });
+
+    let start_date_val = submission_data["start_date"]
+        .as_str()
+        .or(license_template.start_date.as_deref());
+    let start_date_str = start_date_val.unwrap_or("-");
+
+    fields.push(SubmitterField {
+        name: "Start Date".to_string(),
+        default_value: Some(start_date_str.to_string()),
+        readonly: Some(true),
+    });
+
+    // Derive deadline from start_date and duration_days
+    let mut deadline = None;
+    if let Some(ds) = start_date_val {
+        if let Ok(d) = chrono::NaiveDate::parse_from_str(ds, "%Y-%m-%d") {
+            deadline = Some(d + chrono::Duration::days(duration_days as i64));
+        }
+    }
+
+    let combined_terms = submission_data["custom_terms"]
+        .as_str()
+        .filter(|s| !s.trim().is_empty())
+        .map(String::from)
+        .or_else(|| license_template.custom_terms.clone())
+        .unwrap_or_default();
+    fields.push(SubmitterField {
+        name: "Custom Terms".to_string(),
+        default_value: Some(combined_terms),
+        readonly: Some(true),
+    });
+
+    fields.push(SubmitterField {
+        name: "Template Name".to_string(),
+        default_value: Some(license_template.template_name.clone()),
+        readonly: Some(true),
+    });
+
+    let docuseal = DocuSealClient::new(
+        state.docuseal.api_key.clone(),
+        state.docuseal.base_url.clone(),
+    );
+
+    // Use values from request if provided, otherwise fallback to existing record
+    let docuseal_template_id = req
+        .docuseal_template_id
+        .or_else(|| {
+            submission_data["docuseal_template_id"]
+                .as_i64()
+                .map(|i| i as i32)
+        })
+        .or(license_template.docuseal_template_id)
+        .ok_or((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Invalid DS template id".to_string(),
+        ))?;
+
+    let client_name = req
+        .client_name
+        .clone()
+        .filter(|s| !s.trim().is_empty())
+        .or_else(|| submission_data["client_name"].as_str().map(String::from))
+        .unwrap_or_else(|| "Client".to_string());
+
+    let client_email = req
+        .client_email
+        .clone()
+        .filter(|s| !s.trim().is_empty())
+        .or_else(|| submission_data["client_email"].as_str().map(String::from))
+        .unwrap_or_default();
+    let requires_agency_signature = req
+        .requires_agency_signature
+        .or_else(|| {
+            submission_data["requires_agency_signature"]
+                .as_bool()
+                .or(Some(false))
+        })
+        .unwrap_or(false);
+
+    // For renewals, agency has already "signed" by initiating the renewal
+    // So we don't need agency signature again - brand can sign immediately
+    let is_renewal = req.old_license_id.is_some();
+    let final_requires_agency_signature = if is_renewal {
+        false
+    } else {
+        requires_agency_signature
+    };
+
+    // If client info was provided in this request, update the record first
+    if req.client_name.is_some() || req.client_email.is_some() || req.talent_names.is_some() {
+        let mut update_json = serde_json::Map::new();
+        if let Some(n) = &req.client_name {
+            update_json.insert("client_name".to_string(), json!(n));
+        }
+        if let Some(e) = &req.client_email {
+            update_json.insert("client_email".to_string(), json!(e));
+        }
+        if let Some(t) = &req.talent_names {
+            update_json.insert("talent_names".to_string(), json!(t));
+        }
+        update_json.insert(
+            "requires_agency_signature".to_string(),
+            json!(final_requires_agency_signature),
+        );
+        if let Some(br_id) = &req.licensing_request_id {
+            update_json.insert("brand_request_id".to_string(), json!(br_id));
+        }
+
+        let _ = state
+            .pg
+            .from("license_submissions")
+            .update(serde_json::Value::Object(update_json).to_string())
+            .eq("id", &id)
+            .execute()
+            .await;
+    }
+
+    // 4. Fetch Template details for field filtering
+    let template_details = docuseal
+        .get_template(docuseal_template_id)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("DocuSeal Template Fetch Error: {}", e),
+            )
+        })?;
+
+    // Extract all field names present in the template's schema
+    let mut allowed_field_names = std::collections::HashSet::new();
+    if let Some(documents) = template_details.documents {
+        for doc in documents {
+            for field in doc.schema {
+                if let Some(name) = field.get("name").and_then(|n| n.as_str()) {
+                    allowed_field_names.insert(name.to_string());
+                }
+            }
+        }
+    }
+    for field in template_details.schema {
+        if let Some(name) = field.get("name").and_then(|n| n.as_str()) {
+            allowed_field_names.insert(name.to_string());
+        }
+    }
+
+    // Filter fields to only include those that exist in the template
+    let filtered_fields: Vec<_> = fields
+        .into_iter()
+        .filter(|f| allowed_field_names.contains(&f.name))
+        .collect();
+
+    tracing::info!(
+        allowed_count = allowed_field_names.len(),
+        filtered_count = filtered_fields.len(),
+        "Filtered DocuSeal submission fields for finalize"
+    );
+
+    // 5. Create DocuSeal Submission with fields-based pre-fill
+    let agency_signer_email =
+        resolve_agency_signer_email(&state, &agency_id, auth_user.email.as_ref()).await;
+
+    let docuseal_submission = if final_requires_agency_signature {
+        let agency_email = agency_signer_email.ok_or((
+            StatusCode::BAD_REQUEST,
+            "Agency signer email not found. Please set agency email in profile.".to_string(),
+        ))?;
+        let submitters = vec![
+            crate::services::docuseal::Submitter {
+                name: Some("Agency".to_string()),
+                email: Some(agency_email),
+                role: Some("First Party".to_string()),
+                order: Some(0),
+                fields: Some(filtered_fields.clone()),
+                values: None,
+            },
+            crate::services::docuseal::Submitter {
+                name: Some(client_name.clone()),
+                email: Some(client_email.clone()),
+                role: Some("Second Party".to_string()),
+                order: Some(1),
+                fields: Some(filtered_fields),
+                values: None,
+            },
+        ];
+        docuseal
+            .create_submission_with_submitters(docuseal_template_id, submitters, true)
+            .await
+            .map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("DocuSeal Error: {}", e),
+                )
+            })?
+    } else {
+        docuseal
+            .create_submission_with_fields(
+                docuseal_template_id,
+                client_name.clone(),
+                client_email.clone(),
+                "First Party".to_string(),
+                filtered_fields,
+                true,
+            )
+            .await
+            .map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("DocuSeal Error: {}", e),
+                )
+            })?
+    };
+
+    let agency_submitter = docuseal_submission
+        .submitters
+        .iter()
+        .find(|s| {
+            s.role
+                .as_ref()
+                .map(|r| r.eq_ignore_ascii_case("first party") || r.eq_ignore_ascii_case("agency"))
+                .unwrap_or(false)
+        })
+        .or_else(|| docuseal_submission.submitters.first());
+    let client_submitter = docuseal_submission
+        .submitters
+        .iter()
+        .find(|s| {
+            s.role
+                .as_ref()
+                .map(|r| r.eq_ignore_ascii_case("second party") || r.eq_ignore_ascii_case("client"))
+                .unwrap_or(false)
+        })
+        .or_else(|| {
+            if docuseal_submission.submitters.len() > 1 {
+                docuseal_submission.submitters.get(1)
+            } else {
+                // For single submitter scenarios (renewals), the first submitter is the client
+                docuseal_submission.submitters.first()
+            }
+        });
+
+    // 5. Update Likelee record
+    let update_data = json!({
+        "docuseal_submission_id": docuseal_submission.id,
+        "docuseal_slug": docuseal_submission.slug,
+        "docuseal_template_id": docuseal_template_id,
+        "status": if final_requires_agency_signature { "agency_pending" } else { "sent" },
+        "requires_agency_signature": final_requires_agency_signature,
+        "agency_submitter_id": agency_submitter.map(|s| s.id),
+        "agency_submitter_slug": agency_submitter.map(|s| s.slug.clone()),
+        "agency_embed_src": agency_submitter
+            .and_then(|s| s.embed_src.clone())
+            .or_else(|| {
+                agency_submitter
+                    .map(|s| format!("{}/s/{}", state.docuseal.app_url.trim_end_matches('/'), s.slug))
+            }),
+        "client_submitter_id": client_submitter.map(|s| s.id),
+        "client_submitter_slug": client_submitter.map(|s| s.slug.clone()),
+        "updated_at": chrono::Utc::now().to_rfc3339(),
+    });
+
+    let resp = state
+        .pg
+        .from("license_submissions")
+        .update(update_data.to_string())
+        .eq("id", &id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !status.is_success() {
+        return Err((
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+            text,
+        ));
+    }
+
+    let mut updated: Vec<LicenseSubmission> = serde_json::from_str(&text).map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!(
+                "Failed to parse updated submission: {}. Raw response: {}",
+                e, text
+            ),
+        )
+    })?;
+    let submission = updated.pop().ok_or((
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "Failed to update submission (empty response)".to_string(),
+    ))?;
+
+    // Send notification to brand that contract is ready
+    if let Some(brand_id) = submission.client_id.as_ref() {
+        let state_clone = state.clone();
+        let brand_id_clone = brand_id.clone();
+        let submission_id_clone = submission.id.clone();
+        let campaign_title = license_template.template_name.clone();
+
+        tokio::spawn(async move {
+            let subject = "Contract ready for signature";
+            let message = format!(
+                "An agency has sent you a contract for '{}'. Please review and sign.",
+                campaign_title
+            );
+            let _ = crate::notifications::notify_brand_if_enabled(
+                &state_clone,
+                crate::notifications::BrandNotificationRequest {
+                    brand_id: &brand_id_clone,
+                    agency_id: None,
+                    pref_key: "newProjectAlerts",
+                    subject,
+                    message: &message,
+                    meta_json: json!({
+                        "submission_id": submission_id_clone,
+                        "type": "contract_ready"
+                    }),
+                    notify_email: true,
+                },
+            )
+            .await;
+        });
+    }
+
+    // 6. Create a linked licensing_request — single request for all talents.
+    // Resolve the list of talent IDs to use:
+    //   1. talent_ids from the finalize request (array, preferred)
+    //   2. talent_ids stored in the submission at draft time
+    //   3. single talent_id from finalize request (legacy)
+    //   4. single talent_id stored in the submission
+    //   5. None — create one request with no talents
+    let talent_name = submission_data["talent_names"]
+        .as_str()
+        .or(req.talent_names.as_deref());
+
+    let client_name_str = submission_data["client_name"]
+        .as_str()
+        .unwrap_or(&client_name);
+
+    let resolved_talent_ids: Vec<Option<String>> = {
+        // Try talent_ids array from request
+        let from_req: Vec<String> = req
+            .talent_ids
+            .clone()
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|s| !s.is_empty())
+            .collect();
+
+        // Try talent_ids array from stored submission data
+        let from_submission: Vec<String> = submission_data["talent_ids"]
+            .as_array()
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|v| v.as_str())
+                    .filter(|s| !s.is_empty())
+                    .map(|s| s.to_string())
+                    .collect()
+            })
+            .unwrap_or_default();
+
+        let ids = if !from_req.is_empty() {
+            from_req
+        } else if !from_submission.is_empty() {
+            from_submission
+        } else {
+            // Fall back to single talent_id
+            let single = req.talent_id.clone().filter(|s| !s.is_empty()).or_else(|| {
+                submission_data["talent_id"]
+                    .as_str()
+                    .filter(|s| !s.is_empty())
+                    .map(|s| s.to_string())
+            });
+            match single {
+                Some(id) => vec![id],
+                None => vec![],
+            }
+        };
+
+        if ids.is_empty() {
+            vec![None] // create one request with no talent_id
+        } else {
+            ids.into_iter().map(Some).collect()
+        }
+    };
+
+    let mut full_talent_ids: Vec<String> = resolved_talent_ids
+        .iter()
+        .filter_map(|v| v.clone())
+        .collect();
+    full_talent_ids.sort();
+    full_talent_ids.dedup();
+
+    tracing::info!(
+        "Creating 1 licensing_request for submission {}: agency_id={}, client_name={}, talent_count={}, talent_name={:?}",
+        submission.id,
+        agency_id,
+        client_name_str,
+        full_talent_ids.len(),
+        talent_name,
+    );
+
+    let lr_data = json!({
+        "agency_id": agency_id,
+        "brand_id": submission.client_id,
+        "client_name": client_name_str,
+        "talent_id": serde_json::Value::Null,
+        "talent_ids": full_talent_ids,
+        "talent_name": talent_name,
+        "submission_id": submission.id,
+        "status": "pending",
+        "campaign_title": license_template.template_name.clone(),
+        "usage_scope": license_template.usage_scope.clone(),
+        "regions": license_template.territory.clone(),
+        "deadline": deadline.map(|d| d.to_string()),
+    });
+
+    tracing::debug!("Licensing request payload: {}", lr_data);
+
+    let lr_resp = state
+        .pg
+        .from("licensing_requests")
+        .insert(lr_data.to_string())
+        .execute()
+        .await;
+
+    match lr_resp {
+        Ok(resp) => {
+            let status = resp.status();
+            if status.is_success() {
+                tracing::info!(agency_id = %agency_id, "Created licensing_request for submission");
+
+                // If this is a renewal, mark the old license as "renewed"
+                if let Some(old_license_id) = &req.old_license_id {
+                    // Get the brand_request_id from the current submission record (passed via licensing_request_id)
+                    let brand_request_id_opt = req.licensing_request_id.clone().or_else(|| {
+                        submission_data["brand_request_id"]
+                            .as_str()
+                            .map(|s| s.to_string())
+                    });
+
+                    let update_old_license = json!({
+                        "status": "renewed",
+                        "updated_at": chrono::Utc::now().to_rfc3339()
+                    });
+
+                    let update_result = state
+                        .pg
+                        .from("licensing_requests")
+                        .update(update_old_license.to_string())
+                        .eq("id", old_license_id)
+                        .eq("agency_id", &agency_id)
+                        .execute()
+                        .await;
+
+                    match update_result {
+                        Ok(update_resp) if update_resp.status().is_success() => {}
+                        Ok(update_resp) => {
+                            let status = update_resp.status();
+                            let body = update_resp.text().await.unwrap_or_default();
+                            tracing::warn!(
+                                "Failed to mark old license {} as renewed: status={}, body={}",
+                                old_license_id,
+                                status,
+                                body
+                            );
+                        }
+                        Err(e) => {
+                            tracing::error!(
+                                "Error marking old license {} as renewed: {}",
+                                old_license_id,
+                                e
+                            );
+                        }
+                    }
+
+                    // Update the existing brand_license_requests entry if we have the brand_request_id
+                    if let Some(brand_request_id) = brand_request_id_opt {
+                        let update_brand_req = json!({
+                            "submission_id": submission.id,
+                            "status": "pending", // Brand needs to sign the renewed contract
+                            "campaign_title": license_template.template_name.clone(),
+                            "usage_scope": license_template.usage_scope.clone(),
+                            "territory": license_template.territory.clone(),
+                            "duration_days": license_template.duration_days,
+                            "license_fee": license_template.license_fee,
+                            "license_start_date": license_template.start_date.clone(),
+                            "custom_terms": license_template.custom_terms.clone(),
+                            "license_end_date": deadline.map(|d| d.to_string()),
+                            "updated_at": chrono::Utc::now().to_rfc3339()
+                        });
+
+                        let brand_update_result = state
+                            .pg
+                            .from("brand_license_requests")
+                            .update(update_brand_req.to_string())
+                            .eq("id", &brand_request_id)
+                            .execute()
+                            .await;
+
+                        match brand_update_result {
+                            Ok(_) => {}
+                            Err(e) => {
+                                tracing::error!(
+                                    "Error updating brand_license_request {} for renewal: {}",
+                                    brand_request_id,
+                                    e
+                                );
+                            }
+                        }
+                    } else {
+                        // No existing brand_request_id found - create a new brand_license_requests entry
+                        // This handles cases where the original license didn't have a brand_request_id
+                        let brand_id_to_use = submission.client_id.clone();
+
+                        // If no brand_id in submission, try to find it by client_name
+                        let final_brand_id = if brand_id_to_use.is_none() {
+                            // Trim whitespace from client name for better matching
+                            let trimmed_client_name = client_name_str.trim();
+
+                            // Try to find brand by exact client_name match (trimmed)
+                            let brand_lookup_resp = state
+                                .pg
+                                .from("brands")
+                                .select("id, company_name")
+                                .eq("company_name", trimmed_client_name)
+                                .limit(1)
+                                .execute()
+                                .await;
+
+                            match brand_lookup_resp {
+                                Ok(resp) if resp.status().is_success() => {
+                                    let brand_text =
+                                        resp.text().await.unwrap_or_else(|_| "[]".to_string());
+                                    let brands: Vec<serde_json::Value> =
+                                        serde_json::from_str(&brand_text).unwrap_or(vec![]);
+                                    let mut found_brand_id = brands
+                                        .first()
+                                        .and_then(|b| b.get("id"))
+                                        .and_then(|v| v.as_str())
+                                        .map(|s| s.to_string());
+
+                                    // If exact match failed, try case-insensitive search
+                                    if found_brand_id.is_none() {
+                                        let case_insensitive_resp = state
+                                            .pg
+                                            .from("brands")
+                                            .select("id, company_name")
+                                            .ilike(
+                                                "company_name",
+                                                format!("%{}%", trimmed_client_name),
+                                            )
+                                            .limit(5) // Get more results for debugging
+                                            .execute()
+                                            .await;
+
+                                        if let Ok(ci_resp) = case_insensitive_resp {
+                                            if ci_resp.status().is_success() {
+                                                let ci_text = ci_resp
+                                                    .text()
+                                                    .await
+                                                    .unwrap_or_else(|_| "[]".to_string());
+                                                let ci_brands: Vec<serde_json::Value> =
+                                                    serde_json::from_str(&ci_text)
+                                                        .unwrap_or(vec![]);
+
+                                                found_brand_id = ci_brands
+                                                    .first()
+                                                    .and_then(|b| b.get("id"))
+                                                    .and_then(|v| v.as_str())
+                                                    .map(|s| s.to_string());
+                                            }
+                                        }
+                                    }
+
+                                    // If still no match, try with the original client name (including spaces)
+                                    if found_brand_id.is_none()
+                                        && trimmed_client_name != client_name_str
+                                    {
+                                        let original_resp = state
+                                            .pg
+                                            .from("brands")
+                                            .select("id, company_name")
+                                            .eq("company_name", client_name_str)
+                                            .limit(1)
+                                            .execute()
+                                            .await;
+
+                                        if let Ok(orig_resp) = original_resp {
+                                            if orig_resp.status().is_success() {
+                                                let orig_text = orig_resp
+                                                    .text()
+                                                    .await
+                                                    .unwrap_or_else(|_| "[]".to_string());
+                                                let orig_brands: Vec<serde_json::Value> =
+                                                    serde_json::from_str(&orig_text)
+                                                        .unwrap_or(vec![]);
+
+                                                found_brand_id = orig_brands
+                                                    .first()
+                                                    .and_then(|b| b.get("id"))
+                                                    .and_then(|v| v.as_str())
+                                                    .map(|s| s.to_string());
+                                            }
+                                        }
+                                    }
+
+                                    found_brand_id
+                                }
+                                Ok(resp) => {
+                                    let status = resp.status();
+                                    let body = resp.text().await.unwrap_or_default();
+                                    tracing::warn!(
+                                        "Brand lookup failed: status={}, body={}",
+                                        status,
+                                        body
+                                    );
+                                    None
+                                }
+                                Err(e) => {
+                                    tracing::error!("Error looking up brand by name: {}", e);
+                                    None
+                                }
+                            }
+                        } else {
+                            brand_id_to_use
+                        };
+
+                        // If we still don't have a brand_id, this is a critical issue
+                        if final_brand_id.is_none() {
+                            tracing::error!(
+                                "No brand_id found for renewal! client_name='{}', submission.client_id={:?}",
+                                client_name_str,
+                                submission.client_id
+                            );
+                        }
+
+                        if let Some(brand_id) = final_brand_id {
+                            // For brand_license_requests, we need to find the actual creator_id from the creators table
+                            // The submission talent_id might be an agency_user ID, so we need to resolve it
+                            let submission_talent_id = submission_data["talent_id"]
+                                .as_str()
+                                .or_else(|| {
+                                    submission_data["talent_ids"]
+                                        .as_array()
+                                        .and_then(|arr| arr.first())
+                                        .and_then(|v| v.as_str())
+                                })
+                                .unwrap_or("");
+
+                            // Try to resolve the creator_id by looking up the agency_user and getting their creator_id
+                            let creator_id = if !submission_talent_id.is_empty() {
+                                // First try to find this ID in agency_users table to get the creator_id
+                                match state
+                                    .pg
+                                    .from("agency_users")
+                                    .select("creator_id")
+                                    .eq("id", submission_talent_id)
+                                    .eq("agency_id", &agency_id)
+                                    .single()
+                                    .execute()
+                                    .await
+                                {
+                                    Ok(resp) if resp.status().is_success() => {
+                                        match resp.text().await {
+                                            Ok(text) => {
+                                                match serde_json::from_str::<serde_json::Value>(
+                                                    &text,
+                                                ) {
+                                                    Ok(row) => {
+                                                        let resolved_creator_id = row
+                                                            .get("creator_id")
+                                                            .and_then(|v| v.as_str())
+                                                            .unwrap_or("");
+
+                                                        if !resolved_creator_id.is_empty() {
+                                                            resolved_creator_id.to_string()
+                                                        } else {
+                                                            // Check if the talent_id exists directly in creators table
+                                                            match state
+                                                                .pg
+                                                                .from("creators")
+                                                                .select("id")
+                                                                .eq("id", submission_talent_id)
+                                                                .single()
+                                                                .execute()
+                                                                .await
+                                                            {
+                                                                Ok(creator_resp)
+                                                                    if creator_resp
+                                                                        .status()
+                                                                        .is_success() =>
+                                                                {
+                                                                    submission_talent_id.to_string()
+                                                                }
+                                                                _ => {
+                                                                    submission_talent_id.to_string()
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    _ => submission_talent_id.to_string(),
+                                                }
+                                            }
+                                            _ => submission_talent_id.to_string(),
+                                        }
+                                    }
+                                    _ => {
+                                        // Check if the talent_id exists directly in creators table
+                                        match state
+                                            .pg
+                                            .from("creators")
+                                            .select("id")
+                                            .eq("id", submission_talent_id)
+                                            .single()
+                                            .execute()
+                                            .await
+                                        {
+                                            Ok(creator_resp)
+                                                if creator_resp.status().is_success() =>
+                                            {
+                                                submission_talent_id.to_string()
+                                            }
+                                            _ => submission_talent_id.to_string(),
+                                        }
+                                    }
+                                }
+                            } else {
+                                submission_talent_id.to_string()
+                            };
+
+                            // Calculate proper start and end dates for the renewal
+                            let default_start_date = chrono::Utc::now().date_naive().to_string();
+                            let start_date = submission_data["start_date"]
+                                .as_str()
+                                .or(license_template.start_date.as_deref())
+                                .unwrap_or(&default_start_date)
+                                .to_string();
+
+                            // Calculate end date from start date + duration
+                            let end_date = if let Ok(start_naive) =
+                                chrono::NaiveDate::parse_from_str(&start_date, "%Y-%m-%d")
+                            {
+                                let duration_days = submission_data["duration_days"]
+                                    .as_i64()
+                                    .map(|d| d as i32)
+                                    .unwrap_or(license_template.duration_days);
+                                let end_naive =
+                                    start_naive + chrono::Duration::days(duration_days as i64);
+                                end_naive.to_string()
+                            } else {
+                                // Fallback to deadline if start date parsing fails
+                                deadline.map(|d| d.to_string()).unwrap_or_else(|| {
+                                    let fallback_end = chrono::Utc::now().date_naive()
+                                        + chrono::Duration::days(90);
+                                    fallback_end.to_string()
+                                })
+                            };
+
+                            // Get the actual values from submission data or template
+                            let duration_days = submission_data["duration_days"]
+                                .as_i64()
+                                .map(|d| d as i32)
+                                .unwrap_or(license_template.duration_days);
+
+                            let license_fee = submission_data["license_fee"]
+                                .as_i64()
+                                .or(license_template.license_fee);
+
+                            let modifications_allowed = submission_data["custom_terms"]
+                                .as_str()
+                                .filter(|s| !s.trim().is_empty())
+                                .or(license_template.custom_terms.as_deref())
+                                .or(license_template.modifications_allowed.as_deref())
+                                .unwrap_or("No");
+
+                            let brand_license_data = if creator_id.is_empty() {
+                                // If no valid creator_id found, create without it (make it nullable)
+                                json!({
+                                    "brand_id": brand_id,
+                                    "agency_id": agency_id,
+                                    "campaign_title": client_name_str,
+                                    "talent_name": talent_name,
+                                    "usage_scope": license_template.usage_scope.clone(),
+                                    "territory": license_template.territory.clone(),
+                                    "duration_days": duration_days,
+                                    "license_fee": license_fee,
+                                    "license_start_date": start_date,
+                                    "license_end_date": end_date,
+                                    "modifications_allowed": modifications_allowed,
+                                    "custom_terms": license_template.custom_terms.clone(),
+                                    "submission_id": submission.id,
+                                    "status": "approved", // Agency already signed, ready for brand to sign
+                                    "created_at": chrono::Utc::now().to_rfc3339(),
+                                    "updated_at": chrono::Utc::now().to_rfc3339()
+                                })
+                            } else {
+                                json!({
+                                    "brand_id": brand_id,
+                                    "agency_id": agency_id,
+                                    "creator_id": creator_id,
+                                    "campaign_title": client_name_str,
+                                    "talent_name": talent_name,
+                                    "usage_scope": license_template.usage_scope.clone(),
+                                    "territory": license_template.territory.clone(),
+                                    "duration_days": duration_days,
+                                    "license_fee": license_fee,
+                                    "license_start_date": start_date,
+                                    "license_end_date": end_date,
+                                    "modifications_allowed": modifications_allowed,
+                                    "custom_terms": license_template.custom_terms.clone(),
+                                    "submission_id": submission.id,
+                                    "status": "approved", // Agency already signed, ready for brand to sign
+                                    "created_at": chrono::Utc::now().to_rfc3339(),
+                                    "updated_at": chrono::Utc::now().to_rfc3339()
+                                })
+                            };
+
+                            // Create brand_license_requests entry for the renewal
+                            // This entry will appear in the brand dashboard for signing
+                            let brand_license_result = state
+                                .pg
+                                .from("brand_license_requests")
+                                .auth(state.supabase_service_key.clone()) // Use service key for cross-tenant operation
+                                .insert(brand_license_data.to_string())
+                                .select("id")
+                                .single()
+                                .execute()
+                                .await;
+
+                            match brand_license_result {
+                                Ok(brand_resp) if brand_resp.status().is_success() => {
+                                    let response_text = brand_resp.text().await.unwrap_or_default();
+
+                                    // Extract the brand_request_id from the response and update the license_submissions table
+                                    if let Ok(response_json) =
+                                        serde_json::from_str::<serde_json::Value>(&response_text)
+                                    {
+                                        if let Some(brand_request_id) =
+                                            response_json.get("id").and_then(|v| v.as_str())
+                                        {
+                                            let update_submission = json!({
+                                                "brand_request_id": brand_request_id,
+                                                "updated_at": chrono::Utc::now().to_rfc3339()
+                                            });
+
+                                            let _ = state
+                                                .pg
+                                                .from("license_submissions")
+                                                .auth(state.supabase_service_key.clone()) // Use service key for consistency
+                                                .update(update_submission.to_string())
+                                                .eq("id", &submission.id)
+                                                .execute()
+                                                .await;
+                                        }
+                                    }
+                                }
+                                Ok(brand_resp) => {
+                                    let status = brand_resp.status();
+                                    let body = brand_resp.text().await.unwrap_or_default();
+                                    tracing::warn!(
+                                        "Failed to create new brand_license_requests entry for renewal: status={}, body={}",
+                                        status,
+                                        body
+                                    );
+                                }
+                                Err(e) => {
+                                    tracing::error!(
+                                        "Error creating new brand_license_requests entry for renewal: {}",
+                                        e
+                                    );
+                                }
+                            }
+                        } else {
+                            tracing::warn!(
+                                "No brand_id found for renewal (client_name: {}), cannot create brand_license_requests entry",
+                                client_name_str
+                            );
+                        }
+                    }
+                } else {
+                    // Not a renewal
+                }
+            } else {
+                let body = resp.text().await.unwrap_or_default();
+                tracing::error!(
+                    "Failed to create licensing_request (HTTP {}): {}",
+                    status,
+                    body
+                );
+            }
+        }
+        Err(e) => {
+            tracing::error!("Error creating licensing_request: {}", e);
+        }
+    }
+
+    // Update brand_license_requests with submission_id if this is linked to a brand request
+    let brand_request_id_opt = req.licensing_request_id.clone().or_else(|| {
+        submission_data["brand_request_id"]
+            .as_str()
+            .map(|s| s.to_string())
+    });
+
+    if let Some(brand_request_id) = brand_request_id_opt {
+        let update_brand_req = json!({
+            "submission_id": submission.id,
+            "status": "approved",
+            "updated_at": chrono::Utc::now().to_rfc3339()
+        });
+
+        let _ = state
+            .pg
+            .from("brand_license_requests")
+            .update(update_brand_req.to_string())
+            .eq("id", &brand_request_id)
+            .execute()
+            .await;
+    }
+
+    Ok(Json(submission))
+}
+
+/// POST /api/license-submissions - Legacy create (calls draft + finalize if possible)
+pub async fn create(
+    State(_state): State<AppState>,
+    _auth_user: AuthUser,
+    Json(_req): Json<CreateSubmissionRequest>,
+) -> Result<Json<LicenseSubmission>, (StatusCode, String)> {
+    // If no document is provided, we can maybe finalize immediately?
+    // But better to enforce the new flow.
+    Err((
+        StatusCode::NOT_IMPLEMENTED,
+        "Please use draft and finalize flow".to_string(),
+    ))
+}
+
+/// GET /api/license-submissions - List submissions for agency
+pub async fn list(
+    State(state): State<AppState>,
+    auth_user: AuthUser,
+    Query(q): Query<ListQuery>,
+) -> Result<Json<Vec<LicenseSubmission>>, (StatusCode, String)> {
+    let agency_id = auth_user.effective_org_id().to_string();
+
+    let mut query = state
+        .pg
+        .from("license_submissions")
+        .select("*, license_templates:license_templates(template_name)")
+        .eq("agency_id", &agency_id)
+        .order("created_at.desc");
+
+    if let Some(status) = q.status {
+        query = query.eq("status", &status);
+    }
+
+    if let Some(client_id) = q.client_id {
+        query = query.eq("client_id", &client_id);
+    }
+
+    let resp = query.execute().await.map_err(|e| {
+        tracing::error!(error = %e, "Failed to fetch license_submissions");
+        (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+    })?;
+
+    let status = resp.status();
+    let text = resp.text().await.map_err(|e| {
+        tracing::error!(error = %e, "Failed to read response");
+        (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+    })?;
+
+    if !status.is_success() {
+        tracing::error!(error = %text, "license_submissions query error");
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+
+    // The select embeds license_templates as an object; flatten template_name for UI.
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let mut submissions: Vec<LicenseSubmission> = Vec::with_capacity(rows.len());
+    for mut r in rows {
+        let template_name = r
+            .get("license_templates")
+            .and_then(|v| {
+                // PostgREST might return an array for joins, even if it's 1-to-1
+                if v.is_array() {
+                    v.as_array().and_then(|a| a.first())
+                } else {
+                    Some(v)
+                }
+            })
+            .and_then(|v| v.get("template_name"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+
+        if let Some(name) = template_name {
+            if let Some(obj) = r.as_object_mut() {
+                obj.insert("template_name".to_string(), serde_json::Value::String(name));
+            }
+        }
+
+        // Avoid leaking the embedded object; keep response shape stable.
+        if let Some(obj) = r.as_object_mut() {
+            obj.remove("license_templates");
+        }
+
+        if let Ok(sub) = serde_json::from_value::<LicenseSubmission>(r) {
+            submissions.push(sub);
+        }
+    }
+
+    tracing::info!(
+        agency_id = %agency_id,
+        count = submissions.len(),
+        "License submissions fetched"
+    );
+
+    Ok(Json(submissions))
+}
+
+/// GET /api/license-submissions/:id - Get submission details
+pub async fn get(
+    State(state): State<AppState>,
+    auth_user: AuthUser,
+    Path(id): Path<String>,
+) -> Result<Json<LicenseSubmission>, (StatusCode, String)> {
+    let agency_id = auth_user.effective_org_id().to_string();
+
+    let resp = state
+        .pg
+        .from("license_submissions")
+        .select("*, license_templates:license_templates(template_name)")
+        .eq("id", &id)
+        .eq("agency_id", &agency_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| {
+            tracing::error!(error = %e, id = %id, "Failed to fetch submission");
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+        })?;
+
+    if !resp.status().is_success() {
+        let err = resp.text().await.unwrap_or_default();
+        tracing::error!(error = %err, "submission query error");
+        return Err((StatusCode::NOT_FOUND, "Submission not found".to_string()));
+    }
+
+    let text = resp.text().await.map_err(|e| {
+        tracing::error!(error = %e, "Failed to read response");
+        (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+    })?;
+
+    let mut row: serde_json::Value = serde_json::from_str(&text).map_err(|e| {
+        tracing::error!(error = %e, body = %text, "Failed to parse submission JSON");
+        (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+    })?;
+
+    let template_name = row
+        .get("license_templates")
+        .and_then(|v| v.get("template_name"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+
+    if let Some(name) = template_name {
+        if let Some(obj) = row.as_object_mut() {
+            obj.insert("template_name".to_string(), serde_json::Value::String(name));
+            obj.remove("license_templates");
+        }
+    } else if let Some(obj) = row.as_object_mut() {
+        obj.remove("license_templates");
+    }
+
+    let submission: LicenseSubmission = serde_json::from_value(row).map_err(|e| {
+        tracing::error!(error = %e, body = %text, "Failed to parse submission");
+        (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+    })?;
+
+    Ok(Json(submission))
+}
+
+/// POST /api/license-submissions/:id/resend - Edit and resend submission
+pub async fn resend(
+    State(state): State<AppState>,
+    auth_user: AuthUser,
+    Path(id): Path<String>,
+    req_payload: Option<Json<CreateSubmissionRequest>>,
+) -> Result<Json<LicenseSubmission>, (StatusCode, String)> {
+    let agency_id = auth_user.effective_org_id().to_string();
+
+    // 0. Fetch existing submission to get data (for archiving AND for resending if payload missing)
+    let existing_sub_resp = state
+        .pg
+        .from("license_submissions")
+        .select("*") // Fetch everything to reconstruct types
+        .eq("id", &id)
+        .eq("agency_id", &agency_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !existing_sub_resp.status().is_success() {
+        return Err((StatusCode::NOT_FOUND, "Submission not found".to_string()));
+    }
+
+    let existing_text = existing_sub_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let existing_data: serde_json::Value = serde_json::from_str(&existing_text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    // Determine the request payload: use provided one OR reconstruct from existing
+    let req = if let Some(Json(r)) = req_payload {
+        r
+    } else {
+        // Reconstruct from existing data
+        CreateSubmissionRequest {
+            template_id: existing_data["template_id"]
+                .as_str()
+                .unwrap_or_default()
+                .to_string(),
+            client_id: existing_data["client_id"].as_str().map(|s| s.to_string()),
+            client_email: existing_data["client_email"]
+                .as_str()
+                .unwrap_or_default()
+                .to_string(),
+            client_name: existing_data["client_name"]
+                .as_str()
+                .unwrap_or_default()
+                .to_string(),
+            docuseal_template_id: existing_data["docuseal_template_id"]
+                .as_i64()
+                .map(|v| v as i32),
+            talent_id: existing_data["talent_id"].as_str().map(|s| s.to_string()),
+            talent_ids: existing_data["talent_ids"].as_array().map(|arr| {
+                arr.iter()
+                    .filter_map(|v| v.as_str())
+                    .map(|s| s.to_string())
+                    .collect()
+            }),
+            talent_names: existing_data["talent_names"]
+                .as_str()
+                .map(|s| s.to_string()),
+            license_fee: existing_data["license_fee"].as_i64(),
+            duration_days: existing_data["duration_days"].as_i64().map(|v| v as i32),
+            start_date: existing_data["start_date"].as_str().map(|s| s.to_string()),
+            custom_terms: existing_data["custom_terms"]
+                .as_str()
+                .map(|s| s.to_string()),
+            requires_agency_signature: existing_data["requires_agency_signature"].as_bool(),
+            licensing_request_id: existing_data["brand_request_id"]
+                .as_str()
+                .map(|s| s.to_string()),
+        }
+    };
+
+    let old_docuseal_id = existing_data["docuseal_submission_id"]
+        .as_i64()
+        .ok_or_else(|| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Invalid data: missing docuseal_submission_id".to_string(),
+            )
+        })? as i32;
+
+    // Archive in DocuSeal
+    let docuseal = DocuSealClient::new(
+        state.docuseal.api_key.clone(),
+        state.docuseal.base_url.clone(),
+    );
+
+    docuseal
+        .archive_submission(old_docuseal_id)
+        .await
+        .map_err(|e| {
+            tracing::warn!(error = %e, "Failed to archive old DocuSeal submission");
+            e
+        })
+        .ok();
+
+    // 2. Update old submission status to archived
+    let update_data = json!({ "status": "archived" });
+
+    state
+        .pg
+        .from("license_submissions")
+        .update(serde_json::to_string(&update_data).unwrap())
+        .eq("id", &id)
+        .execute()
+        .await
+        .ok();
+
+    // 3. Create new submission record in draft status first to reuse finalize logic if needed,
+    // or just perform full submission here.
+    // Given the complexity of finalize, it's better to implement the send logic here.
+
+    // Reuse create_draft logic to get a code-friendly way to create the record
+    let new_auth_user = AuthUser {
+        id: agency_id.clone(),
+        email: auth_user.email,
+        role: auth_user.role,
+        organization_id: auth_user.organization_id,
+        access_token: auth_user.access_token.clone(),
+    };
+
+    // Instead of calling create (which is a stub), we call create_draft then we can finalize it.
+    let draft_resp = create_draft(
+        State(state.clone()),
+        new_auth_user.clone(),
+        Json(serde_json::to_value(&req).unwrap()),
+    )
+    .await?;
+    let draft_id = draft_resp.0["id"]
+        .as_str()
+        .ok_or((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to get new draft ID".to_string(),
+        ))?
+        .to_string();
+
+    // Now finalize it
+    let finalize_req = FinalizeSubmissionRequest {
+        docuseal_template_id: req.docuseal_template_id,
+        client_name: Some(req.client_name),
+        client_email: Some(req.client_email),
+        talent_id: None,
+        talent_ids: req.talent_ids,
+        talent_names: req.talent_names,
+        requires_agency_signature: req.requires_agency_signature,
+        licensing_request_id: req.licensing_request_id,
+        old_license_id: None, // Not a renewal in this flow
+    };
+
+    finalize(
+        State(state),
+        new_auth_user,
+        Path(draft_id),
+        Json(finalize_req),
+    )
+    .await
+}
+
+/// DELETE /api/license-submissions/:id - Archive submission
+pub async fn archive(
+    State(state): State<AppState>,
+    auth_user: AuthUser,
+    Path(id): Path<String>,
+) -> Result<StatusCode, (StatusCode, String)> {
+    let agency_id = auth_user.effective_org_id().to_string();
+
+    let update_data = json!({ "status": "archived" });
+
+    let resp = state
+        .pg
+        .from("license_submissions")
+        .update(serde_json::to_string(&update_data).unwrap())
+        .eq("id", &id)
+        .eq("agency_id", &agency_id)
+        .execute()
+        .await
+        .map_err(|e| {
+            tracing::error!(error = %e, "Failed to archive submission");
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+        })?;
+
+    if !resp.status().is_success() {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to archive".to_string(),
+        ));
+    }
+
+    tracing::info!(submission_id = %id, "Submission archived");
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// POST /api/license-submissions/:id/recover - Recover submission
+pub async fn recover(
+    State(state): State<AppState>,
+    auth_user: AuthUser,
+    Path(id): Path<String>,
+) -> Result<StatusCode, (StatusCode, String)> {
+    let agency_id = auth_user.effective_org_id().to_string();
+
+    // We recover to 'sent' if it was sent, or 'opened' etc.
+    // For simplicity, let's look up the previous status or just set to 'sent'
+    // Actually, setting to 'sent' is safest.
+    let update_data = json!({ "status": "sent" });
+
+    let resp = state
+        .pg
+        .from("license_submissions")
+        .update(serde_json::to_string(&update_data).unwrap())
+        .eq("id", &id)
+        .eq("agency_id", &agency_id)
+        .execute()
+        .await
+        .map_err(|e| {
+            tracing::error!(error = %e, "Failed to recover submission");
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+        })?;
+
+    if !resp.status().is_success() {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to recover".to_string(),
+        ));
+    }
+
+    Ok(StatusCode::OK)
+}
+
+/// POST /api/license-submissions/:id/sync-status - Pull latest status from DocuSeal
+pub async fn sync_status(
+    State(state): State<AppState>,
+    auth_user: AuthUser,
+    Path(id): Path<String>,
+) -> Result<Json<LicenseSubmission>, (StatusCode, String)> {
+    let agency_id = auth_user.effective_org_id().to_string();
+
+    let sub_resp = state
+        .pg
+        .from("license_submissions")
+        .select("*")
+        .eq("id", &id)
+        .eq("agency_id", &agency_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !sub_resp.status().is_success() {
+        return Err((StatusCode::NOT_FOUND, "Submission not found".to_string()));
+    }
+
+    let sub_text = sub_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let row: serde_json::Value = serde_json::from_str(&sub_text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let docuseal_submission_id = row
+        .get("docuseal_submission_id")
+        .and_then(|v| v.as_i64())
+        .ok_or((
+            StatusCode::BAD_REQUEST,
+            "No docuseal_submission_id on submission".to_string(),
+        ))? as i32;
+
+    let requires_agency_signature = row
+        .get("requires_agency_signature")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+
+    let docuseal = DocuSealClient::new(
+        state.docuseal.api_key.clone(),
+        state.docuseal.base_url.clone(),
+    );
+    let ds_sub = docuseal
+        .get_submission(docuseal_submission_id)
+        .await
+        .map_err(|e| {
+            let msg = e.to_string();
+            if msg.contains("404") {
+                (
+                    StatusCode::NOT_FOUND,
+                    "DocuSeal submission not found. It may have been deleted.".to_string(),
+                )
+            } else {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("DocuSeal fetch failed: {msg}"),
+                )
+            }
+        })?;
+
+    let mut update = serde_json::Map::new();
+    let ds_status = ds_sub.status.to_lowercase();
+    let now = chrono::Utc::now().to_rfc3339();
+
+    if ds_status == "declined" {
+        update.insert("status".to_string(), json!("declined"));
+        update.insert("declined_at".to_string(), json!(now.clone()));
+    } else if ds_status == "completed" {
+        update.insert("status".to_string(), json!("completed"));
+        update.insert("signed_at".to_string(), json!(now.clone()));
+        if let Some(doc) = ds_sub.documents.first() {
+            update.insert("signed_document_url".to_string(), json!(doc.url.clone()));
+        }
+    } else if requires_agency_signature {
+        let agency_signed = ds_sub.submitters.iter().any(|s| {
+            let role = s.role.as_deref().unwrap_or("").to_lowercase();
+            (role == "first party" || role == "agency") && is_completed_status(&s.status)
+        });
+        if agency_signed {
+            update.insert("agency_signed_at".to_string(), json!(now.clone()));
+            update.insert("status".to_string(), json!("client_pending"));
+        } else {
+            update.insert("status".to_string(), json!("agency_pending"));
+        }
+    } else {
+        update.insert("status".to_string(), json!("opened"));
+    }
+
+    update.insert("updated_at".to_string(), json!(now));
+
+    let upd_resp = state
+        .pg
+        .from("license_submissions")
+        .update(serde_json::Value::Object(update).to_string())
+        .eq("id", &id)
+        .eq("agency_id", &agency_id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !upd_resp.status().is_success() {
+        let body = upd_resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, body));
+    }
+
+    let out_text = upd_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let mut out_rows: Vec<LicenseSubmission> = serde_json::from_str(&out_text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let out = out_rows.pop().ok_or((
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "Updated submission missing".to_string(),
+    ))?;
+
+    Ok(Json(out))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateAndSendRequest {
+    pub template_id: String,
+    pub docuseal_template_id: Option<i32>,
+    pub client_name: String,
+    pub client_email: String,
+    pub talent_names: Option<String>,
+    pub talent_ids: Option<Vec<String>>,
+    pub license_fee: Option<i64>,
+    pub duration_days: Option<i32>,
+    pub start_date: Option<String>,
+    pub custom_terms: Option<String>,
+    pub requires_agency_signature: Option<bool>,
+    pub branding_color: Option<String>, // Optional customization
+    pub logo_url: Option<String>,
+}
+
+/// POST /api/license-submissions/create-and-send
+pub async fn create_and_send(
+    State(state): State<AppState>,
+    auth_user: AuthUser,
+    Json(req): Json<CreateAndSendRequest>,
+) -> Result<Json<LicenseSubmission>, (StatusCode, String)> {
+    // 1. Fetch the License Template (to ensure it exists & get agency_id)
+    let template_resp = state
+        .pg
+        .from("license_templates")
+        .select("*")
+        .eq("id", &req.template_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let template_text = template_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let license_template: LicenseTemplate = serde_json::from_str(&template_text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let agency_id = license_template.agency_id;
+    let requires_agency_signature = req.requires_agency_signature.unwrap_or(false);
+
+    // 2. Initialize DocuSeal
+    let docuseal_client = DocuSealClient::new(
+        state.docuseal.api_key.clone(),
+        state.docuseal.base_url.clone(),
+    );
+
+    let docuseal_template_id = req
+        .docuseal_template_id
+        .or(license_template.docuseal_template_id)
+        .ok_or((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Invalid DS template id".to_string(),
+        ))?;
+
+    // 3. Build fields array for pre-filling (DocuSeal API standard format)
+    let license_fee_val = req.license_fee.or(license_template.license_fee);
+    let fee_str = license_fee_val
+        .map(|c| format!("${:.2}", c as f64 / 100.0))
+        .unwrap_or_default();
+
+    let duration_days = req
+        .duration_days
+        .or(Some(license_template.duration_days))
+        .unwrap_or(0);
+
+    let start_date = req
+        .start_date
+        .clone()
+        .or(license_template.start_date.clone())
+        .unwrap_or_else(|| "-".to_string());
+
+    let talent_names_val = req
+        .talent_names
+        .clone()
+        .or(license_template.talent_name.clone());
+
+    use crate::services::docuseal::SubmitterField;
+
+    let mut fields = vec![
+        SubmitterField {
+            name: "Client/Brand Name".to_string(),
+            default_value: Some(req.client_name.clone()),
+            readonly: Some(true),
+        },
+        SubmitterField {
+            name: "Talent Name".to_string(),
+            default_value: Some(talent_names_val.clone().unwrap_or_default()),
+            readonly: Some(true),
+        },
+        SubmitterField {
+            name: "License Fee".to_string(),
+            default_value: Some(fee_str.clone()),
+            readonly: Some(true),
+        },
+        SubmitterField {
+            name: "Category".to_string(),
+            default_value: Some(license_template.category.clone()),
+            readonly: Some(true),
+        },
+    ];
+
+    if let Some(desc) = &license_template.description {
+        fields.push(SubmitterField {
+            name: "Description".to_string(),
+            default_value: Some(desc.clone()),
+            readonly: Some(true),
+        });
+    }
+
+    if let Some(scope) = &license_template.usage_scope {
+        fields.push(SubmitterField {
+            name: "Usage Scope".to_string(),
+            default_value: Some(scope.clone()),
+            readonly: Some(true),
+        });
+    }
+
+    fields.push(SubmitterField {
+        name: "Territory".to_string(),
+        default_value: Some(license_template.territory.clone()),
+        readonly: Some(true),
+    });
+
+    fields.push(SubmitterField {
+        name: "Exclusivity".to_string(),
+        default_value: Some(license_template.exclusivity.clone()),
+        readonly: Some(true),
+    });
+
+    fields.push(SubmitterField {
+        name: "Duration".to_string(),
+        default_value: Some(duration_days.to_string()),
+        readonly: Some(true),
+    });
+
+    fields.push(SubmitterField {
+        name: "Start Date".to_string(),
+        default_value: Some(start_date.clone()),
+        readonly: Some(true),
+    });
+
+    let combined_terms = format!(
+        "{}\n{}",
+        license_template.custom_terms.as_deref().unwrap_or_default(),
+        req.custom_terms.as_deref().unwrap_or_default()
+    );
+    fields.push(SubmitterField {
+        name: "Custom Terms".to_string(),
+        default_value: Some(combined_terms),
+        readonly: Some(true),
+    });
+
+    fields.push(SubmitterField {
+        name: "Template Name".to_string(),
+        default_value: Some(license_template.template_name.clone()),
+        readonly: Some(true),
+    });
+
+    if let Some(mod_allowed) = &license_template.modifications_allowed {
+        fields.push(SubmitterField {
+            name: "Modifications Allowed".to_string(),
+            default_value: Some(mod_allowed.clone()),
+            readonly: Some(true),
+        });
+    }
+
+    // 4. Fetch Template Details to get the schema (which fields actually exist on the doc)
+    let template_details = docuseal_client
+        .get_template(docuseal_template_id)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("DocuSeal Template Fetch Error: {}", e),
+            )
+        })?;
+
+    // Extract all field names present in any of the documents' schemas
+    let mut allowed_field_names = std::collections::HashSet::new();
+    if let Some(documents) = template_details.documents {
+        for doc in documents {
+            for field in doc.schema {
+                if let Some(name) = field.get("name").and_then(|n| n.as_str()) {
+                    allowed_field_names.insert(name.to_string());
+                }
+            }
+        }
+    }
+    // Also check top-level schema if present
+    for field in template_details.schema {
+        if let Some(name) = field.get("name").and_then(|n| n.as_str()) {
+            allowed_field_names.insert(name.to_string());
+        }
+    }
+
+    // Filter fields list to only include those that exist in the template
+    let filtered_fields: Vec<_> = fields
+        .into_iter()
+        .filter(|f| allowed_field_names.contains(&f.name))
+        .collect();
+
+    info!(
+        allowed_count = allowed_field_names.len(),
+        filtered_count = filtered_fields.len(),
+        "Filtered DocuSeal submission fields based on template schema"
+    );
+
+    // 5. Create DocuSeal Submission with fields-based pre-fill
+    let agency_signer_email =
+        resolve_agency_signer_email(&state, &agency_id, auth_user.email.as_ref()).await;
+    let docuseal_submission = if requires_agency_signature {
+        let agency_email = agency_signer_email.ok_or((
+            StatusCode::BAD_REQUEST,
+            "Agency signer email not found. Please set agency email in profile.".to_string(),
+        ))?;
+        let submitters = vec![
+            crate::services::docuseal::Submitter {
+                name: Some("Agency".to_string()),
+                email: Some(agency_email),
+                role: Some("First Party".to_string()),
+                order: Some(0),
+                fields: Some(filtered_fields.clone()),
+                values: None,
+            },
+            crate::services::docuseal::Submitter {
+                name: Some(req.client_name.clone()),
+                email: Some(req.client_email.clone()),
+                role: Some("Second Party".to_string()),
+                order: Some(1),
+                fields: Some(filtered_fields),
+                values: None,
+            },
+        ];
+        docuseal_client
+            .create_submission_with_submitters(docuseal_template_id, submitters, true)
+            .await
+            .map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("DocuSeal Error: {}", e),
+                )
+            })?
+    } else {
+        docuseal_client
+            .create_submission_with_fields(
+                docuseal_template_id,
+                req.client_name.clone(),
+                req.client_email.clone(),
+                "First Party".to_string(),
+                filtered_fields,
+                true,
+            )
+            .await
+            .map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("DocuSeal Error: {}", e),
+                )
+            })?
+    };
+    let agency_submitter = docuseal_submission
+        .submitters
+        .iter()
+        .find(|s| {
+            s.role
+                .as_ref()
+                .map(|r| r.eq_ignore_ascii_case("first party") || r.eq_ignore_ascii_case("agency"))
+                .unwrap_or(false)
+        })
+        .or_else(|| docuseal_submission.submitters.first());
+    let client_submitter = docuseal_submission
+        .submitters
+        .iter()
+        .find(|s| {
+            s.role
+                .as_ref()
+                .map(|r| r.eq_ignore_ascii_case("second party") || r.eq_ignore_ascii_case("client"))
+                .unwrap_or(false)
+        })
+        .or_else(|| {
+            if docuseal_submission.submitters.len() > 1 {
+                docuseal_submission.submitters.get(1)
+            } else {
+                None
+            }
+        });
+
+    // 5. Create the License Submission record in DB (Status = 'sent')
+    let submission_data = json!({
+        "agency_id": agency_id,
+        "template_id": req.template_id,
+        "docuseal_template_id": docuseal_template_id,
+        "status": if requires_agency_signature { "agency_pending" } else { "sent" },
+        "requires_agency_signature": requires_agency_signature,
+        "agency_submitter_id": agency_submitter.map(|s| s.id),
+        "agency_submitter_slug": agency_submitter.map(|s| s.slug.clone()),
+        "agency_embed_src": agency_submitter
+            .and_then(|s| s.embed_src.clone())
+            .or_else(|| {
+                agency_submitter
+                    .map(|s| format!("{}/s/{}", state.docuseal.app_url.trim_end_matches('/'), s.slug))
+            }),
+        "client_submitter_id": client_submitter.map(|s| s.id),
+        "client_submitter_slug": client_submitter.map(|s| s.slug.clone()),
+        "client_name": req.client_name.clone(),
+        "client_email": req.client_email.clone(),
+        "talent_names": talent_names_val.clone(),
+        "talent_ids": req.talent_ids.clone(),
+        "license_fee": license_fee_val,
+        "duration_days": duration_days,
+        "start_date": req.start_date.clone().or(license_template.start_date.clone()),
+        "custom_terms": req.custom_terms.clone().or(license_template.custom_terms.clone()),
+        "docuseal_submission_id": docuseal_submission.id,
+        "docuseal_slug": docuseal_submission.slug,
+        "sent_at": chrono::Utc::now().to_rfc3339(),
+    });
+
+    let insert_resp = state
+        .pg
+        .from("license_submissions")
+        .insert(submission_data.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let insert_text = insert_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let created_rows: Vec<serde_json::Value> = serde_json::from_str(&insert_text).map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to parse created row: {} - body: {}", e, insert_text),
+        )
+    })?;
+
+    let new_submission = created_rows.first().ok_or((
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "No row returned after insert".to_string(),
+    ))?;
+
+    let new_submission_id = new_submission["id"]
+        .as_str()
+        .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Missing ID".to_string()))?;
+
+    // 6. Create corresponding Licensing Request (status=pending, linked to submission)
+    // Using start_date + duration to calculate end_date if possible
+    let license_end_date = if let (Some(start), duration) = (
+        req.start_date
+            .clone()
+            .or(license_template.start_date.clone()),
+        duration_days,
+    ) {
+        if let Ok(sd) = chrono::NaiveDate::parse_from_str(&start, "%Y-%m-%d") {
+            Some((sd + chrono::Duration::days(duration as i64)).to_string())
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
+    let now = chrono::Utc::now().to_rfc3339();
+    let names_str = talent_names_val.clone().unwrap_or_default();
+    let names: Vec<&str> = if names_str.trim().is_empty() {
+        vec!["Assigned Talent"]
+    } else {
+        names_str
+            .split(',')
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .collect()
+    };
+
+    for name in names {
+        let lr_data = json!({
+            "agency_id": agency_id,
+            "submission_id": new_submission_id,
+            "client_name": req.client_name.clone(),
+            "talent_name": name,
+            "campaign_title": license_template.template_name.clone(),
+            "usage_scope": license_template.usage_scope.clone(),
+            "license_start_date": req.start_date.clone().or(license_template.start_date.clone()),
+            "license_end_date": license_end_date.clone(),
+            "status": "pending",
+            "regions": license_template.territory.clone(),
+            "payment_amount": license_fee_val.unwrap_or(0),
+            "notes": license_template.template_name.clone(), // Use template name for description/notes
+            "created_at": now.clone(),
+        });
+
+        let _ = state
+            .pg
+            .from("licensing_requests")
+            .insert(lr_data.to_string())
+            .execute()
+            .await;
+    }
+
+    // Return the created submission
+    // Reconstruct LicenseSubmission properly
+    Ok(Json(LicenseSubmission {
+        id: new_submission_id.to_string(),
+        agency_id: agency_id.clone(),
+        client_id: None,
+        template_id: req.template_id,
+        licensing_request_id: None, // We just created it, but we can't get ID easily without another fetch.
+        brand_request_id: None,
+        docuseal_submission_id: Some(docuseal_submission.id),
+        docuseal_slug: Some(docuseal_submission.slug),
+        docuseal_template_id: Some(docuseal_template_id),
+        client_name: Some(req.client_name),
+        client_email: Some(req.client_email),
+        talent_names: talent_names_val,
+        license_fee: license_fee_val,
+        duration_days: Some(duration_days),
+        start_date: Some(start_date),
+        custom_terms: req.custom_terms,
+        status: if requires_agency_signature {
+            "agency_pending".to_string()
+        } else {
+            "sent".to_string()
+        },
+        sent_at: Some(chrono::Utc::now().to_rfc3339()),
+        opened_at: None,
+        signed_at: None,
+        declined_at: None,
+        decline_reason: None,
+        signed_document_url: None,
+        requires_agency_signature: Some(requires_agency_signature),
+        agency_submitter_id: agency_submitter.map(|s| s.id as i64),
+        agency_submitter_slug: agency_submitter.map(|s| s.slug.clone()),
+        agency_embed_src: agency_submitter
+            .and_then(|s| s.embed_src.clone())
+            .or_else(|| {
+                agency_submitter.map(|s| {
+                    format!(
+                        "{}/s/{}",
+                        state.docuseal.app_url.trim_end_matches('/'),
+                        s.slug
+                    )
+                })
+            }),
+        agency_signed_at: None,
+        client_submitter_id: client_submitter.map(|s| s.id as i64),
+        client_submitter_slug: client_submitter.map(|s| s.slug.clone()),
+        talent_id: None,
+        template_name: Some(license_template.template_name.clone()),
+        created_at: Some(chrono::Utc::now().to_rfc3339()),
+        updated_at: Some(chrono::Utc::now().to_rfc3339()),
+    }))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct DocuSealWebhookEvent {
+    pub event_type: String,
+    pub timestamp: String,
+    pub data: serde_json::Value,
+}
+
+/// POST /api/webhooks/license-contract
+pub async fn handle_webhook(
+    State(state): State<AppState>,
+    Json(payload): Json<DocuSealWebhookEvent>,
+) -> Result<axum::http::StatusCode, (axum::http::StatusCode, String)> {
+    info!(
+        event_type = %payload.event_type,
+        payload = ?payload,
+        "Received DocuSeal licensing webhook"
+    );
+
+    let tracked_event = matches!(
+        payload.event_type.as_str(),
+        "submission.started"
+            | "submission.opened"
+            | "submission.viewed"
+            | "form.started"
+            | "form.viewed"
+            | "form.completed"
+            | "submission.completed"
+            | "submission.declined"
+            | "form.declined"
+    );
+    if !tracked_event {
+        info!("Ignoring untracked event: {}", payload.event_type);
+        return Ok(axum::http::StatusCode::OK);
+    }
+
+    let submission_id = payload.data["submission_id"]
+        .as_i64()
+        .or_else(|| payload.data["id"].as_i64())
+        .ok_or_else(|| {
+            error!(
+                "Missing submission id in licensing webhook payload: {:?}",
+                payload.data
+            );
+            (
+                axum::http::StatusCode::BAD_REQUEST,
+                "Missing submission id".to_string(),
+            )
+        })?;
+
+    info!(
+        "Looking for submission with docuseal_submission_id: {}",
+        submission_id
+    );
+
+    let pg = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
+        .insert_header("apikey", &state.supabase_service_key)
+        .insert_header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        );
+
+    // Update license_submissions
+    let sub_response = pg
+        .from("license_submissions")
+        .select(
+            "id,requires_agency_signature,agency_submitter_id,agency_signed_at,brand_request_id",
+        )
+        .eq("docuseal_submission_id", submission_id.to_string())
+        .order("updated_at.desc")
+        .limit(2)
+        .execute()
+        .await
+        .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    info!(
+        "Submission lookup response status: {}",
+        sub_response.status()
+    );
+
+    if sub_response.status().is_success() {
+        let sub_text = sub_response
+            .text()
+            .await
+            .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        info!("Found submission lookup payload: {}", sub_text);
+
+        let sub_rows: Vec<serde_json::Value> = serde_json::from_str(&sub_text)
+            .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if sub_rows.is_empty() {
+            error!(
+                "No license_submissions row found for docuseal_submission_id: {}",
+                submission_id
+            );
+            return Ok(axum::http::StatusCode::OK);
+        }
+        if sub_rows.len() > 1 {
+            error!(
+                "Multiple license_submissions rows found for docuseal_submission_id: {}. Using the most recently updated row.",
+                submission_id
+            );
+        }
+        let sub = sub_rows.first().cloned().unwrap_or_default();
+
+        if let Some(sub_id) = sub["id"].as_str() {
+            let requires_agency_signature =
+                sub["requires_agency_signature"].as_bool().unwrap_or(false);
+            let agency_submitter_id = sub["agency_submitter_id"].as_i64();
+            let agency_already_signed = !sub["agency_signed_at"].is_null();
+
+            let submitter_id = payload.data["submitter_id"].as_i64().or_else(|| {
+                payload
+                    .data
+                    .get("submitter")
+                    .and_then(|s| s.get("id"))
+                    .and_then(|v| v.as_i64())
+            });
+            let submitter_role = payload
+                .data
+                .get("submitter")
+                .and_then(|s| s.get("role"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_lowercase())
+                .or_else(|| {
+                    payload
+                        .data
+                        .get("role")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_lowercase())
+                });
+            let is_agency_signer = submitter_role
+                .as_ref()
+                .map(|r| r == "agency" || r == "first party")
+                .unwrap_or(false)
+                || (agency_submitter_id.is_some() && submitter_id == agency_submitter_id);
+
+            let mut update_map = serde_json::Map::new();
+
+            match payload.event_type.as_str() {
+                "form.completed" => {
+                    info!("Processing form.completed event - requires_agency_signature: {}, is_agency_signer: {}, agency_already_signed: {}", 
+                          requires_agency_signature, is_agency_signer, agency_already_signed);
+                    if requires_agency_signature && (is_agency_signer || !agency_already_signed) {
+                        update_map.insert(
+                            "agency_signed_at".to_string(),
+                            json!(chrono::Utc::now().to_rfc3339()),
+                        );
+                        update_map.insert("status".to_string(), json!("client_pending"));
+                    } else if requires_agency_signature && !agency_already_signed {
+                        update_map.insert("status".to_string(), json!("agency_pending"));
+                    } else {
+                        // Brand signed and no agency signature required - contract is completed
+                        update_map.insert("status".to_string(), json!("completed"));
+                        update_map.insert(
+                            "signed_at".to_string(),
+                            json!(chrono::Utc::now().to_rfc3339()),
+                        );
+                    }
+                }
+                "submission.completed" => {
+                    info!("Processing submission.completed event");
+                    update_map.insert("status".to_string(), json!("completed"));
+                    update_map.insert(
+                        "signed_at".to_string(),
+                        json!(chrono::Utc::now().to_rfc3339()),
+                    );
+                    if let Some(url) = payload.data["documents"]
+                        .as_array()
+                        .and_then(|docs| docs.first())
+                        .and_then(|doc| doc["url"].as_str())
+                    {
+                        update_map.insert("signed_document_url".to_string(), json!(url));
+                    }
+
+                    // Don't update brand_license_requests status - it should only change based on agency accept/decline
+                    // Just log that the contract was signed
+                    if let Some(brand_request_id) =
+                        sub.get("brand_request_id").and_then(|v| v.as_str())
+                    {
+                        info!("Contract signed for brand_license_request: {} - status remains unchanged", brand_request_id);
+                    }
+
+                    // Mark linked licensing requests as approved so they appear in Active Licenses
+                    let licensing_update_result = pg
+                        .from("licensing_requests")
+                        .update(json!({ "status": "approved" }).to_string())
+                        .eq("submission_id", sub_id)
+                        .execute()
+                        .await;
+
+                    if let Ok(lr_resp) = licensing_update_result {
+                        if lr_resp.status().is_success() {
+                            info!("Successfully marked licensing_requests as approved for submission: {}", sub_id);
+                        }
+                    }
+                }
+                "submission.declined" | "form.declined" => {
+                    update_map.insert("status".to_string(), json!("declined"));
+                    update_map.insert(
+                        "declined_at".to_string(),
+                        json!(chrono::Utc::now().to_rfc3339()),
+                    );
+                    if let Some(reason) =
+                        payload.data.get("decline_reason").and_then(|v| v.as_str())
+                    {
+                        update_map.insert("decline_reason".to_string(), json!(reason));
+                    }
+                }
+                _ => {
+                    if requires_agency_signature && !agency_already_signed {
+                        update_map.insert("status".to_string(), json!("agency_pending"));
+                    } else if requires_agency_signature {
+                        update_map.insert("status".to_string(), json!("client_pending"));
+                    } else {
+                        update_map.insert("status".to_string(), json!("opened"));
+                    }
+                }
+            }
+
+            if !update_map.is_empty() {
+                info!("Updating submission {} with: {:?}", sub_id, update_map);
+                let update_result = pg
+                    .from("license_submissions")
+                    .update(serde_json::Value::Object(update_map).to_string())
+                    .eq("id", sub_id)
+                    .execute()
+                    .await;
+
+                match update_result {
+                    Ok(resp) => info!("Update successful: {}", resp.status()),
+                    Err(e) => error!("Update failed: {}", e),
+                }
+            } else {
+                info!("No updates needed for submission {}", sub_id);
+            }
+
+            if matches!(
+                payload.event_type.as_str(),
+                "submission.declined" | "form.declined"
+            ) {
+                let _ = pg
+                    .from("licensing_requests")
+                    .update(json!({ "status": "rejected" }).to_string())
+                    .eq("submission_id", sub_id)
+                    .execute()
+                    .await;
+            }
+        } else {
+            error!("No submission ID found in database response");
+        }
+    } else {
+        let lookup_status = sub_response.status();
+        let err_body = sub_response.text().await.unwrap_or_default();
+        error!(
+            "Failed to find submission with docuseal_submission_id: {}. Supabase returned status {} with body: {}",
+            submission_id,
+            lookup_status,
+            err_body
+        );
+    }
+
+    Ok(axum::http::StatusCode::OK)
+}

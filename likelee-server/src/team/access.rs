@@ -7,7 +7,7 @@ use super::support::{
 use super::types::{
     MembershipRecord, OrganizationAccess, OrganizationType, ResolvedScope, TeamScopeQuery,
 };
-use crate::{auth::AuthUser, config::AppState};
+use crate::{auth::AuthUser, state::AppState};
 use axum::http::StatusCode;
 use chrono::Utc;
 use serde_json::json;

@@ -2,7 +2,7 @@ use super::providers;
 use super::types::*;
 use super::wallet;
 use crate::auth::AuthUser;
-use crate::config::AppState;
+use crate::state::AppState;
 use crate::storage::{
     canonical_object_path, download_object, insert_asset_record, safe_fetch_url,
     sanitize_file_name, upload_object, StorageAssetRecord, StorageContextType, StorageOwnerType,
@@ -1058,11 +1058,11 @@ pub async fn save_generation_to_storage(
     let mut cumulative_new_size: i64 = 0;
     if org_type == "brand" {
         let _limit =
-            crate::brand_storage::ensure_brand_storage_settings_row(&state, &org_id).await?;
-        let used = crate::brand_storage::get_brand_used_storage_bytes(&state, &org_id).await?;
+            crate::brands::storage::ensure_brand_storage_settings_row(&state, &org_id).await?;
+        let used = crate::brands::storage::get_brand_used_storage_bytes(&state, &org_id).await?;
         cumulative_new_size = used;
         folder_id =
-            Some(crate::brand_storage::get_or_create_default_folder(&state, &org_id).await?);
+            Some(crate::brands::storage::get_or_create_default_folder(&state, &org_id).await?);
     }
 
     let mut saved = Vec::new();
@@ -1085,7 +1085,7 @@ pub async fn save_generation_to_storage(
 
         if org_type == "brand" {
             let limit =
-                crate::brand_storage::ensure_brand_storage_settings_row(&state, &org_id).await?;
+                crate::brands::storage::ensure_brand_storage_settings_row(&state, &org_id).await?;
             if cumulative_new_size + new_size > limit {
                 warn!(
                     generation_id = %generation_id,

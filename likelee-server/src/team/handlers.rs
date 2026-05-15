@@ -17,9 +17,9 @@ use super::types::{
 };
 use crate::{
     auth::AuthUser,
-    config::AppState,
+    state::AppState,
     email,
-    entitlements::{
+    billing::entitlements::{
         format_seat_limit_error_with_upgrade, get_agency_seat_limit_info, get_brand_seat_limit_info,
     },
 };
