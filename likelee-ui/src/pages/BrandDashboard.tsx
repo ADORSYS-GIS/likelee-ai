@@ -39,6 +39,7 @@ import {
 import { useAuth } from "@/auth/AuthProvider";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
+import { setCachedQuery } from "@/lib/indexedDb";
 import {
   BRAND_STUDIO_ADDON_PRICE,
   BrandPlanTier,
@@ -2568,11 +2569,33 @@ export default function BrandDashboard() {
     if (isSavingProfile) return;
     setIsSavingProfile(true);
     try {
-      await updateBrandProfile({
+      const updatedProfile = await updateBrandProfile({
         company_name: brand?.name,
         industry: brand?.industry,
         website: brand?.website,
         logo_url: brand?.logo,
+      });
+      const nextProfile =
+        updatedProfile && typeof updatedProfile === "object"
+          ? updatedProfile
+          : {};
+      const nextBrand = {
+        ...(brand ?? {}),
+        name:
+          (nextProfile as any)?.company_name ||
+          (nextProfile as any)?.name ||
+          brand?.name ||
+          "Brand",
+        industry: (nextProfile as any)?.industry ?? brand?.industry,
+        website: (nextProfile as any)?.website ?? brand?.website,
+        contact_email: (nextProfile as any)?.email ?? brand?.contact_email,
+        logo: (nextProfile as any)?.logo_url ?? brand?.logo,
+      };
+      setBrand(nextBrand);
+      queryClient.setQueryData(["brand-profile", user?.id], nextProfile);
+      await setCachedQuery(["brand-profile", user?.id], nextProfile);
+      await queryClient.invalidateQueries({
+        queryKey: ["brand-profile", user?.id],
       });
       toast({
         title: "Success",
