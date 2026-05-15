@@ -174,6 +174,7 @@ export default function BrandCampaignDashboard({
   const [isExistingCampaign, setIsExistingCampaign] = useState(false);
   const [campaignCards, setCampaignCards] = useState<any[]>([]);
   const [loadingCampaignCards, setLoadingCampaignCards] = useState(false);
+  const hasLoadedCampaignCardsRef = useRef(false);
   const [showEscrowReleaseModal, setShowEscrowReleaseModal] = useState(false);
   const [escrowReleaseInfo, setEscrowReleaseInfo] = useState<any>(null);
   const [campaignListTab, setCampaignListTab] = useState<
@@ -942,10 +943,14 @@ export default function BrandCampaignDashboard({
           : {},
     };
   };
-  const loadCampaignCards = async () => {
+  const loadCampaignCards = async (options?: { showLoading?: boolean }) => {
     if (isFetchingCampaignCardsRef.current) return;
     isFetchingCampaignCardsRef.current = true;
-    setLoadingCampaignCards(true);
+    const shouldShowLoading =
+      options?.showLoading ?? !hasLoadedCampaignCardsRef.current;
+    if (shouldShowLoading) {
+      setLoadingCampaignCards(true);
+    }
     try {
       const response = await base44.get<{ campaigns?: any[] }>(
         "/api/brand/campaigns",
@@ -1015,10 +1020,15 @@ export default function BrandCampaignDashboard({
         }),
       );
       setCampaignCards(normalized);
+      hasLoadedCampaignCardsRef.current = true;
     } catch {
-      setCampaignCards([]);
+      if (!hasLoadedCampaignCardsRef.current) {
+        setCampaignCards([]);
+      }
     } finally {
-      setLoadingCampaignCards(false);
+      if (shouldShowLoading) {
+        setLoadingCampaignCards(false);
+      }
       isFetchingCampaignCardsRef.current = false;
     }
   };
@@ -1417,14 +1427,16 @@ export default function BrandCampaignDashboard({
     const refreshData = async () => {
       if (!mounted) return;
       await loadConnectedAgencies();
-      await loadCampaignCards();
+      await loadCampaignCards({
+        showLoading: !hasLoadedCampaignCardsRef.current,
+      });
     };
 
     void refreshData();
 
     const campaignTimer = setInterval(() => {
       if (mounted) {
-        void loadCampaignCards();
+        void loadCampaignCards({ showLoading: false });
       }
     }, 15000);
 
