@@ -18773,12 +18773,25 @@ export default function AgencyDashboard() {
   } | null>(null);
 
   // Initialize state from URL params
-  const [agencyMode, setAgencyModeState] = useState<"AI" | "IRL">(
-    (searchParams.get("mode") as "AI" | "IRL") || "AI",
-  );
-  const [activeTab, setActiveTabState] = useState(
-    searchParams.get("tab") || "dashboard",
-  );
+  const [agencyMode, setAgencyModeState] = useState<"AI" | "IRL">(() => {
+    const modeFromUrl = searchParams.get("mode") as "AI" | "IRL";
+    if (modeFromUrl === "AI" || modeFromUrl === "IRL") return modeFromUrl;
+    if (typeof window !== "undefined") {
+      const savedMode = window.localStorage.getItem("agencyDashboard_mode");
+      if (savedMode === "AI" || savedMode === "IRL") return savedMode;
+    }
+    return "AI";
+  });
+  const [activeTab, setActiveTabState] = useState(() => {
+    const tabFromUrl = searchParams.get("tab");
+    if (tabFromUrl) return tabFromUrl;
+    if (typeof window !== "undefined") {
+      return (
+        window.localStorage.getItem("agencyDashboard_activeTab") || "dashboard"
+      );
+    }
+    return "dashboard";
+  });
   // openTalentId: when set, RosterView auto-opens that talent's side modal
   const [openTalentId, setOpenTalentId] = useState<string | undefined>(
     searchParams.get("openTalentId") || undefined,
@@ -18814,10 +18827,18 @@ export default function AgencyDashboard() {
         return "All Talent";
     }
   };
-  const [activeSubTab, setActiveSubTabState] = useState(
-    normalizeSubTab(searchParams.get("subTab")) ||
-      getDefaultSubTab(searchParams.get("tab") || "dashboard"),
-  );
+  const [activeSubTab, setActiveSubTabState] = useState(() => {
+    const tab = searchParams.get("tab") || activeTab || "dashboard";
+    const subTabFromUrl = normalizeSubTab(searchParams.get("subTab"));
+    if (subTabFromUrl) return subTabFromUrl;
+    if (typeof window !== "undefined") {
+      const savedSubTab = normalizeSubTab(
+        window.localStorage.getItem("agencyDashboard_activeSubTab"),
+      );
+      if (savedSubTab) return savedSubTab;
+    }
+    return getDefaultSubTab(tab);
+  });
   const checkoutSuccess = searchParams.get("success") === "1";
   const checkoutSessionId = String(searchParams.get("session_id") || "").trim();
   const billingSyncRequested =
@@ -18838,9 +18859,34 @@ export default function AgencyDashboard() {
     }
   }, [searchParams, activeTab]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("agencyDashboard_mode", agencyMode);
+    window.localStorage.setItem("agencyDashboard_activeTab", activeTab);
+    window.localStorage.setItem("agencyDashboard_activeSubTab", activeSubTab);
+  }, [activeSubTab, activeTab, agencyMode]);
+
+  useEffect(() => {
+    if (searchParams.get("tab")) return;
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set("mode", agencyMode);
+        next.set("tab", activeTab || "dashboard");
+        if (activeSubTab) {
+          next.set("subTab", activeSubTab);
+        } else {
+          next.delete("subTab");
+        }
+        return next;
+      },
+      { replace: true, preventScrollReset: true },
+    );
+  }, [activeSubTab, activeTab, agencyMode, searchParams, setSearchParams]);
+
   const [expandedItems, setExpandedItems] = useState<string[]>(() => {
     const tabFromUrl = searchParams.get("tab");
-    return tabFromUrl ? [tabFromUrl] : ["dashboard"];
+    return tabFromUrl ? [tabFromUrl] : [activeTab || "dashboard"];
   });
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     const saved = localStorage.getItem("agency-sidebar-width");
@@ -20235,6 +20281,9 @@ export default function AgencyDashboard() {
         ? "AI"
         : mode;
     setAgencyModeState(resolvedMode);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("agencyDashboard_mode", resolvedMode);
+    }
     setSearchParams(
       (prev) => {
         const newParams = new URLSearchParams(prev);
@@ -20288,6 +20337,13 @@ export default function AgencyDashboard() {
         setActiveSubTabState(resolvedSubTab);
       });
     }
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("agencyDashboard_activeTab", tab);
+      window.localStorage.setItem(
+        "agencyDashboard_activeSubTab",
+        resolvedSubTab,
+      );
+    }
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev);
@@ -20308,6 +20364,12 @@ export default function AgencyDashboard() {
     startTransition(() => {
       setActiveSubTabState(normalizedSubTab);
     });
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(
+        "agencyDashboard_activeSubTab",
+        normalizedSubTab,
+      );
+    }
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev);
@@ -20324,6 +20386,13 @@ export default function AgencyDashboard() {
       setActiveTabState(tab);
       setActiveSubTabState(resolvedSubTab);
     });
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("agencyDashboard_activeTab", tab);
+      window.localStorage.setItem(
+        "agencyDashboard_activeSubTab",
+        resolvedSubTab,
+      );
+    }
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev);

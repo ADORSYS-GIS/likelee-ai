@@ -139,6 +139,7 @@ const BrandConnectionsView = ({
   const { t: baseTranslate, i18n } = useTranslation("agency");
   const brandFallbacks: Record<string, Record<string, string>> = {
     en: {
+      title: "Brand Connections",
       connectedBrands: "Connected Brands",
       requests: "Requests",
       brandOffers: "Brand Offers",
@@ -147,6 +148,8 @@ const BrandConnectionsView = ({
       loadingBrands: "Loading brands...",
       loadBrandsFailed: "Failed to load brands.",
       noBrands: "No connected brands yet.",
+      "ui.subtitle":
+        "Manage connected brands, requests, offers, contracts, and deliverables.",
       "ui.connected": "Connected",
       "ui.since": "Since {{date}}",
       "ui.loadingRequests": "Loading requests...",
@@ -331,7 +334,12 @@ const BrandConnectionsView = ({
     options?: Record<string, unknown>,
   ) => {
     const defaultValue = brandFallbacks.en[path] || path;
-    return baseTranslate(`agencyDashboard.brandConnections.${path}`, {
+    const value = baseTranslate(`agencyDashboard.brandConnections.${path}`, {
+      defaultValue,
+      ...options,
+    });
+    if (value !== defaultValue && value !== path) return value;
+    return baseTranslate(`agencyDashboard.roster.brandConnections.${path}`, {
       defaultValue,
       ...options,
     });

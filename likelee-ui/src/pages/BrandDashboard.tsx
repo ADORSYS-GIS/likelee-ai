@@ -18,6 +18,7 @@ import {
   updateBrandLicensingRequestsStatus,
   deleteBrandLicensingRequests,
   getBrandProfile,
+  updateBrandProfile,
   listOfferDeliverables,
   reviewOfferDeliverable,
   getBrandBillingStatus,
@@ -38,6 +39,7 @@ import {
 import { useAuth } from "@/auth/AuthProvider";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
+import { setCachedQuery } from "@/lib/indexedDb";
 import {
   BRAND_STUDIO_ADDON_PRICE,
   BrandPlanTier,
@@ -320,7 +322,17 @@ export default function BrandDashboard() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
-  const [activeSection, setActiveSection] = useState("home");
+  const [activeSection, setActiveSection] = useState(() => {
+    if (typeof window !== "undefined") {
+      const section = new URLSearchParams(window.location.search).get(
+        "section",
+      );
+      if (section) return section === "campaigns" ? "campaigns-hub" : section;
+      const saved = localStorage.getItem("brandDashboard_activeSection");
+      return saved || "home";
+    }
+    return "home";
+  });
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showCampaignSubtabs, setShowCampaignSubtabs] = useState(true);
   const [inboxSubTab, setInboxSubTab] = useState<
@@ -329,7 +341,14 @@ export default function BrandDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [brand, setBrand] = useState<any>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [campaignView, setCampaignView] = useState("active");
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [campaignView, setCampaignView] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("brandDashboard_campaignView");
+      return saved || "active";
+    }
+    return "active";
+  });
   const [openCampaignModalSignal, setOpenCampaignModalSignal] = useState(0);
   const [campaignBuilderContext, setCampaignBuilderContext] =
     useState<any>(null);
@@ -337,7 +356,23 @@ export default function BrandDashboard() {
   // "Expired" is deadline-based; "Done" is tracked separately via completed_at.
   const [campaignHubTab, setCampaignHubTab] = useState<
     "active" | "pending_approval" | "completed" | "inbox" | "jobs"
-  >("active");
+  >(() => {
+    if (typeof window !== "undefined") {
+      const tab = new URLSearchParams(window.location.search).get("tab");
+      if (
+        tab === "active" ||
+        tab === "pending_approval" ||
+        tab === "completed" ||
+        tab === "inbox" ||
+        tab === "jobs"
+      ) {
+        return tab;
+      }
+      const saved = localStorage.getItem("brandDashboard_campaignHubTab");
+      return (saved as any) || "active";
+    }
+    return "active";
+  });
   const activeSectionRef = useRef(activeSection);
   const campaignHubTabRef = useRef(campaignHubTab);
   const pendingSectionOverrideRef = useRef<string | null>(null);
@@ -361,6 +396,27 @@ export default function BrandDashboard() {
   useEffect(() => {
     campaignHubTabRef.current = campaignHubTab;
   }, [campaignHubTab]);
+
+  // Save activeSection to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("brandDashboard_activeSection", activeSection);
+    }
+  }, [activeSection]);
+
+  // Save campaignHubTab to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("brandDashboard_campaignHubTab", campaignHubTab);
+    }
+  }, [campaignHubTab]);
+
+  // Save campaignView to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("brandDashboard_campaignView", campaignView);
+    }
+  }, [campaignView]);
 
   // Handle billing success - refresh profile to ensure subscription is active
   useEffect(() => {
@@ -480,6 +536,7 @@ export default function BrandDashboard() {
     options?: {
       campaignHubTab?: "active" | "pending_approval" | "completed" | "jobs";
       campaignView?: "active" | "pending" | "completed";
+      settingsTab?: string;
       replace?: boolean;
     },
   ) => {
@@ -492,12 +549,23 @@ export default function BrandDashboard() {
       if (options?.campaignView) {
         setCampaignView(options.campaignView);
       }
+      if (options?.settingsTab) {
+        setActiveSettingsTab(options.settingsTab);
+      }
     });
     const params = new URLSearchParams(location.search);
     params.set(
       "section",
       nextSection === "campaigns-hub" ? "campaigns" : nextSection,
     );
+    if (nextSection === "settings") {
+      params.set("tab", options?.settingsTab || activeSettingsTab);
+    } else {
+      params.delete("tab");
+    }
+    if (nextSection === "campaigns-hub" && options?.campaignHubTab) {
+      params.set("tab", options.campaignHubTab);
+    }
     setSearchParams(params, { replace: options?.replace ?? false });
   };
 
@@ -541,8 +609,7 @@ export default function BrandDashboard() {
       return;
     }
     // Navigate to Settings → Team tab to manage team members
-    setActiveSettingsTab("team");
-    navigateToSection("settings", { replace: false });
+    navigateToSection("settings", { replace: false, settingsTab: "team" });
   };
 
   const formatRelativeTime = (value?: string | null) => {
@@ -767,7 +834,24 @@ export default function BrandDashboard() {
   const [showSessionAudit, setShowSessionAudit] = useState(false);
   const [selectedCreator, setSelectedCreator] = useState(null);
   const [showLicenseRequestModal, setShowLicenseRequestModal] = useState(false);
-  const [activeSettingsTab, setActiveSettingsTab] = useState("profile");
+  const [activeSettingsTab, setActiveSettingsTab] = useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      return (
+        params.get("tab") ||
+        localStorage.getItem("brandDashboard_settingsTab") ||
+        "profile"
+      );
+    }
+    return "profile";
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("brandDashboard_settingsTab", activeSettingsTab);
+    }
+  }, [activeSettingsTab]);
+
   const [selectedLicenseCreator, setSelectedLicenseCreator] =
     useState<MarketplaceProfile | null>(null);
   const [creatingLicenseRequest, setCreatingLicenseRequest] = useState(false);
@@ -1193,6 +1277,9 @@ export default function BrandDashboard() {
     const sectionFromQuery = String(
       new URLSearchParams(location.search).get("section") || "",
     ).trim();
+    const tabFromQuery = String(
+      new URLSearchParams(location.search).get("tab") || "",
+    ).trim();
     const mappedSectionFromQuery =
       sectionFromQuery === "campaigns" ? "campaigns-hub" : sectionFromQuery;
     if (pendingSectionOverrideRef.current) {
@@ -1203,11 +1290,17 @@ export default function BrandDashboard() {
     }
     if (mappedSectionFromQuery) {
       const targetSection = mappedSectionFromQuery;
-      if (
-        targetSection === "campaigns-hub" &&
-        campaignHubTabRef.current !== "active"
-      ) {
-        setCampaignHubTab("active");
+      if (targetSection === "campaigns-hub") {
+        const nextCampaignTab =
+          tabFromQuery === "pending_approval" ||
+          tabFromQuery === "completed" ||
+          tabFromQuery === "inbox" ||
+          tabFromQuery === "jobs"
+            ? tabFromQuery
+            : "active";
+        if (campaignHubTabRef.current !== nextCampaignTab) {
+          setCampaignHubTab(nextCampaignTab as any);
+        }
       }
       if (activeSectionRef.current !== targetSection) {
         setActiveSection(targetSection);
@@ -2472,8 +2565,53 @@ export default function BrandDashboard() {
     }
   };
 
-  const handleSaveProfile = () => {
-    toast({ title: "Success", description: "Profile updated! (Demo mode)" });
+  const handleSaveProfile = async () => {
+    if (isSavingProfile) return;
+    setIsSavingProfile(true);
+    try {
+      const updatedProfile = await updateBrandProfile({
+        company_name: brand?.name,
+        industry: brand?.industry,
+        website: brand?.website,
+        logo_url: brand?.logo,
+      });
+      const nextProfile =
+        updatedProfile && typeof updatedProfile === "object"
+          ? updatedProfile
+          : {};
+      const nextBrand = {
+        ...(brand ?? {}),
+        name:
+          (nextProfile as any)?.company_name ||
+          (nextProfile as any)?.name ||
+          brand?.name ||
+          "Brand",
+        industry: (nextProfile as any)?.industry ?? brand?.industry,
+        website: (nextProfile as any)?.website ?? brand?.website,
+        contact_email: (nextProfile as any)?.email ?? brand?.contact_email,
+        logo: (nextProfile as any)?.logo_url ?? brand?.logo,
+      };
+      setBrand(nextBrand);
+      queryClient.setQueryData(["brand-profile", user?.id], nextProfile);
+      await setCachedQuery(["brand-profile", user?.id], nextProfile);
+      await queryClient.invalidateQueries({
+        queryKey: ["brand-profile", user?.id],
+      });
+      toast({
+        title: "Success",
+        description: "Profile updated successfully!",
+      });
+      // Refresh profile data to ensure UI is in sync
+      await refreshProfile();
+    } catch (e: any) {
+      toast({
+        title: "Failed to save profile",
+        description: e?.message || "Please try again.",
+        variant: "destructive" as any,
+      });
+    } finally {
+      setIsSavingProfile(false);
+    }
   };
 
   const handleToggleNotificationPref = async (
@@ -8092,28 +8230,48 @@ export default function BrandDashboard() {
             <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
-                onClick={() => setCampaignHubTab("active")}
+                onClick={() =>
+                  navigateToSection("campaigns-hub", {
+                    campaignHubTab: "active",
+                    replace: true,
+                  })
+                }
                 className={`border-2 rounded-none text-xs sm:text-sm h-8 sm:h-10 px-3 sm:px-4 ${campaignHubTab === "active" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
                 Active
               </Button>
               <Button
                 variant="outline"
-                onClick={() => setCampaignHubTab("pending_approval")}
+                onClick={() =>
+                  navigateToSection("campaigns-hub", {
+                    campaignHubTab: "pending_approval",
+                    replace: true,
+                  })
+                }
                 className={`border-2 rounded-none text-xs sm:text-sm h-8 sm:h-10 px-3 sm:px-4 ${campaignHubTab === "pending_approval" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
                 Pending
               </Button>
               <Button
                 variant="outline"
-                onClick={() => setCampaignHubTab("completed")}
+                onClick={() =>
+                  navigateToSection("campaigns-hub", {
+                    campaignHubTab: "completed",
+                    replace: true,
+                  })
+                }
                 className={`border-2 rounded-none text-xs sm:text-sm h-8 sm:h-10 px-3 sm:px-4 ${campaignHubTab === "completed" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
                 Expired
               </Button>
               <Button
                 variant="outline"
-                onClick={() => setCampaignHubTab("jobs")}
+                onClick={() =>
+                  navigateToSection("campaigns-hub", {
+                    campaignHubTab: "jobs",
+                    replace: true,
+                  })
+                }
                 className={`border-2 rounded-none text-xs sm:text-sm h-8 sm:h-10 px-3 sm:px-4 ${campaignHubTab === "jobs" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
                 Jobs
@@ -10808,7 +10966,13 @@ export default function BrandDashboard() {
 
       <Tabs
         value={activeSettingsTab}
-        onValueChange={setActiveSettingsTab}
+        onValueChange={(tab) => {
+          setActiveSettingsTab(tab);
+          const params = new URLSearchParams(location.search);
+          params.set("section", "settings");
+          params.set("tab", tab);
+          setSearchParams(params, { replace: true });
+        }}
         className="w-full"
       >
         <TabsList className="w-full flex justify-start bg-gray-100/50 p-1 mb-6 overflow-x-auto no-scrollbar rounded-none border-b border-gray-200 h-auto">
@@ -10942,9 +11106,17 @@ export default function BrandDashboard() {
             <div className="mt-12">
               <Button
                 onClick={handleSaveProfile}
+                disabled={isSavingProfile}
                 className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-black uppercase tracking-widest px-6 sm:px-12 h-11 sm:h-14 shadow-[8px_8px_0px_rgba(247,183,80,0.3)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none w-full sm:w-auto"
               >
-                {t("dashboard.settingsPage.profile.saveProfileChanges")}
+                {isSavingProfile ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  t("dashboard.settingsPage.profile.saveProfileChanges")
+                )}
               </Button>
             </div>
           </Card>
