@@ -447,6 +447,17 @@ export default function BrandCampaignDashboard({
   }, [maxCampaignWizardStep, newCampaignStep, showNewCampaignModal]);
 
   useEffect(() => {
+    if (!showPostJobModal) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowPostJobModal(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showPostJobModal]);
+
+  useEffect(() => {
     if (!showNewCampaignModal) return;
     const campaignId = String(brandCampaignId || "").trim();
     if (!campaignId) {
@@ -4972,32 +4983,28 @@ export default function BrandCampaignDashboard({
 
       {/* Post Job Modal */}
       {showPostJobModal && (
-        <div
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 overflow-y-auto"
-          onKeyDown={(e) => {
-            if (e.key === "Escape") {
-              setShowPostJobModal(false);
-            }
-          }}
-          tabIndex={-1}
-        >
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 overflow-y-auto">
           <div className="min-h-screen flex items-center justify-center p-6">
-            <Button
-              variant="ghost"
-              onClick={() => navigate(createPageUrl("PostJob"))}
-              className="absolute top-4 left-4 text-white hover:bg-white/10 rounded-none"
-            >
-              {t("campaignsDashboard.postJobModal.openFullForm")}
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => setShowPostJobModal(false)}
-              className="absolute top-4 right-4 text-white hover:bg-white/10 rounded-none flex items-center gap-2 px-4 py-2"
-            >
-              <X className="w-5 h-5" />
-              <span className="text-sm font-medium">Close</span>
-            </Button>
             <Card className="w-full max-w-4xl bg-white p-8 rounded-none">
+              <div className="flex items-center justify-between gap-3 border-b-2 border-gray-100 pb-4">
+                <Button
+                  variant="outline"
+                  onClick={() => navigate(createPageUrl("PostJob"))}
+                  className="rounded-none border-2 border-blue-600 text-blue-700 hover:bg-blue-50"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  {t("campaignsDashboard.postJobModal.openFullForm")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowPostJobModal(false)}
+                  aria-label="Close post job modal"
+                  className="rounded-none hover:bg-gray-100 flex items-center gap-2 px-3"
+                >
+                  <X className="w-5 h-5" />
+                  <span className="text-sm font-medium">Close</span>
+                </Button>
+              </div>
               <div className="text-center py-12">
                 <div className="w-20 h-20 bg-blue-600 rounded-none flex items-center justify-center mx-auto mb-6">
                   <Briefcase className="w-10 h-10 text-white" />
