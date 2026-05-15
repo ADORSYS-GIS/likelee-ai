@@ -1345,12 +1345,27 @@ export default function BrandCampaignDashboard({
     if (!isValidDateString(String(campaignBrief.overview_launch_date || ""))) {
       return { ok: false, message: "Launch date must be a valid date." };
     }
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const launchDate = new Date(campaignBrief.overview_launch_date);
+    if (launchDate < today) {
+      return { ok: false, message: "Launch date cannot be in the past." };
+    }
     if (
       !isValidDateString(String(campaignBrief.budget_submission_deadline || ""))
     ) {
       return {
         ok: false,
         message: "Submission deadline must be a valid date.",
+      };
+    }
+    const submissionDeadline = new Date(
+      campaignBrief.budget_submission_deadline,
+    );
+    if (submissionDeadline < launchDate) {
+      return {
+        ok: false,
+        message: "Submission deadline must be after or equal to launch date.",
       };
     }
     if (!parsePositiveNumber(campaignBrief.budget_total)) {
@@ -1812,11 +1827,27 @@ export default function BrandCampaignDashboard({
         "Campaign duration must be a valid number of days.";
     if (!isValidDateString(String(campaignBrief.overview_launch_date || "")))
       errors.overview_launch_date = "Please enter a valid launch date.";
+    else {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const launchDate = new Date(campaignBrief.overview_launch_date);
+      if (launchDate < today)
+        errors.overview_launch_date = "Launch date cannot be in the past.";
+    }
     if (
       !isValidDateString(String(campaignBrief.budget_submission_deadline || ""))
     )
       errors.budget_submission_deadline =
         "Please enter a valid submission deadline.";
+    else if (campaignBrief.overview_launch_date) {
+      const launchDate = new Date(campaignBrief.overview_launch_date);
+      const submissionDeadline = new Date(
+        campaignBrief.budget_submission_deadline,
+      );
+      if (submissionDeadline < launchDate)
+        errors.budget_submission_deadline =
+          "Submission deadline must be after or equal to launch date.";
+    }
     if (!parsePositiveNumber(campaignBrief.budget_total))
       errors.budget_total = "Total budget must be a valid amount.";
     if (!parsePositiveNumber(campaignBrief.budget_creator_payment))
@@ -4941,7 +4972,15 @@ export default function BrandCampaignDashboard({
 
       {/* Post Job Modal */}
       {showPostJobModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 overflow-y-auto">
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 overflow-y-auto"
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              setShowPostJobModal(false);
+            }
+          }}
+          tabIndex={-1}
+        >
           <div className="min-h-screen flex items-center justify-center p-6">
             <Button
               variant="ghost"
@@ -4952,11 +4991,11 @@ export default function BrandCampaignDashboard({
             </Button>
             <Button
               variant="ghost"
-              size="icon"
               onClick={() => setShowPostJobModal(false)}
-              className="absolute top-4 right-4 text-white hover:bg-white/10 rounded-none"
+              className="absolute top-4 right-4 text-white hover:bg-white/10 rounded-none flex items-center gap-2 px-4 py-2"
             >
               <X className="w-5 h-5" />
+              <span className="text-sm font-medium">Close</span>
             </Button>
             <Card className="w-full max-w-4xl bg-white p-8 rounded-none">
               <div className="text-center py-12">
