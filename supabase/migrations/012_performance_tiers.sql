@@ -128,4 +128,13 @@ $$;
 REVOKE ALL ON FUNCTION public.get_agency_performance_stats(UUID, DATE, DATE) FROM public;
 GRANT EXECUTE ON FUNCTION public.get_agency_performance_stats(UUID, DATE, DATE) TO authenticated, service_role;
 
+-- ============================================================================
+-- 4. UPDATED_AT TRIGGER (from 0006)
+-- ============================================================================
+DROP TRIGGER IF EXISTS update_performance_tiers_updated_at ON public.performance_tiers;
+CREATE TRIGGER update_performance_tiers_updated_at
+    BEFORE UPDATE ON public.performance_tiers
+    FOR EACH ROW
+    EXECUTE FUNCTION public.update_updated_at_column();
+
 COMMIT;

@@ -861,10 +861,11 @@ CREATE TABLE IF NOT EXISTS public.campaign_offer_transfers (
     amount_cents bigint NOT NULL CHECK (amount_cents > 0),
     currency text NOT NULL DEFAULT 'USD',
     stripe_transfer_id text,
-    status text NOT NULL DEFAULT 'created' CHECK (status IN ('created', 'failed', 'reversed')),
+    status text NOT NULL DEFAULT 'created' CHECK (status IN ('created', 'failed', 'pending_retry', 'reversed')),
     failure_reason text,
-    retry_count integer DEFAULT 0,
-    last_retry_at timestamptz,
+    retry_count integer NOT NULL DEFAULT 0,
+    retried_at timestamptz,
+    notified_at timestamptz,
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now(),
     UNIQUE(offer_id, recipient_type, recipient_id)
@@ -1110,5 +1111,44 @@ SELECT
     AVG(bf.size_bytes) as avg_file_size
 FROM brand_files bf
 GROUP BY bf.brand_id, bf.source_type, bf.mime_type;
+
+-- ============================================================================
+-- 19. CAMPAIGN OFFER TRANSFER RETRY FUNCTIONS (from 2026-04-22)
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION public.mark_transfer_pending_retry(
+    p_offer_id        uuid,
+    p_recipient_type  text,
+    p_recipient_id    uuid
+) RETURNS void AS $$
+BEGIN
+    UPDATE public.campaign_offer_transfers
+    SET
+        status      = 'pending_retry',
+        retried_at  = now(),
+        retry_count = retry_count + 1,
+        updated_at  = now()
+    WHERE offer_id       = p_offer_id
+      AND recipient_type = p_recipient_type
+      AND recipient_id   = p_recipient_id
+      AND status         = 'failed';
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION public.mark_transfer_notified(
+    p_offer_id        uuid,
+    p_recipient_type  text,
+    p_recipient_id    uuid
+) RETURNS void AS $$
+BEGIN
+    UPDATE public.campaign_offer_transfers
+    SET
+        notified_at = now(),
+        updated_at  = now()
+    WHERE offer_id       = p_offer_id
+      AND recipient_type = p_recipient_type
+      AND recipient_id   = p_recipient_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 COMMIT;

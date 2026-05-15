@@ -23,6 +23,30 @@ ALTER TABLE public.brand_license_requests
     FOREIGN KEY (submission_id) REFERENCES public.license_submissions(id) ON DELETE SET NULL;
 
 -- ============================================================================
+-- 3. SINGLE ROLE ENFORCEMENT TRIGGERS (from 2026-04-29)
+--    These must run after all three role tables exist (001, 002, 004)
+--    and after the _enforce_single_role() function is defined (015).
+-- ============================================================================
+
+DROP TRIGGER IF EXISTS trg_enforce_single_role_creators ON public.creators;
+CREATE TRIGGER trg_enforce_single_role_creators
+    BEFORE INSERT OR UPDATE ON public.creators
+    FOR EACH ROW
+    EXECUTE FUNCTION public._enforce_single_role();
+
+DROP TRIGGER IF EXISTS trg_enforce_single_role_brands ON public.brands;
+CREATE TRIGGER trg_enforce_single_role_brands
+    BEFORE INSERT OR UPDATE ON public.brands
+    FOR EACH ROW
+    EXECUTE FUNCTION public._enforce_single_role();
+
+DROP TRIGGER IF EXISTS trg_enforce_single_role_agencies ON public.agencies;
+CREATE TRIGGER trg_enforce_single_role_agencies
+    BEFORE INSERT OR UPDATE ON public.agencies
+    FOR EACH ROW
+    EXECUTE FUNCTION public._enforce_single_role();
+
+-- ============================================================================
 -- 2. VIEWS
 -- ============================================================================
 

@@ -210,4 +210,34 @@ DROP POLICY IF EXISTS "Creators can view own subscription events" ON public.crea
 CREATE POLICY "Creators can view own subscription events" ON public.creator_subscription_events
     FOR SELECT USING (creator_id = auth.uid());
 
+-- ============================================================================
+-- 5. CREATOR RATES UPSERT (from 0004)
+-- ============================================================================
+CREATE OR REPLACE FUNCTION public.upsert_creator_rates(p_creator_id UUID, p_rates JSONB)
+RETURNS void AS $$
+BEGIN
+    IF auth.uid() != p_creator_id THEN
+        RAISE EXCEPTION 'Unauthorized: You can only update your own rates';
+    END IF;
+
+    DELETE FROM public.creator_custom_rates
+    WHERE creator_id = p_creator_id;
+
+    INSERT INTO public.creator_custom_rates (creator_id, rate_type, rate_name, price_per_month_cents)
+    SELECT
+        p_creator_id,
+        (rate->>'rate_type')::TEXT,
+        CASE
+            WHEN lower(trim(replace((rate->>'rate_name')::TEXT, '-', ' '))) IN ('social media ads', 'social medial ads') THEN 'Social media ads'
+            ELSE (rate->>'rate_name')::TEXT
+        END,
+        COALESCE(
+            (rate->>'price_per_month_cents')::INT,
+            (rate->>'price_per_week_cents')::INT,
+            0
+        )
+    FROM jsonb_array_elements(p_rates) AS rate;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 COMMIT;

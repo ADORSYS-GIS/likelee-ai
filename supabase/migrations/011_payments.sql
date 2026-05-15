@@ -701,4 +701,58 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- ============================================================================
+-- 10. PAYMENT BALANCE TRIGGERS (from 0036, 0038, 0044)
+-- ============================================================================
+
+-- Agency balance: update on licensing_payouts insert
+DROP TRIGGER IF EXISTS tr_update_agency_balance_on_payout ON public.licensing_payouts;
+CREATE TRIGGER tr_update_agency_balance_on_payout
+    AFTER INSERT ON public.licensing_payouts
+    FOR EACH ROW
+    EXECUTE FUNCTION public.handle_licensing_payout_insert();
+
+-- Agency balance: update on payout request status change
+DROP TRIGGER IF EXISTS tr_update_agency_balance_on_payout_request ON public.agency_payout_requests;
+CREATE TRIGGER tr_update_agency_balance_on_payout_request
+    AFTER INSERT OR UPDATE ON public.agency_payout_requests
+    FOR EACH ROW
+    EXECUTE FUNCTION public.handle_payout_request_status_change();
+
+-- Creator balance: update on licensing_payouts insert
+DROP TRIGGER IF EXISTS tr_update_creator_balance_on_payout ON public.licensing_payouts;
+CREATE TRIGGER tr_update_creator_balance_on_payout
+    AFTER INSERT ON public.licensing_payouts
+    FOR EACH ROW
+    EXECUTE FUNCTION public.handle_licensing_payout_creator_update();
+
+-- Creator balance: update on creator payout request status change
+DROP TRIGGER IF EXISTS tr_update_creator_balance_on_payout_request ON public.creator_payout_requests;
+CREATE TRIGGER tr_update_creator_balance_on_payout_request
+    AFTER INSERT OR UPDATE ON public.creator_payout_requests
+    FOR EACH ROW
+    EXECUTE FUNCTION public.handle_creator_payout_request_status_change();
+
+-- ============================================================================
+-- 11. TIMESTAMP UPDATED_AT TRIGGERS (from 0038)
+-- ============================================================================
+
+DROP TRIGGER IF EXISTS tr_agency_payment_links_updated_at ON public.agency_payment_links;
+CREATE TRIGGER tr_agency_payment_links_updated_at
+    BEFORE UPDATE ON public.agency_payment_links
+    FOR EACH ROW
+    EXECUTE FUNCTION public.update_updated_at_column();
+
+DROP TRIGGER IF EXISTS tr_creator_balances_updated_at ON public.creator_balances;
+CREATE TRIGGER tr_creator_balances_updated_at
+    BEFORE UPDATE ON public.creator_balances
+    FOR EACH ROW
+    EXECUTE FUNCTION public.update_updated_at_column();
+
+DROP TRIGGER IF EXISTS tr_creator_payout_requests_updated_at ON public.creator_payout_requests;
+CREATE TRIGGER tr_creator_payout_requests_updated_at
+    BEFORE UPDATE ON public.creator_payout_requests
+    FOR EACH ROW
+    EXECUTE FUNCTION public.update_updated_at_column();
+
 COMMIT;

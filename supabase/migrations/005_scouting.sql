@@ -311,4 +311,48 @@ BEGIN
 END;
 $$;
 
+-- ============================================================================
+-- 7. SCOUTING OFFER DOCUMENT NAME TRIGGERS (from 0005)
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION public.set_scouting_offer_document_name()
+RETURNS trigger AS $$
+BEGIN
+    IF NEW.document_name IS NULL OR NEW.document_name = '' THEN
+        SELECT name INTO NEW.document_name FROM public.scouting_templates WHERE id = NEW.template_id;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger WHERE tgname = 'trg_set_scouting_offer_document_name'
+    ) THEN
+        CREATE TRIGGER trg_set_scouting_offer_document_name
+            BEFORE INSERT ON public.scouting_offers
+            FOR EACH ROW EXECUTE FUNCTION public.set_scouting_offer_document_name();
+    END IF;
+END $$;
+
+CREATE OR REPLACE FUNCTION public.lock_scouting_offer_document_name()
+RETURNS trigger AS $$
+BEGIN
+    NEW.document_name := OLD.document_name;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger WHERE tgname = 'trg_lock_scouting_offer_document_name'
+    ) THEN
+        CREATE TRIGGER trg_lock_scouting_offer_document_name
+            BEFORE UPDATE OF document_name ON public.scouting_offers
+            FOR EACH ROW EXECUTE FUNCTION public.lock_scouting_offer_document_name();
+    END IF;
+END $$;
+
 COMMIT;

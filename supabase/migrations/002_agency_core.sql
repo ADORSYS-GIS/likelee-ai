@@ -1062,4 +1062,80 @@ $$;
 REVOKE ALL ON FUNCTION public.ensure_storage(text, text, text) FROM public;
 GRANT EXECUTE ON FUNCTION public.ensure_storage(text, text, text) TO anon, authenticated, service_role;
 
+-- ============================================================================
+-- ACTIVITY EVENTS TABLE (from 0003)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.activity_events (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
+    type text NOT NULL,
+    subject_table text,
+    subject_id uuid,
+    title text,
+    subtitle text,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.activity_events ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Agency users can view their agency's activity_events" ON public.activity_events;
+CREATE POLICY "Agency users can view their agency's activity_events"
+    ON public.activity_events FOR SELECT USING (auth.uid() = agency_id);
+
+-- ============================================================================
+-- AGENCY STRIPE CONNECT (from 0036)
+-- ============================================================================
+CREATE OR REPLACE FUNCTION public.setup_agency_stripe_connect(
+    p_agency_id uuid,
+    p_email text,
+    p_stripe_account_id text DEFAULT NULL
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+    v_existing_account_id text;
+    v_is_new boolean := false;
+BEGIN
+    SELECT stripe_connect_account_id INTO v_existing_account_id
+    FROM public.agencies
+    WHERE id = p_agency_id;
+
+    IF NOT FOUND THEN
+        INSERT INTO public.agencies (
+            id,
+            agency_name,
+            email,
+            status,
+            onboarding_step
+        )
+        VALUES (
+            p_agency_id,
+            'Agency',
+            p_email,
+            'active',
+            'complete'
+        );
+        v_is_new := true;
+    END IF;
+
+    IF p_stripe_account_id IS NOT NULL THEN
+        UPDATE public.agencies
+        SET stripe_connect_account_id = p_stripe_account_id
+        WHERE id = p_agency_id;
+    END IF;
+
+    RETURN jsonb_build_object(
+        'agency_id', p_agency_id,
+        'stripe_connect_account_id', COALESCE(p_stripe_account_id, v_existing_account_id),
+        'is_new_agency', v_is_new
+    );
+END;
+$$;
+
+COMMENT ON FUNCTION public.setup_agency_stripe_connect IS
+'Atomically creates agency profile (if needed) and sets Stripe Connect account ID.';
+
 COMMIT;

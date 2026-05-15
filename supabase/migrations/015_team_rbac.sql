@@ -237,12 +237,11 @@ AS $$
 $$;
 
 -- ============================================================================
--- 5. ENFORCE SINGLE ROLE TRIGGER
+-- 5. ENFORCE UNIQUE ORG MEMBERSHIP TRIGGER
 -- ============================================================================
-CREATE OR REPLACE FUNCTION public._enforce_single_role()
+CREATE OR REPLACE FUNCTION public._enforce_unique_org_membership()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Ensure a user can only have one membership per organization
     IF TG_OP = 'INSERT' OR (TG_OP = 'UPDATE' AND OLD.user_id != NEW.user_id) THEN
         IF EXISTS (
             SELECT 1 FROM public.organization_memberships
@@ -254,12 +253,11 @@ BEGIN
             RAISE EXCEPTION 'User already has a membership in this organization';
         END IF;
     END IF;
-    
-    -- Update last_role_changed_at if role changed
+
     IF TG_OP = 'UPDATE' AND OLD.role != NEW.role THEN
         NEW.last_role_changed_at := now();
     END IF;
-    
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -267,10 +265,63 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS trigger_enforce_single_role ON public.organization_memberships;
 CREATE TRIGGER trigger_enforce_single_role
     BEFORE INSERT OR UPDATE ON public.organization_memberships
-    FOR EACH ROW EXECUTE FUNCTION public._enforce_single_role();
+    FOR EACH ROW EXECUTE FUNCTION public._enforce_unique_org_membership();
 
 -- ============================================================================
--- 6. TEAM MEMBER AWARE POLICIES (examples)
+-- 6. ENFORCE SINGLE ROLE (no profile mixing across creators/brands/agencies)
+--    (from 2026-04-29)
+-- ============================================================================
+CREATE OR REPLACE FUNCTION public._count_user_roles(_user_id uuid)
+RETURNS integer
+LANGUAGE sql
+STABLE
+AS $$
+  SELECT
+    (SELECT COUNT(*) FROM public.creators WHERE id = _user_id)::int +
+    (SELECT COUNT(*) FROM public.brands  WHERE id = _user_id)::int +
+    (SELECT COUNT(*) FROM public.agencies WHERE id = _user_id)::int;
+$$;
+
+CREATE OR REPLACE FUNCTION public._enforce_single_role()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_count integer;
+  v_table text;
+BEGIN
+  v_table := TG_TABLE_NAME;
+
+  IF TG_OP = 'UPDATE' THEN
+    v_count := (
+      (CASE WHEN v_table <> 'creators' THEN (SELECT COUNT(*) FROM public.creators WHERE id = NEW.id)::int ELSE 0 END) +
+      (CASE WHEN v_table <> 'brands'    THEN (SELECT COUNT(*) FROM public.brands  WHERE id = NEW.id)::int  ELSE 0 END) +
+      (CASE WHEN v_table <> 'agencies'  THEN (SELECT COUNT(*) FROM public.agencies WHERE id = NEW.id)::int ELSE 0 END)
+    );
+
+    IF v_count > 0 THEN
+      RAISE EXCEPTION 'role_mixing_violation: user % already has a profile in another role table', NEW.id
+        USING ERRCODE = '23P01',
+              DETAIL  = format('A user may only have ONE role profile (creator, brand, or agency). User %s already has a profile in a different role table.', NEW.id);
+    END IF;
+  END IF;
+
+  IF TG_OP = 'INSERT' THEN
+    v_count := public._count_user_roles(NEW.id);
+
+    IF v_count > 0 THEN
+      RAISE EXCEPTION 'role_mixing_violation: user % already has a profile in another role table', NEW.id
+        USING ERRCODE = '23P01',
+              DETAIL  = format('A user may only have ONE role profile (creator, brand, or agency). User %s already has a profile in a different role table.', NEW.id);
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+-- ============================================================================
+-- 7. TEAM MEMBER AWARE POLICIES (examples)
 -- ============================================================================
 
 -- These are policy templates that can be applied to various tables

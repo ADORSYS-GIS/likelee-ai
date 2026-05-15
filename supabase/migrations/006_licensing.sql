@@ -344,4 +344,21 @@ BEGIN
 END;
 $$;
 
+-- ============================================================================
+-- 8. LICENSE SUBMISSIONS UPDATED_AT TRIGGER (from 0015)
+-- ============================================================================
+CREATE OR REPLACE FUNCTION public.update_license_submissions_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trigger_license_submissions_updated_at ON public.license_submissions;
+CREATE TRIGGER trigger_license_submissions_updated_at
+    BEFORE UPDATE ON public.license_submissions
+    FOR EACH ROW
+    EXECUTE FUNCTION public.update_license_submissions_updated_at();
+
 COMMIT;
