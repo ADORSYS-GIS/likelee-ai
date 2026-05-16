@@ -139,16 +139,19 @@ const ActiveLicensesView = ({
           </div>
         </div>
       )}
-      
+
       <div className="flex items-start gap-3 px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl shadow-sm">
         <Info className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
         <div>
           <p className="font-bold text-blue-900 text-sm">
-            {t("agencyDashboard.activeLicenses.info.title", { defaultValue: "About Active Licenses" })}
+            {t("agencyDashboard.activeLicenses.info.title", {
+              defaultValue: "About Active Licenses",
+            })}
           </p>
           <p className="text-sm text-blue-800 mt-1">
-            {t("agencyDashboard.activeLicenses.info.description", { 
-              defaultValue: "Successfully paid licensing requests automatically appear here as Active Licenses. Once a license reaches its expiration date, it will systematically change to Expired and will no longer be available for new catalog creations." 
+            {t("agencyDashboard.activeLicenses.info.description", {
+              defaultValue:
+                "Successfully paid licensing requests automatically appear here as Active Licenses. Once a license reaches its expiration date, it will systematically change to Expired and will no longer be available for new catalog creations.",
             })}
           </p>
         </div>

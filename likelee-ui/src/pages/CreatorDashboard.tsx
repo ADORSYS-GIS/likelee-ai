@@ -9487,7 +9487,6 @@ export default function CreatorDashboard() {
                   </div>
                 </div>
               )}
-            
             </div>
           </Card>
         )}

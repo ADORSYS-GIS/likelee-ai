@@ -845,10 +845,10 @@ const LicensingRequestsView = ({
                 <Info className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
                 <div>
                   <p className="text-sm text-blue-800 font-medium leading-relaxed">
-                    {t(
-                      "agencyDashboard.licensingRequests.info.paidRequests",
-                      { defaultValue: "Fully paid licensing requests are systematically moved to the Archive tab. They will remain available to be linked to new Catalogs in the Catalog Builder until their license expiration date." }
-                    )}
+                    {t("agencyDashboard.licensingRequests.info.paidRequests", {
+                      defaultValue:
+                        "Fully paid licensing requests are systematically moved to the Archive tab. They will remain available to be linked to new Catalogs in the Catalog Builder until their license expiration date.",
+                    })}
                   </p>
                 </div>
               </div>

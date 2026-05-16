@@ -652,8 +652,7 @@ export const LicensingRequestsTab = ({
                   </Button>
                 </div>
               ) : group.submission_id ||
-                !group.brand_id ? // Agency-initiated via SubmissionWizard — no brand actions needed,
-              // the agency is waiting on the client to sign. Show nothing.
+                !group.brand_id ? // the agency is waiting on the client to sign. Show nothing. // Agency-initiated via SubmissionWizard — no brand actions needed,
               null : null}
             </Card>
           ))}

@@ -616,7 +616,10 @@ export function CatalogBuilderWizard({
                   <p className="text-sm text-blue-800 font-medium">
                     {t(
                       "agencyDashboard.catalogs.wizard.selectRequest.infoBox",
-                      { defaultValue: "Only active, fully paid, or approved license requests are shown here. Requests that have passed their expiration date are automatically hidden." }
+                      {
+                        defaultValue:
+                          "Only active, fully paid, or approved license requests are shown here. Requests that have passed their expiration date are automatically hidden.",
+                      },
                     )}
                   </p>
                 </div>
