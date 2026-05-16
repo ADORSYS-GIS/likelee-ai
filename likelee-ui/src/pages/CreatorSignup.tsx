@@ -1093,7 +1093,7 @@ export default function CreatorSignup() {
                   className="border-2 border-black rounded-none"
                   onClick={() => {
                     window.open(
-                      "/LIKELEE%20AI%20%E2%80%94%20Creator%20%26%20Talent%20Terms%20and%20Conditions.pdf",
+                      "/creator-talent-terms-and-conditions.html",
                       "_blank",
                     );
                   }}
