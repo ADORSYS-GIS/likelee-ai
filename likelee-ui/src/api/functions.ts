@@ -1211,14 +1211,14 @@ export const retryOfferTransfers = (offerId: string) =>
 export const getCreatorTransferStatus = () =>
   base44Client.get(`/api/talent/campaign-offers/transfer-status`);
 
-export const uploadOfferAssetRequestFile = (offerId: string, file: File) =>
-  base44Client.post(
+export const uploadOfferAssetRequestFile = (offerId: string, file: File) => {
+  const fd = new FormData();
+  fd.append("file", file);
+  return base44Client.post(
     `/api/campaign-offers/${offerId}/asset-requests/upload`,
-    file,
-    {
-      headers: { "Content-Type": file.type || "application/pdf" },
-    },
+    fd,
   );
+};
 
 export const listOfferAssetRequests = (offerId: string) =>
   base44Client.get(`/api/campaign-offers/${offerId}/asset-requests`);

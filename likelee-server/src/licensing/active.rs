@@ -187,9 +187,14 @@ pub async fn list(
     for r in rows {
         let req_status = r.status.as_deref().unwrap_or("approved");
         if req_status == "archived" {
-            let is_paid = r.payments.as_ref().map(|ps| {
-                ps.iter().any(|p| p.status.as_deref().unwrap_or("").to_lowercase() == "paid")
-            }).unwrap_or(false);
+            let is_paid = r
+                .payments
+                .as_ref()
+                .map(|ps| {
+                    ps.iter()
+                        .any(|p| p.status.as_deref().unwrap_or("").to_lowercase() == "paid")
+                })
+                .unwrap_or(false);
             if !is_paid {
                 continue;
             }
@@ -380,9 +385,14 @@ pub async fn stats(
     for r in rows {
         let req_status = r.status.as_deref().unwrap_or("approved");
         if req_status == "archived" {
-            let is_paid = r.payments.as_ref().map(|ps| {
-                ps.iter().any(|p| p.status.as_deref().unwrap_or("").to_lowercase() == "paid")
-            }).unwrap_or(false);
+            let is_paid = r
+                .payments
+                .as_ref()
+                .map(|ps| {
+                    ps.iter()
+                        .any(|p| p.status.as_deref().unwrap_or("").to_lowercase() == "paid")
+                })
+                .unwrap_or(false);
             if !is_paid {
                 continue;
             }

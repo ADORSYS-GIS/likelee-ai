@@ -235,8 +235,10 @@ pub async fn list_eligible_requests(
 
         if is_eligible {
             let today = chrono::Utc::now().date_naive();
-            let end_date_str = row.get("license_end_date").and_then(|v| v.as_str())
-                                  .or_else(|| row.get("deadline").and_then(|v| v.as_str()));
+            let end_date_str = row
+                .get("license_end_date")
+                .and_then(|v| v.as_str())
+                .or_else(|| row.get("deadline").and_then(|v| v.as_str()));
             if let Some(end_str) = end_date_str {
                 if let Ok(end_date) = chrono::NaiveDate::parse_from_str(end_str, "%Y-%m-%d") {
                     if end_date < today {
