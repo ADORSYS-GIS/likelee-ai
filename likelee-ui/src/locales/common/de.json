@@ -1546,7 +1546,11 @@
     },
     "organization": "Organization",
     "unknown": "Unknown",
-    "noResults": "No Results"
+    "noResults": "No Results",
+    "new": "Neu",
+    "approved": "Genehmigt",
+    "close": "Schließen",
+    "agency": "Agentur"
   },
   "licensingSettingsPage": {
     "title": "Lizenzeinstellungen",
