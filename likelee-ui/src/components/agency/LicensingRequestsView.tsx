@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   MessageSquare,
   UserX,
+  Info,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Card } from "@/components/ui/card";
@@ -839,23 +840,37 @@ const LicensingRequestsView = ({
 
         <div className="space-y-6">
           {activeRequestTab === "Active" && (
-            <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
-              <svg
-                className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <p className="text-xs text-amber-800">
-                {t("agencyDashboard.licensingRequests.archiveNotice")}
-              </p>
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl shadow-sm">
+                <Info className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm text-blue-800 font-medium leading-relaxed">
+                    {t(
+                      "agencyDashboard.licensingRequests.info.paidRequests",
+                      { defaultValue: "Fully paid licensing requests are systematically moved to the Archive tab. They will remain available to be linked to new Catalogs in the Catalog Builder until their license expiration date." }
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                <svg
+                  className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <p className="text-xs text-amber-800">
+                  {t("agencyDashboard.licensingRequests.archiveNotice")}
+                </p>
+              </div>
             </div>
           )}
 

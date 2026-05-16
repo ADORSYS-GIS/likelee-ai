@@ -139,7 +139,7 @@ pub async fn list_eligible_requests(
         .pg
         .from("licensing_requests")
         .select(
-            "id,client_name,campaign_title,talent_id,talent_ids,created_at,license_submissions!licensing_requests_submission_id_fkey(status,client_name,client_email,license_fee,created_at)",
+            "id,client_name,campaign_title,talent_id,talent_ids,created_at,license_start_date,license_end_date,deadline,license_submissions!licensing_requests_submission_id_fkey(status,client_name,client_email,license_fee,created_at)",
         )
         .eq("agency_id", agency_id)
         .order("created_at.desc")
@@ -221,11 +221,6 @@ pub async fn list_eligible_requests(
             .unwrap_or("")
             .trim()
             .to_lowercase();
-        let is_signed = submission_status == "completed" || submission_status == "signed";
-        if !is_signed {
-            continue;
-        }
-
         let payment_link = payment_link_by_lr.get(lrid);
         let payment_status = payment_link
             .and_then(|pl| pl.get("status"))
@@ -234,6 +229,27 @@ pub async fn list_eligible_requests(
             .trim()
             .to_lowercase();
         let is_paid = payment_status == "paid";
+
+        let is_signed = submission_status == "completed" || submission_status == "signed";
+        let mut is_eligible = is_signed || (submission_status == "archived" && is_paid);
+
+        if is_eligible {
+            let today = chrono::Utc::now().date_naive();
+            let end_date_str = row.get("license_end_date").and_then(|v| v.as_str())
+                                  .or_else(|| row.get("deadline").and_then(|v| v.as_str()));
+            if let Some(end_str) = end_date_str {
+                if let Ok(end_date) = chrono::NaiveDate::parse_from_str(end_str, "%Y-%m-%d") {
+                    if end_date < today {
+                        // Expired requests should not be eligible for new catalogs
+                        is_eligible = false;
+                    }
+                }
+            }
+        }
+
+        if !is_eligible {
+            continue;
+        }
 
         let mut mod_row = json!({
             "id": lrid,
