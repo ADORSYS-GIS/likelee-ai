@@ -1733,7 +1733,7 @@ export default function ReserveProfile() {
                   className="border-2 border-black rounded-none"
                   onClick={() =>
                     window.open(
-                      "/creator-talent-terms-and-conditions.html",
+                      "/creator-talent-terms-and-conditions.pdf",
                       "_blank",
                     )
                   }
