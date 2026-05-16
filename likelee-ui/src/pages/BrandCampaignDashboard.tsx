@@ -4849,20 +4849,28 @@ export default function BrandCampaignDashboard({
                             return (
                               <Card
                                 key={deliverableId || idx}
-                                className={`p-6 border-2 border-gray-200 rounded-none hover:border-gray-300 transition-colors shadow-none ${
-                                  isPaid ? "cursor-zoom-in" : "cursor-default"
-                                }`}
-                                onClick={() => {
-                                  setPreviewItems(selectedCampaignDeliverables);
-                                  setPreviewIndex(idx);
-                                  setPreviewImage({
-                                    ...deliverable,
-                                    payment_status: deliverable?.payment_status,
-                                  });
-                                }}
+                                className="p-6 border-2 border-gray-200 rounded-none hover:border-gray-300 transition-colors shadow-none"
                               >
                                 <div className="flex items-start gap-6">
-                                  <div className="w-48 h-32 bg-gray-100 rounded-none flex items-center justify-center overflow-hidden border border-gray-200">
+                                  <div
+                                    className={`w-48 h-32 bg-gray-100 rounded-none flex items-center justify-center overflow-hidden border border-gray-200 ${
+                                      isPaid
+                                        ? "cursor-zoom-in"
+                                        : "cursor-default"
+                                    }`}
+                                    onClick={() => {
+                                      if (!isPaid) return;
+                                      setPreviewItems(
+                                        selectedCampaignDeliverables,
+                                      );
+                                      setPreviewIndex(idx);
+                                      setPreviewImage({
+                                        ...deliverable,
+                                        payment_status:
+                                          deliverable?.payment_status,
+                                      });
+                                    }}
+                                  >
                                     {String(
                                       deliverable?.asset_type || "",
                                     ).startsWith("image") &&
