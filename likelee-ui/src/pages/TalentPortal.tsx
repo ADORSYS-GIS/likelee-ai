@@ -3868,51 +3868,6 @@ export default function TalentPortal({
                   )}
                 </div>
               </Card>
-
-              <Card className="p-5 rounded-xl shadow-sm border-0 bg-gradient-to-r from-indigo-50 to-blue-50">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4 min-w-0">
-                    <div className="h-14 w-14 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center overflow-hidden">
-                      {agencyUser?.agency_logo_url ? (
-                        <img
-                          src={agencyUser.agency_logo_url}
-                          alt=""
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <Briefcase className="h-6 w-6 text-gray-400" />
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-base font-semibold text-gray-900 truncate">
-                        {agencyName ||
-                          t("talentPortal.content.ai.earnings.yourAgency")}
-                      </div>
-                      <div className="text-sm text-gray-500 truncate">
-                        {t("talentPortal.content.ai.earnings.connectedSince", {
-                          date: new Date().toLocaleDateString(),
-                        })}
-                      </div>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-[#32C8D1] text-white hover:bg-[#2AB8C1] transition-colors">
-                          {t("talentPortal.content.ai.earnings.editProfile")}
-                        </button>
-                        <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors">
-                          {t(
-                            "talentPortal.content.ai.earnings.manageCampaigns",
-                          )}
-                        </button>
-                        <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-amber-400 text-white hover:bg-amber-500 transition-colors">
-                          {t("talentPortal.content.ai.earnings.viewEarnings")}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  <Button variant="outline" className="h-10 px-4 rounded-lg">
-                    {t("talentPortal.content.ai.earnings.manage")}
-                  </Button>
-                </div>
-              </Card>
             </div>
           )}
 
