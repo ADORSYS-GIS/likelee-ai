@@ -2574,14 +2574,31 @@ export default function BrandDashboard() {
         (resp as any)?.url ||
         (resp as any)?.file_url;
       if (!publicUrl) throw new Error("No URL returned from upload");
-      setBrand({ ...brand, logo: publicUrl });
-      // Persist immediately so the logo is saved even without clicking Save Profile
-      await updateBrandProfile({
-        company_name: brand?.name,
-        industry: brand?.industry,
-        website: brand?.website,
+
+      // Persist to backend
+      const updatedProfile = await updateBrandProfile({
         logo_url: publicUrl,
       });
+      const nextProfile =
+        updatedProfile && typeof updatedProfile === "object"
+          ? updatedProfile
+          : {};
+
+      // Update local brand state
+      const nextBrand = {
+        ...(brand ?? {}),
+        logo: (nextProfile as any)?.logo_url ?? publicUrl,
+      };
+      setBrand(nextBrand);
+
+      // Update both React Query and IndexedDB caches so the useEffect
+      // doesn't overwrite the new logo with the stale cached value
+      queryClient.setQueryData(["brand-profile", user?.id], nextProfile);
+      await setCachedQuery(["brand-profile", user?.id], nextProfile);
+      await queryClient.invalidateQueries({
+        queryKey: ["brand-profile", user?.id],
+      });
+
       toast({ title: "Success", description: "Logo uploaded successfully!" });
     } catch (err: any) {
       toast({
