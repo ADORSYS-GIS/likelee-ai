@@ -30,6 +30,7 @@ import {
   listBrandStorageFilesPaged,
   listBrandStorageFoldersPaged,
   getBrandStorageFileSignedUrl,
+  uploadBrandStorageFile,
 } from "@/api/functions";
 import {
   listGenerations,
@@ -2559,15 +2560,54 @@ export default function BrandDashboard() {
     },
   ];
 
-  const handleLogoUpload = (e) => {
+  const handleLogoUpload = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setUploadingLogo(true);
-      setTimeout(() => {
-        setBrand({ ...brand, logo: URL.createObjectURL(file) });
-        setUploadingLogo(false);
-        toast({ title: "Success", description: "Logo uploaded! (Demo mode)" });
-      }, 1000);
+    if (!file) return;
+    setUploadingLogo(true);
+    try {
+      const resp = await uploadBrandStorageFile({
+        file,
+        visibility: "public",
+      });
+      const publicUrl =
+        (resp as any)?.public_url ||
+        (resp as any)?.url ||
+        (resp as any)?.file_url;
+      if (!publicUrl) throw new Error("No URL returned from upload");
+
+      // Persist to backend
+      const updatedProfile = await updateBrandProfile({
+        logo_url: publicUrl,
+      });
+      const nextProfile =
+        updatedProfile && typeof updatedProfile === "object"
+          ? updatedProfile
+          : {};
+
+      // Update local brand state
+      const nextBrand = {
+        ...(brand ?? {}),
+        logo: (nextProfile as any)?.logo_url ?? publicUrl,
+      };
+      setBrand(nextBrand);
+
+      // Update both React Query and IndexedDB caches so the useEffect
+      // doesn't overwrite the new logo with the stale cached value
+      queryClient.setQueryData(["brand-profile", user?.id], nextProfile);
+      await setCachedQuery(["brand-profile", user?.id], nextProfile);
+      await queryClient.invalidateQueries({
+        queryKey: ["brand-profile", user?.id],
+      });
+
+      toast({ title: "Success", description: "Logo uploaded successfully!" });
+    } catch (err: any) {
+      toast({
+        title: "Upload failed",
+        description: err?.message || "Could not upload logo. Please try again.",
+        variant: "destructive" as any,
+      });
+    } finally {
+      setUploadingLogo(false);
     }
   };
 

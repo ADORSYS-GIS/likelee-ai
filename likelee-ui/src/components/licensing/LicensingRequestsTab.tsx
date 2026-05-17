@@ -58,7 +58,12 @@ export const LicensingRequestsTab = ({
     queryFn: async () => {
       const resp = await getAgencyLicensingRequests();
       // Ensure we always return an array even if backend returns an object or null
-      return Array.isArray(resp) ? resp : (resp as any)?.data || [];
+      const rows = Array.isArray(resp) ? resp : (resp as any)?.data || [];
+      // Filter out campaign-offer billing stubs — they are internal accounting
+      // records and have nothing to do with actual licensing requests.
+      return rows.filter(
+        (r: any) => String(r?.context_type || "").toLowerCase() !== "campaign",
+      );
     },
   });
 
@@ -652,9 +657,8 @@ export const LicensingRequestsTab = ({
                   </Button>
                 </div>
               ) : group.submission_id ||
-                !group.brand_id ? // Agency-initiated via SubmissionWizard — no brand actions needed,
-              // the agency is waiting on the client to sign. Show nothing.
-              null : null}
+                !group.brand_id ? null : null // the agency is waiting on the client to sign. Show nothing. // Agency-initiated via SubmissionWizard — no brand actions needed,
+              }
             </Card>
           ))}
         </div>

@@ -541,7 +541,6 @@ const BrandConnectionsView = ({
       );
       return refreshed;
     },
-    refetchInterval: 5000,
   });
 
   const offerDeliverablesQuery = useQuery({
@@ -553,7 +552,6 @@ const BrandConnectionsView = ({
       );
       return Array.isArray(resp?.deliverables) ? resp.deliverables : [];
     },
-    refetchInterval: 5000,
   });
 
   const rosterQuery = useQuery({
