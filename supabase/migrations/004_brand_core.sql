@@ -712,7 +712,7 @@ CREATE TABLE IF NOT EXISTS public.campaign_offer_deliverables (
     talent_id uuid REFERENCES public.agency_users(id) ON DELETE SET NULL,
     submitted_by uuid NOT NULL,
     submitted_by_role text NOT NULL DEFAULT 'creator' CHECK (submitted_by_role IN ('agency', 'creator')),
-    asset_request_id uuid REFERENCES public.offer_asset_requests(id) ON DELETE SET NULL,
+    asset_request_id uuid,
     asset_url text NOT NULL,
     asset_type text NOT NULL DEFAULT 'file',
     caption text,
@@ -848,6 +848,15 @@ CREATE POLICY "Creators can update offer asset requests"
     ON public.offer_asset_requests FOR UPDATE
     USING (creator_id = auth.uid())
     WITH CHECK (creator_id = auth.uid());
+
+-- Add FK from campaign_offer_deliverables now that offer_asset_requests exists
+DO $$ BEGIN
+    ALTER TABLE public.campaign_offer_deliverables
+        ADD CONSTRAINT fk_deliverables_asset_request
+        FOREIGN KEY (asset_request_id) REFERENCES public.offer_asset_requests(id) ON DELETE SET NULL;
+EXCEPTION WHEN undefined_table THEN
+    NULL;
+END $$;
 
 -- ============================================================================
 -- 12. CAMPAIGN OFFER TRANSFERS

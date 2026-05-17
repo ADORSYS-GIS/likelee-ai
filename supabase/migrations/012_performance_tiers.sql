@@ -76,12 +76,13 @@ payment_earnings AS (
 ),
 licensing_earnings AS (
     SELECT
-        lp.talent_id,
-        SUM(COALESCE(lp.amount_cents, 0))::BIGINT AS amount_cents
+        (split->>'talent_id')::uuid AS talent_id,
+        SUM(COALESCE((split->>'amount_cents')::bigint, 0))::BIGINT AS amount_cents
     FROM public.licensing_payouts lp
+    CROSS JOIN jsonb_array_elements(lp.talent_splits) AS split
     WHERE lp.agency_id = p_agency_id
         AND COALESCE(lp.paid_at, lp.created_at) >= p_earnings_start_date::timestamptz
-    GROUP BY lp.talent_id
+    GROUP BY split->>'talent_id'
 ),
 earnings AS (
     SELECT

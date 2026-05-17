@@ -250,6 +250,7 @@ CREATE TABLE IF NOT EXISTS public.scouting_offers (
     -- Offer Details
     subject text NOT NULL,
     body text NOT NULL,
+    document_name text,
     
     -- Status
     status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'sent', 'viewed', 'responded', 'accepted', 'declined')),
