@@ -8913,51 +8913,143 @@ export default function CreatorDashboard() {
                   {t("brandConnections.noOffersAvailable")}
                 </p>
               )}
+
               {!selectedOfferBriefId && brandOffers.length > 0 && (
                 <div className="space-y-3">
                   {brandOffers.map((offer: any) => {
                     const offerId = String(offer?.id || "");
-                    const status = String(offer?.status || "sent");
+                    const campaign = offer?.brand_campaigns || {};
                     return (
                       <div
                         key={offerId}
-                        className="border border-gray-200 rounded-lg p-4 bg-white space-y-3"
+                        className="p-4 border border-gray-200 rounded-lg space-y-3"
                       >
                         <div className="flex items-start justify-between gap-3">
-                          <div>
+                          <div className="space-y-2">
+                            <p className="text-xs text-gray-600 uppercase tracking-wide">
+                              BRAND
+                            </p>
+                            <p className="text-base font-bold text-gray-900">
+                              {offer?.brands?.company_name ||
+                                offer?.brand_campaigns?.name ||
+                                t("brandConnections.brandFallback")}
+                            </p>
                             <div className="font-semibold text-gray-900">
-                              {offer?.brand_campaigns?.name ||
+                              {campaign?.name ||
+                                offer?.offer_title ||
                                 t("brandConnections.offerFallback")}
                             </div>
-                            <div className="text-xs text-gray-500">
-                              {offer?.brands?.company_name ||
-                                t("brandConnections.brandFallback")}{" "}
-                              • {formatStatus(status)}
-                            </div>
                           </div>
-                          <Badge variant="outline" className="capitalize">
-                            {formatStatus(status)}
+                          <Badge
+                            className={`text-xs ${offerStatusBadgeClass(offer?.status)}`}
+                          >
+                            {formatStatus(offer?.status || "sent")}
                           </Badge>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-700">
+                          <p>
+                            {t("brandConnections.offerStatusLabel")}{" "}
+                            <span className="font-semibold text-gray-900">
+                              {formatStatus(offer?.status || "sent")}
+                            </span>
+                          </p>
+                          <p>
+                            {t("brandConnections.deliverableStatus")}{" "}
+                            <span className="font-semibold text-gray-900">
+                              {(() => {
+                                const normalized = String(
+                                  offer?.status || "",
+                                ).toLowerCase();
+                                if (normalized.includes("changes_requested")) {
+                                  return t("brandConnections.requestReview");
+                                }
+                                if (
+                                  normalized.includes("deliverables_submitted")
+                                ) {
+                                  return t("brandConnections.submitted");
+                                }
+                                if (normalized.includes("approved")) {
+                                  return t("brandConnections.approved");
+                                }
+                                if (
+                                  normalized.includes(
+                                    "contract_fully_signed",
+                                  ) ||
+                                  normalized.includes("signed")
+                                ) {
+                                  return t("brandConnections.readyToSubmit");
+                                }
+                                return t("brandConnections.notStarted");
+                              })()}
+                            </span>
+                          </p>
+                          <p>
+                            Category:{" "}
+                            <span className="font-semibold text-gray-900">
+                              {String(campaign?.category || "N/A")}
+                            </span>
+                          </p>
+                          <p>
+                            Budget range:{" "}
+                            <span className="font-semibold text-gray-900">
+                              {String(campaign?.budget_range || "N/A")}
+                            </span>
+                          </p>
+                          <p>
+                            Usage scope:{" "}
+                            <span className="font-semibold text-gray-900">
+                              {String(campaign?.usage_scope || "N/A")}
+                            </span>
+                          </p>
+                          <p>
+                            Territory:{" "}
+                            <span className="font-semibold text-gray-900">
+                              {String(campaign?.territory || "N/A")}
+                            </span>
+                          </p>
+                          <p>
+                            Start date:{" "}
+                            <span className="font-semibold text-gray-900">
+                              {String(campaign?.start_date || "N/A")}
+                            </span>
+                          </p>
+                          <p>
+                            Duration:{" "}
+                            <span className="font-semibold text-gray-900">
+                              {campaign?.duration_days
+                                ? `${campaign.duration_days} days`
+                                : "N/A"}
+                            </span>
+                          </p>
                         </div>
                         {offer?.message && (
                           <p className="text-sm text-gray-700">
                             {String(offer.message)}
                           </p>
                         )}
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            variant="outline"
-                            className="border-gray-200"
-                            onClick={() => openOfferBriefPage(offerId)}
-                          >
-                            {t("brandConnections.viewBrief")}
-                          </Button>
-                        </div>
+                        {String(offer?.status || "").toLowerCase() ===
+                          "changes_requested" &&
+                          !seenOfferNotificationIds.has(
+                            String(offer?.id || ""),
+                          ) && (
+                            <div className="flex items-center rounded-md border border-amber-300 bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
+                              {t("brandConnections.editsRequestedByBrand")}.{" "}
+                              {t("brandConnections.viewBrief")}
+                            </div>
+                          )}
+                        <Button
+                          variant="outline"
+                          className="border-gray-200"
+                          onClick={() => openOfferBriefPage(offerId)}
+                        >
+                          {t("brandConnections.viewBrief")}
+                        </Button>
                       </div>
                     );
                   })}
                 </div>
               )}
+
               {selectedOfferBriefId && !selectedBriefOffer && (
                 <div className="space-y-3">
                   <Button
@@ -9395,134 +9487,6 @@ export default function CreatorDashboard() {
                   </div>
                 </div>
               )}
-              {!selectedOfferBriefId &&
-                brandOffers.map((offer: any) => {
-                  const offerId = String(offer?.id || "");
-                  const campaign = offer?.brand_campaigns || {};
-                  return (
-                    <div
-                      key={offerId}
-                      className="p-4 border border-gray-200 rounded-lg space-y-3"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="space-y-2">
-                          <p className="text-xs text-gray-600 uppercase tracking-wide">
-                            {t("brandConnections.brandFallback")}
-                          </p>
-                          <p className="text-base font-bold text-gray-900">
-                            {resolveOfferBrandName(offer)}
-                          </p>
-                          <div className="font-semibold text-gray-900">
-                            {campaign?.name ||
-                              offer?.offer_title ||
-                              t("brandConnections.offerFallback")}
-                          </div>
-                        </div>
-                        <Badge
-                          className={`text-xs ${offerStatusBadgeClass(offer?.status)}`}
-                        >
-                          {formatStatus(offer?.status || "sent")}
-                        </Badge>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-700">
-                        <p>
-                          {t("brandConnections.offerStatusLabel")}{" "}
-                          <span className="font-semibold text-gray-900">
-                            {formatStatus(offer?.status || "sent")}
-                          </span>
-                        </p>
-                        <p>
-                          {t("brandConnections.deliverableStatus")}{" "}
-                          <span className="font-semibold text-gray-900">
-                            {(() => {
-                              const normalized = String(
-                                offer?.status || "",
-                              ).toLowerCase();
-                              if (normalized.includes("changes_requested")) {
-                                return t("brandConnections.requestReview");
-                              }
-                              if (
-                                normalized.includes("deliverables_submitted")
-                              ) {
-                                return t("brandConnections.submitted");
-                              }
-                              if (normalized.includes("approved")) {
-                                return t("brandConnections.approved");
-                              }
-                              if (
-                                normalized.includes("contract_fully_signed") ||
-                                normalized.includes("signed")
-                              ) {
-                                return t("brandConnections.readyToSubmit");
-                              }
-                              return t("brandConnections.notStarted");
-                            })()}
-                          </span>
-                        </p>
-                        <p>
-                          Category:{" "}
-                          <span className="font-semibold text-gray-900">
-                            {String(campaign?.category || "N/A")}
-                          </span>
-                        </p>
-                        <p>
-                          Budget range:{" "}
-                          <span className="font-semibold text-gray-900">
-                            {String(campaign?.budget_range || "N/A")}
-                          </span>
-                        </p>
-                        <p>
-                          Usage scope:{" "}
-                          <span className="font-semibold text-gray-900">
-                            {String(campaign?.usage_scope || "N/A")}
-                          </span>
-                        </p>
-                        <p>
-                          Territory:{" "}
-                          <span className="font-semibold text-gray-900">
-                            {String(campaign?.territory || "N/A")}
-                          </span>
-                        </p>
-                        <p>
-                          Start date:{" "}
-                          <span className="font-semibold text-gray-900">
-                            {String(campaign?.start_date || "N/A")}
-                          </span>
-                        </p>
-                        <p>
-                          Duration:{" "}
-                          <span className="font-semibold text-gray-900">
-                            {campaign?.duration_days
-                              ? `${campaign.duration_days} days`
-                              : "N/A"}
-                          </span>
-                        </p>
-                      </div>
-                      {offer?.message && (
-                        <p className="text-sm text-gray-700">
-                          {String(offer.message)}
-                        </p>
-                      )}
-                      {String(offer?.status || "").toLowerCase() ===
-                        "changes_requested" &&
-                        !seenOfferNotificationIds.has(
-                          String(offer?.id || ""),
-                        ) && (
-                          <div className="flex items-center rounded-md border border-amber-300 bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
-                            {t("brandConnections.editsRequestedByBrand")}.{" "}
-                            {t("brandConnections.viewBrief")}
-                          </div>
-                        )}
-                      <Button
-                        variant="outline"
-                        className="border-gray-200"
-                        onClick={() => openOfferBriefPage(offerId)}
-                      >
-                        {t("brandConnections.viewBrief")}
-                      </Button>
-                    </div>
-                  );
-                })}
             </div>
           </Card>
         )}

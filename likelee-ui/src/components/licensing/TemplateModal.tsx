@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import {
   Dialog,
   DialogContent,
@@ -110,6 +110,8 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
     reset,
     setValue,
     watch,
+    trigger,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<CreateTemplateRequest>({
     defaultValues: {
@@ -173,6 +175,8 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
   const contractFormatValue = watch("contract_body_format") || "markdown";
   const categoryValue = watch("category");
 
+  const [shakeFields, setShakeFields] = useState<Record<string, boolean>>({});
+
   const onSubmit = async (data: CreateTemplateRequest) => {
     const payload = {
       ...data,
@@ -185,12 +189,34 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
     onClose();
   };
 
+  const handleError = () => {
+    const newShakeFields: Record<string, boolean> = {};
+    const firstError = Object.keys(errors)[0];
+
+    if (errors.template_name) newShakeFields.template_name = true;
+    if (errors.category) newShakeFields.category = true;
+    if (errors.exclusivity) newShakeFields.exclusivity = true;
+
+    setShakeFields(newShakeFields);
+
+    const firstErrorElement =
+      document.querySelector(`[name="${firstError}"]`) ||
+      document.getElementById(firstError);
+    if (firstErrorElement) {
+      firstErrorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    setTimeout(() => {
+      setShakeFields({});
+    }, 500);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl w-[98vw] sm:w-[95vw] h-[95vh] sm:h-[90vh] max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col p-0 border-none bg-slate-50 rounded-2xl sm:rounded-3xl shadow-2xl">
         <form
           id="license-template-form"
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(onSubmit, handleError)}
           className="flex flex-col h-full"
         >
           <DialogHeader className="p-4 sm:p-8 bg-white border-b border-slate-100 rounded-t-3xl shrink-0">
@@ -245,6 +271,16 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto p-4 sm:p-8">
+            <style>{`
+              @keyframes field-shake {
+                0%, 100% { transform: translateX(0); }
+                20%, 60% { transform: translateX(-5px); }
+                40%, 80% { transform: translateX(5px); }
+              }
+              .animate-field-shake {
+                animation: field-shake 0.4s ease-in-out;
+              }
+            `}</style>
             <div className="max-w-full lg:max-w-4xl mx-auto space-y-6 sm:space-y-8">
               {/* Template Identity */}
               <div className="p-4 sm:p-8 bg-white rounded-3xl border border-slate-200/60 shadow-sm space-y-6">
@@ -274,7 +310,11 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                         "agencyDashboard.licenseTemplates.form.templateNamePlaceholder",
                       )}
                       disabled={readOnly}
-                      className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75"
+                      className={`h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75 ${
+                        errors.template_name
+                          ? "border-amber-500 ring-2 ring-amber-100"
+                          : ""
+                      } ${shakeFields.template_name ? "animate-field-shake" : ""}`}
                     />
                     {errors.template_name && (
                       <span className="text-amber-700 text-xs font-bold px-1 dark:text-amber-400">
@@ -289,33 +329,47 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                       </Label>
                       <MandatoryHint />
                     </div>
-                    <Select
-                      value={categoryValue}
-                      onValueChange={(val) => setValue("category", val)}
-                      disabled={readOnly}
-                    >
-                      <SelectTrigger className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75">
-                        <SelectValue
-                          placeholder={t(
-                            "agencyDashboard.licenseTemplates.form.selectCategory",
-                          )}
-                        />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl border-slate-200">
-                        {CATEGORIES.map((cat) => (
-                          <SelectItem
-                            key={cat}
-                            value={cat}
-                            className="rounded-lg font-medium"
+                    <Controller
+                      name="category"
+                      control={control}
+                      rules={{ required: true }}
+                      render={({ field }) => (
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={readOnly}
+                        >
+                          <SelectTrigger
+                            id="category"
+                            className={`h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75 ${
+                              errors.category
+                                ? "border-amber-500 ring-2 ring-amber-100"
+                                : ""
+                            } ${shakeFields.category ? "animate-field-shake" : ""}`}
                           >
-                            {t(
-                              `agencyDashboard.licenseTemplates.categories.${CATEGORY_TRANSLATION_KEYS[cat]}`,
-                              { defaultValue: cat },
-                            )}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                            <SelectValue
+                              placeholder={t(
+                                "agencyDashboard.licenseTemplates.form.selectCategory",
+                              )}
+                            />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-slate-200">
+                            {CATEGORIES.map((cat) => (
+                              <SelectItem
+                                key={cat}
+                                value={cat}
+                                className="rounded-lg font-medium"
+                              >
+                                {t(
+                                  `agencyDashboard.licenseTemplates.categories.${CATEGORY_TRANSLATION_KEYS[cat]}`,
+                                  { defaultValue: cat },
+                                )}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                     {errors.category && (
                       <span className="text-amber-700 text-xs font-bold px-1 dark:text-amber-400">
                         {t("agencyDashboard.licenseTemplates.form.required")}
@@ -387,45 +441,64 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                   </Label>
                   <MandatoryHint />
                 </div>
-                <Select
-                  onValueChange={(val) => setValue("exclusivity", val)}
-                  defaultValue={initialData?.exclusivity || "Non-exclusive"}
-                  disabled={readOnly}
-                >
-                  <SelectTrigger className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75">
-                    <SelectValue
-                      placeholder={t(
-                        "agencyDashboard.licenseTemplates.form.selectExclusivity",
-                      )}
-                    />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl border-slate-200">
-                    <SelectItem
-                      value="Non-exclusive"
-                      className="rounded-lg font-medium"
+                <Controller
+                  name="exclusivity"
+                  control={control}
+                  rules={{ required: true }}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={readOnly}
                     >
-                      {t(
-                        "agencyDashboard.licenseTemplates.form.exclusivityOptions.nonExclusive",
-                      )}
-                    </SelectItem>
-                    <SelectItem
-                      value="Category exclusive"
-                      className="rounded-lg font-medium"
-                    >
-                      {t(
-                        "agencyDashboard.licenseTemplates.form.exclusivityOptions.categoryExclusive",
-                      )}
-                    </SelectItem>
-                    <SelectItem
-                      value="Full exclusivity"
-                      className="rounded-lg font-medium"
-                    >
-                      {t(
-                        "agencyDashboard.licenseTemplates.form.exclusivityOptions.fullExclusivity",
-                      )}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                      <SelectTrigger
+                        id="exclusivity"
+                        className={`h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75 ${
+                          errors.exclusivity
+                            ? "border-amber-500 ring-2 ring-amber-100"
+                            : ""
+                        } ${shakeFields.exclusivity ? "animate-field-shake" : ""}`}
+                      >
+                        <SelectValue
+                          placeholder={t(
+                            "agencyDashboard.licenseTemplates.form.selectExclusivity",
+                          )}
+                        />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-slate-200">
+                        <SelectItem
+                          value="Non-exclusive"
+                          className="rounded-lg font-medium"
+                        >
+                          {t(
+                            "agencyDashboard.licenseTemplates.form.exclusivityOptions.nonExclusive",
+                          )}
+                        </SelectItem>
+                        <SelectItem
+                          value="Category exclusive"
+                          className="rounded-lg font-medium"
+                        >
+                          {t(
+                            "agencyDashboard.licenseTemplates.form.exclusivityOptions.categoryExclusive",
+                          )}
+                        </SelectItem>
+                        <SelectItem
+                          value="Full exclusivity"
+                          className="rounded-lg font-medium"
+                        >
+                          {t(
+                            "agencyDashboard.licenseTemplates.form.exclusivityOptions.fullExclusivity",
+                          )}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.exclusivity && (
+                  <span className="text-amber-700 text-xs font-bold px-1 dark:text-amber-400">
+                    {t("agencyDashboard.licenseTemplates.form.required")}
+                  </span>
+                )}
               </div>
 
               <div className="space-y-2">

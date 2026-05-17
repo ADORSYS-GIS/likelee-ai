@@ -24,6 +24,7 @@ import {
   Users,
   UploadCloud,
   Play,
+  Info,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { catalogApi } from "@/api/catalogs";
@@ -608,8 +609,23 @@ export function CatalogBuilderWizard({
 
           {/* ---- Step: Select Request ---- */}
           {step === "select-request" && (
-            <div className="space-y-3">
-              <p className="text-sm text-gray-600 font-medium">
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl">
+                <Info className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm text-blue-800 font-medium">
+                    {t(
+                      "agencyDashboard.catalogs.wizard.selectRequest.infoBox",
+                      {
+                        defaultValue:
+                          "Only active, fully paid, or approved license requests are shown here. Requests that have passed their expiration date are automatically hidden.",
+                      },
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-sm text-gray-600 font-medium pb-2">
                 {t("agencyDashboard.catalogs.wizard.selectRequest.description")}
               </p>
               {eligibleQuery.isLoading ? (

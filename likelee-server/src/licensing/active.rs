@@ -77,8 +77,14 @@ struct CampaignEmbed {
 }
 
 #[derive(Deserialize)]
+struct PaymentEmbed {
+    status: Option<String>,
+}
+
+#[derive(Deserialize)]
 struct LicensingRequestRow {
     id: String,
+    status: Option<String>,
     submission_id: Option<String>,
     brand_id: Option<String>,
     talent_id: Option<String>,
@@ -95,13 +101,16 @@ struct LicensingRequestRow {
     brands: Option<BrandEmbed>,
     agency_users: Option<AgencyUserEmbed>,
     campaigns: Option<Vec<CampaignEmbed>>, // Reverse relation might be array
+    payments: Option<Vec<PaymentEmbed>>,
 }
 
 #[derive(Deserialize)]
 struct StatRow {
+    status: Option<String>,
     license_end_date: Option<String>,
     deadline: Option<String>,
     campaigns: Option<Vec<CampaignEmbed>>,
+    payments: Option<Vec<PaymentEmbed>>,
 }
 
 #[derive(Deserialize)]
@@ -132,14 +141,14 @@ pub async fn list(
     let access = require_agency_permission(&state, &user, Permission::ViewLicenses).await?;
     let agency_id = &access.organization_id;
 
-    let select = "id,talent_id,talent_name,campaign_title,client_name,brand_id,license_start_date,license_end_date,deadline,usage_scope,brands(company_name),agency_users(full_legal_name,stage_name,profile_photo_url),campaigns(payment_amount),license_submissions!licensing_requests_submission_id_fkey(template_id,client_name,client_email,license_fee,duration_days,start_date,custom_terms,requires_agency_signature,license_templates(territory,exclusivity,modifications_allowed))";
+    let select = "id,status,talent_id,talent_name,campaign_title,client_name,brand_id,license_start_date,license_end_date,deadline,usage_scope,brands(company_name),agency_users(full_legal_name,stage_name,profile_photo_url),campaigns(payment_amount),payments(status),license_submissions!licensing_requests_submission_id_fkey(template_id,client_name,client_email,license_fee,duration_days,start_date,custom_terms,requires_agency_signature,license_templates(territory,exclusivity,modifications_allowed))";
 
     let query = state
         .pg
         .from("licensing_requests")
         .select(select)
         .eq("agency_id", agency_id)
-        .eq("status", "approved");
+        .in_("status", vec!["approved", "archived"]);
 
     let today = Utc::now().date_naive();
     let expiring_threshold = today + chrono::Duration::days(5); // Changed from 30 to 5 days
@@ -176,6 +185,21 @@ pub async fn list(
     let mut licenses = Vec::new();
 
     for r in rows {
+        let req_status = r.status.as_deref().unwrap_or("approved");
+        if req_status == "archived" {
+            let is_paid = r
+                .payments
+                .as_ref()
+                .map(|ps| {
+                    ps.iter()
+                        .any(|p| p.status.as_deref().unwrap_or("").to_lowercase() == "paid")
+                })
+                .unwrap_or(false);
+            if !is_paid {
+                continue;
+            }
+        }
+
         let talent_name = r
             .agency_users
             .as_ref()
@@ -326,14 +350,14 @@ pub async fn stats(
     let agency_id = &access.organization_id;
 
     // Optimization: Fetch only necessary columns for stats calculation
-    let select = "license_end_date,deadline,campaigns(payment_amount)";
+    let select = "status,license_end_date,deadline,campaigns(payment_amount),payments(status)";
 
     let resp = state
         .pg
         .from("licensing_requests")
         .select(select)
         .eq("agency_id", agency_id)
-        .eq("status", "approved")
+        .in_("status", vec!["approved", "archived"])
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -359,6 +383,21 @@ pub async fn stats(
     let mut total_val = 0.0;
 
     for r in rows {
+        let req_status = r.status.as_deref().unwrap_or("approved");
+        if req_status == "archived" {
+            let is_paid = r
+                .payments
+                .as_ref()
+                .map(|ps| {
+                    ps.iter()
+                        .any(|p| p.status.as_deref().unwrap_or("").to_lowercase() == "paid")
+                })
+                .unwrap_or(false);
+            if !is_paid {
+                continue;
+            }
+        }
+
         let val = r
             .campaigns
             .as_ref()
