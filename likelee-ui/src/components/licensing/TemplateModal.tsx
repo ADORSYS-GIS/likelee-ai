@@ -192,14 +192,16 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
   const handleError = () => {
     const newShakeFields: Record<string, boolean> = {};
     const firstError = Object.keys(errors)[0];
-    
+
     if (errors.template_name) newShakeFields.template_name = true;
     if (errors.category) newShakeFields.category = true;
     if (errors.exclusivity) newShakeFields.exclusivity = true;
 
     setShakeFields(newShakeFields);
-    
-    const firstErrorElement = document.querySelector(`[name="${firstError}"]`) || document.getElementById(firstError);
+
+    const firstErrorElement =
+      document.querySelector(`[name="${firstError}"]`) ||
+      document.getElementById(firstError);
     if (firstErrorElement) {
       firstErrorElement.scrollIntoView({ behavior: "smooth", block: "center" });
     }
@@ -309,7 +311,9 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                       )}
                       disabled={readOnly}
                       className={`h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75 ${
-                        errors.template_name ? "border-amber-500 ring-2 ring-amber-100" : ""
+                        errors.template_name
+                          ? "border-amber-500 ring-2 ring-amber-100"
+                          : ""
                       } ${shakeFields.template_name ? "animate-field-shake" : ""}`}
                     />
                     {errors.template_name && (
@@ -335,10 +339,12 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                           onValueChange={field.onChange}
                           disabled={readOnly}
                         >
-                          <SelectTrigger 
+                          <SelectTrigger
                             id="category"
                             className={`h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75 ${
-                              errors.category ? "border-amber-500 ring-2 ring-amber-100" : ""
+                              errors.category
+                                ? "border-amber-500 ring-2 ring-amber-100"
+                                : ""
                             } ${shakeFields.category ? "animate-field-shake" : ""}`}
                           >
                             <SelectValue
@@ -445,10 +451,12 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                       onValueChange={field.onChange}
                       disabled={readOnly}
                     >
-                      <SelectTrigger 
+                      <SelectTrigger
                         id="exclusivity"
                         className={`h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75 ${
-                          errors.exclusivity ? "border-amber-500 ring-2 ring-amber-100" : ""
+                          errors.exclusivity
+                            ? "border-amber-500 ring-2 ring-amber-100"
+                            : ""
                         } ${shakeFields.exclusivity ? "animate-field-shake" : ""}`}
                       >
                         <SelectValue
