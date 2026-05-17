@@ -2406,39 +2406,50 @@ pub async fn send_payment_link(
 
     // Fallback name resolution from the licensing_request record itself
     let record_talent_name = lr.get("talent_name").and_then(|v| v.as_str()).unwrap_or("");
-    
+
     // If map is still missing names, try to resolve from joined agency_users or the record's talent_name
     if talent_name_map.len() < all_talent_ids.len() {
         if all_talent_ids.len() == 1 {
             let tid = all_talent_ids[0].clone();
-                let au = lr.get("agency_users");
-                let name = au
-                    .and_then(|v| v.get("full_legal_name").or_else(|| v.get("stage_name")))
-                    .and_then(|v| v.as_str())
-                    .filter(|s| !s.is_empty())
-                    .map(|s| s.to_string())
-                    .or_else(|| {
-                        if !record_talent_name.is_empty() {
-                            Some(record_talent_name.to_string())
-                        } else {
-                            None
-                        }
-                    })
-                    .unwrap_or_else(|| "Unknown".to_string());
-                talent_name_map.insert(tid.clone(), name);
-                
-                if let Some(cid) = au.and_then(|v| v.get("creator_id")).and_then(|v| v.as_str()) {
-                    talent_creator_map.insert(tid.clone(), cid.to_string());
-                }
-                if let Some(tn) = au.and_then(|v| v.get("performance_tier_name")).and_then(|v| v.as_str()) {
-                    talent_tier_name_map.insert(tid, tn.to_string());
-                }
+            let au = lr.get("agency_users");
+            let name = au
+                .and_then(|v| v.get("full_legal_name").or_else(|| v.get("stage_name")))
+                .and_then(|v| v.as_str())
+                .filter(|s| !s.is_empty())
+                .map(|s| s.to_string())
+                .or_else(|| {
+                    if !record_talent_name.is_empty() {
+                        Some(record_talent_name.to_string())
+                    } else {
+                        None
+                    }
+                })
+                .unwrap_or_else(|| "Unknown".to_string());
+            talent_name_map.insert(tid.clone(), name);
+
+            if let Some(cid) = au
+                .and_then(|v| v.get("creator_id"))
+                .and_then(|v| v.as_str())
+            {
+                talent_creator_map.insert(tid.clone(), cid.to_string());
+            }
+            if let Some(tn) = au
+                .and_then(|v| v.get("performance_tier_name"))
+                .and_then(|v| v.as_str())
+            {
+                talent_tier_name_map.insert(tid, tn.to_string());
+            }
         } else if !record_talent_name.is_empty() {
             // For multiple talents, we might have a comma-separated list in record_talent_name
-            let names: Vec<String> = record_talent_name.split(',').map(|s| s.trim().to_string()).collect();
+            let names: Vec<String> = record_talent_name
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .collect();
             if names.len() == all_talent_ids.len() {
                 for (i, tid) in all_talent_ids.iter().enumerate() {
-                    talent_name_map.entry(tid.clone()).or_insert_with(|| names[i].clone());
+                    talent_name_map
+                        .entry(tid.clone())
+                        .or_insert_with(|| names[i].clone());
                 }
             }
         }

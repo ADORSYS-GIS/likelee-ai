@@ -589,75 +589,77 @@ export const LicensingRequestsTab = ({
                 </div>
               </div>
 
-              {group.status === "approved" ? (
-                <div>
-                  <Button
-                    onClick={() => handleSendPaymentLink(group)}
-                    disabled={sendingPaymentLink[group.group_key]}
-                    className="w-full font-bold h-10 rounded-md flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white shadow-lg shadow-indigo-200"
-                  >
-                    {sendingPaymentLink[group.group_key] ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />{" "}
-                        {t("agencyDashboard.licensingRequests.buttons.sending")}
-                      </>
-                    ) : group.payment_link_id || group.payment_link_url ? (
-                      <>
-                        <Send className="w-4 h-4" />{" "}
-                        {t(
-                          "agencyDashboard.licensingRequests.buttons.resendPaymentLink",
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4" />{" "}
-                        {t(
-                          "agencyDashboard.licensingRequests.buttons.sendPaymentLink",
-                        )}
-                      </>
-                    )}
-                  </Button>
-                </div>
-              ) : activeRequestTab === "Archive" ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => updateGroupStatus(group, "pending")}
-                    className="border-gray-300 text-gray-700 font-bold h-10 rounded-md flex items-center justify-center gap-2"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                    {t(
-                      "agencyDashboard.licensingRequests.buttons.recoverToActive",
-                    )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setGroupToDelete(group);
-                      setShowDeleteConfirm(true);
-                    }}
-                    disabled={deletingGroup === group.group_key}
-                    className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-10 rounded-md flex items-center justify-center gap-2"
-                  >
-                    {deletingGroup === group.group_key ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        {t(
-                          "agencyDashboard.licensingRequests.messages.deleting",
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <Trash2 className="w-4 h-4" />
-                        {t(
-                          "agencyDashboard.licensingRequests.actions.deletePermanently",
-                        )}
-                      </>
-                    )}
-                  </Button>
-                </div>
-              ) : group.submission_id ||
-                !group.brand_id ? null : null // the agency is waiting on the client to sign. Show nothing. // Agency-initiated via SubmissionWizard — no brand actions needed,
+              {
+                group.status === "approved" ? (
+                  <div>
+                    <Button
+                      onClick={() => handleSendPaymentLink(group)}
+                      disabled={sendingPaymentLink[group.group_key]}
+                      className="w-full font-bold h-10 rounded-md flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white shadow-lg shadow-indigo-200"
+                    >
+                      {sendingPaymentLink[group.group_key] ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />{" "}
+                          {t(
+                            "agencyDashboard.licensingRequests.buttons.sending",
+                          )}
+                        </>
+                      ) : group.payment_link_id || group.payment_link_url ? (
+                        <>
+                          <Send className="w-4 h-4" />{" "}
+                          {t(
+                            "agencyDashboard.licensingRequests.buttons.resendPaymentLink",
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4" />{" "}
+                          {t(
+                            "agencyDashboard.licensingRequests.buttons.sendPaymentLink",
+                          )}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                ) : activeRequestTab === "Archive" ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => updateGroupStatus(group, "pending")}
+                      className="border-gray-300 text-gray-700 font-bold h-10 rounded-md flex items-center justify-center gap-2"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      {t(
+                        "agencyDashboard.licensingRequests.buttons.recoverToActive",
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setGroupToDelete(group);
+                        setShowDeleteConfirm(true);
+                      }}
+                      disabled={deletingGroup === group.group_key}
+                      className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-10 rounded-md flex items-center justify-center gap-2"
+                    >
+                      {deletingGroup === group.group_key ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          {t(
+                            "agencyDashboard.licensingRequests.messages.deleting",
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="w-4 h-4" />
+                          {t(
+                            "agencyDashboard.licensingRequests.actions.deletePermanently",
+                          )}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                ) : group.submission_id || !group.brand_id ? null : null // the agency is waiting on the client to sign. Show nothing. // Agency-initiated via SubmissionWizard — no brand actions needed,
               }
             </Card>
           ))}
