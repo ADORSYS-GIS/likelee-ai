@@ -965,7 +965,11 @@
       "constraintViolation": "Invalid data. Please check your input and try again."
     },
     "unknown": "Unknown",
-    "noResults": "No Results"
+    "noResults": "No Results",
+    "new": "New",
+    "approved": "Approved",
+    "close": "Close",
+    "agency": "Agency"
   },
   "faces.realFutures.title": "Real Faces. Real Futures.",
   "faces.realFutures.line1": "Brands and studios are already generating AI campaigns — most use unlicensed or synthetic faces.",

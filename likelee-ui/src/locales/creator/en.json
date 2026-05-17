@@ -428,6 +428,10 @@
     "contracts": {
       "title": "Licenses & Contracts",
       "subtitle": "Manage your active agreements and rights usage",
+      "comingSoonBadge": "Coming Soon",
+      "featurePreview": "Feature preview",
+      "comingSoonTitle": "Licenses & Contracts is coming soon",
+      "comingSoonDescription": "We’re preparing a dedicated space for contract visibility, license tracking, and agreement history.",
       "welcome": {
         "title": "Welcome!",
         "message": "Manage your active contracts here. Pause, revoke, or renew anytime."
@@ -752,6 +756,27 @@
       "actionRequired": "Action required",
       "actionRequiredDescription": "One or more transfers failed because your Stripe account is not fully set up. Complete your Stripe onboarding to receive these funds. The agency will retry the transfer once your account is ready.",
       "completeStripeSetup": "Complete Stripe setup",
+      "transfers": {
+        "pendingTransfers": "Pending Transfers",
+        "refresh": "Refresh",
+        "loadingStatus": "Loading transfer status...",
+        "actionRequired": "Action required",
+        "failedReason": "One or more transfers failed because your Stripe account is not fully set up. Complete your Stripe onboarding to receive these funds. The agency will retry the transfer once your account is ready.",
+        "completeStripeSetup": "Complete Stripe setup",
+        "retry": "retry",
+        "retries": "retries",
+        "status": {
+          "transferred": "transferred",
+          "retrying": "retrying...",
+          "failed": "failed",
+          "pending": "pending"
+        },
+        "errors": {
+          "incompleteStripe": "Your Stripe account is not fully set up. Complete your Stripe onboarding to receive transfers.",
+          "notAllowed": "Transfers are not allowed on your Stripe account.",
+          "noStripeAccount": "No Stripe account is connected. Complete Stripe onboarding to receive funds."
+        }
+      },
       "history": {
         "title": "Payment History",
         "placeholderTitle": "Your payment history will appear here",

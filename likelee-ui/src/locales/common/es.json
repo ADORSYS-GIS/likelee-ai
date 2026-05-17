@@ -1291,7 +1291,11 @@
     },
     "organization": "Organization",
     "unknown": "Unknown",
-    "noResults": "No Results"
+    "noResults": "No Results",
+    "new": "Nuevo",
+    "approved": "Aprobado",
+    "close": "Cerrar",
+    "agency": "Agencia"
   },
   "licensingSettingsPage": {
     "title": "Configuración de Licencias",

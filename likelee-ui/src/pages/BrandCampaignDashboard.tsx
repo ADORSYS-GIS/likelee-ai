@@ -174,6 +174,7 @@ export default function BrandCampaignDashboard({
   const [isExistingCampaign, setIsExistingCampaign] = useState(false);
   const [campaignCards, setCampaignCards] = useState<any[]>([]);
   const [loadingCampaignCards, setLoadingCampaignCards] = useState(false);
+  const hasLoadedCampaignCardsRef = useRef(false);
   const [showEscrowReleaseModal, setShowEscrowReleaseModal] = useState(false);
   const [escrowReleaseInfo, setEscrowReleaseInfo] = useState<any>(null);
   const [campaignListTab, setCampaignListTab] = useState<
@@ -445,6 +446,17 @@ export default function BrandCampaignDashboard({
     if (newCampaignStep <= maxCampaignWizardStep) return;
     setNewCampaignStep(maxCampaignWizardStep);
   }, [maxCampaignWizardStep, newCampaignStep, showNewCampaignModal]);
+
+  useEffect(() => {
+    if (!showPostJobModal) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowPostJobModal(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showPostJobModal]);
 
   useEffect(() => {
     if (!showNewCampaignModal) return;
@@ -931,10 +943,14 @@ export default function BrandCampaignDashboard({
           : {},
     };
   };
-  const loadCampaignCards = async () => {
+  const loadCampaignCards = async (options?: { showLoading?: boolean }) => {
     if (isFetchingCampaignCardsRef.current) return;
     isFetchingCampaignCardsRef.current = true;
-    setLoadingCampaignCards(true);
+    const shouldShowLoading =
+      options?.showLoading ?? !hasLoadedCampaignCardsRef.current;
+    if (shouldShowLoading) {
+      setLoadingCampaignCards(true);
+    }
     try {
       const response = await base44.get<{ campaigns?: any[] }>(
         "/api/brand/campaigns",
@@ -1004,10 +1020,15 @@ export default function BrandCampaignDashboard({
         }),
       );
       setCampaignCards(normalized);
+      hasLoadedCampaignCardsRef.current = true;
     } catch {
-      setCampaignCards([]);
+      if (!hasLoadedCampaignCardsRef.current) {
+        setCampaignCards([]);
+      }
     } finally {
-      setLoadingCampaignCards(false);
+      if (shouldShowLoading) {
+        setLoadingCampaignCards(false);
+      }
       isFetchingCampaignCardsRef.current = false;
     }
   };
@@ -1309,6 +1330,20 @@ export default function BrandCampaignDashboard({
   const isValidDateString = (value: string): boolean =>
     /^\d{4}-\d{2}-\d{2}$/.test(String(value || "").trim());
 
+  const parseDateOnly = (value: string): Date | null => {
+    if (!isValidDateString(value)) return null;
+    const [year, month, day] = value.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  };
+
+  const todayDateString = (): string => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   const parsePositiveNumber = (value: unknown): number | null => {
     if (value === null || value === undefined) return null;
     const normalized = String(value)
@@ -1345,12 +1380,35 @@ export default function BrandCampaignDashboard({
     if (!isValidDateString(String(campaignBrief.overview_launch_date || ""))) {
       return { ok: false, message: "Launch date must be a valid date." };
     }
+    const today = parseDateOnly(todayDateString());
+    const launchDate = parseDateOnly(campaignBrief.overview_launch_date);
+    if (!today || !launchDate) {
+      return { ok: false, message: "Launch date must be a valid date." };
+    }
+    if (launchDate < today) {
+      return { ok: false, message: "Launch date cannot be in the past." };
+    }
     if (
       !isValidDateString(String(campaignBrief.budget_submission_deadline || ""))
     ) {
       return {
         ok: false,
         message: "Submission deadline must be a valid date.",
+      };
+    }
+    const submissionDeadline = parseDateOnly(
+      campaignBrief.budget_submission_deadline,
+    );
+    if (!submissionDeadline) {
+      return {
+        ok: false,
+        message: "Submission deadline must be a valid date.",
+      };
+    }
+    if (submissionDeadline < launchDate) {
+      return {
+        ok: false,
+        message: "Submission deadline must be after or equal to launch date.",
       };
     }
     if (!parsePositiveNumber(campaignBrief.budget_total)) {
@@ -1391,14 +1449,16 @@ export default function BrandCampaignDashboard({
     const refreshData = async () => {
       if (!mounted) return;
       await loadConnectedAgencies();
-      await loadCampaignCards();
+      await loadCampaignCards({
+        showLoading: !hasLoadedCampaignCardsRef.current,
+      });
     };
 
     void refreshData();
 
     const campaignTimer = setInterval(() => {
       if (mounted) {
-        void loadCampaignCards();
+        void loadCampaignCards({ showLoading: false });
       }
     }, 15000);
 
@@ -1794,7 +1854,7 @@ export default function BrandCampaignDashboard({
     setNewCampaignStep(2);
   };
 
-  const handleStep2Next = async () => {
+  const getStep2BriefErrors = () => {
     const errors: Record<string, string> = {};
     const expectedTotal = Number.parseInt(
       String(campaignBrief.total_expected_deliverables || "").trim(),
@@ -1812,16 +1872,88 @@ export default function BrandCampaignDashboard({
         "Campaign duration must be a valid number of days.";
     if (!isValidDateString(String(campaignBrief.overview_launch_date || "")))
       errors.overview_launch_date = "Please enter a valid launch date.";
+    else {
+      const today = parseDateOnly(todayDateString());
+      const launchDate = parseDateOnly(campaignBrief.overview_launch_date);
+      if (today && launchDate && launchDate < today)
+        errors.overview_launch_date = "Launch date cannot be in the past.";
+    }
     if (
       !isValidDateString(String(campaignBrief.budget_submission_deadline || ""))
     )
       errors.budget_submission_deadline =
         "Please enter a valid submission deadline.";
+    else if (campaignBrief.overview_launch_date) {
+      const launchDate = parseDateOnly(campaignBrief.overview_launch_date);
+      const submissionDeadline = parseDateOnly(
+        campaignBrief.budget_submission_deadline,
+      );
+      if (launchDate && submissionDeadline && submissionDeadline < launchDate)
+        errors.budget_submission_deadline =
+          "Submission deadline must be after or equal to launch date.";
+    }
     if (!parsePositiveNumber(campaignBrief.budget_total))
       errors.budget_total = "Total budget must be a valid amount.";
     if (!parsePositiveNumber(campaignBrief.budget_creator_payment))
       errors.budget_creator_payment = "Creator payment must be a valid amount.";
 
+    return errors;
+  };
+
+  useEffect(() => {
+    if (!showNewCampaignModal || newCampaignStep !== 2) return;
+
+    const errors: Record<string, string> = {};
+    const launchValue = String(campaignBrief.overview_launch_date || "");
+    const deadlineValue = String(
+      campaignBrief.budget_submission_deadline || "",
+    );
+    const today = parseDateOnly(todayDateString());
+    const launchDate = parseDateOnly(launchValue);
+
+    if (launchValue) {
+      if (!launchDate) {
+        errors.overview_launch_date = "Please enter a valid launch date.";
+      } else if (today && launchDate < today) {
+        errors.overview_launch_date = "Launch date cannot be in the past.";
+      }
+    }
+
+    if (deadlineValue) {
+      const submissionDeadline = parseDateOnly(deadlineValue);
+      if (!submissionDeadline) {
+        errors.budget_submission_deadline =
+          "Please enter a valid submission deadline.";
+      } else if (
+        launchDate &&
+        !errors.overview_launch_date &&
+        submissionDeadline < launchDate
+      ) {
+        errors.budget_submission_deadline =
+          "Submission deadline must be after or equal to launch date.";
+      }
+    }
+
+    setStep2FieldErrors((prev) => {
+      const next = { ...prev };
+      for (const field of [
+        "overview_launch_date",
+        "budget_submission_deadline",
+      ]) {
+        if (errors[field]) next[field] = errors[field];
+        else if (next[field]) delete next[field];
+      }
+      return next;
+    });
+  }, [
+    campaignBrief.budget_submission_deadline,
+    campaignBrief.overview_launch_date,
+    newCampaignStep,
+    showNewCampaignModal,
+  ]);
+
+  const handleStep2Next = async () => {
+    const errors = getStep2BriefErrors();
     setStep2FieldErrors(errors);
 
     if (Object.keys(errors).length > 0) {
@@ -4717,20 +4849,28 @@ export default function BrandCampaignDashboard({
                             return (
                               <Card
                                 key={deliverableId || idx}
-                                className={`p-6 border-2 border-gray-200 rounded-none hover:border-gray-300 transition-colors shadow-none ${
-                                  isPaid ? "cursor-zoom-in" : "cursor-default"
-                                }`}
-                                onClick={() => {
-                                  setPreviewItems(selectedCampaignDeliverables);
-                                  setPreviewIndex(idx);
-                                  setPreviewImage({
-                                    ...deliverable,
-                                    payment_status: deliverable?.payment_status,
-                                  });
-                                }}
+                                className="p-6 border-2 border-gray-200 rounded-none hover:border-gray-300 transition-colors shadow-none"
                               >
                                 <div className="flex items-start gap-6">
-                                  <div className="w-48 h-32 bg-gray-100 rounded-none flex items-center justify-center overflow-hidden border border-gray-200">
+                                  <div
+                                    className={`w-48 h-32 bg-gray-100 rounded-none flex items-center justify-center overflow-hidden border border-gray-200 ${
+                                      isPaid
+                                        ? "cursor-zoom-in"
+                                        : "cursor-default"
+                                    }`}
+                                    onClick={() => {
+                                      if (!isPaid) return;
+                                      setPreviewItems(
+                                        selectedCampaignDeliverables,
+                                      );
+                                      setPreviewIndex(idx);
+                                      setPreviewImage({
+                                        ...deliverable,
+                                        payment_status:
+                                          deliverable?.payment_status,
+                                      });
+                                    }}
+                                  >
                                     {String(
                                       deliverable?.asset_type || "",
                                     ).startsWith("image") &&
@@ -4943,22 +5083,26 @@ export default function BrandCampaignDashboard({
       {showPostJobModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 overflow-y-auto">
           <div className="min-h-screen flex items-center justify-center p-6">
-            <Button
-              variant="ghost"
-              onClick={() => navigate(createPageUrl("PostJob"))}
-              className="absolute top-4 left-4 text-white hover:bg-white/10 rounded-none"
-            >
-              {t("campaignsDashboard.postJobModal.openFullForm")}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowPostJobModal(false)}
-              className="absolute top-4 right-4 text-white hover:bg-white/10 rounded-none"
-            >
-              <X className="w-5 h-5" />
-            </Button>
             <Card className="w-full max-w-4xl bg-white p-8 rounded-none">
+              <div className="flex items-center justify-between gap-3 border-b-2 border-gray-100 pb-4">
+                <Button
+                  variant="outline"
+                  onClick={() => navigate(createPageUrl("PostJob"))}
+                  className="rounded-none border-2 border-blue-600 text-blue-700 hover:bg-blue-50"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  {t("campaignsDashboard.postJobModal.openFullForm")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowPostJobModal(false)}
+                  aria-label="Close post job modal"
+                  className="rounded-none hover:bg-gray-100 flex items-center gap-2 px-3"
+                >
+                  <X className="w-5 h-5" />
+                  <span className="text-sm font-medium">Close</span>
+                </Button>
+              </div>
               <div className="text-center py-12">
                 <div className="w-20 h-20 bg-blue-600 rounded-none flex items-center justify-center mx-auto mb-6">
                   <Briefcase className="w-10 h-10 text-white" />

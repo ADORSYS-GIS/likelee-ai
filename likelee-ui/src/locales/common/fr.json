@@ -1646,7 +1646,11 @@
     "profilePhotoOptional": "Profile Photo (optional)",
     "agencyOptional": "Agency (if applicable)",
     "unknown": "Unknown",
-    "noResults": "No Results"
+    "noResults": "No Results",
+    "new": "Nouveau",
+    "approved": "Approuvé",
+    "close": "Fermer",
+    "agency": "Agence"
   },
   "licensingSettingsPage": {
     "title": "Paramètres de Licence",

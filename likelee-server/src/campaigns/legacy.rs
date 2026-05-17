@@ -5999,28 +5999,49 @@ pub async fn upload_offer_asset_request_file(
     State(state): State<AppState>,
     user: AuthUser,
     Path(OfferPath { offer_id }): Path<OfferPath>,
-    headers: HeaderMap,
-    body: axum::body::Bytes,
+    mut multipart: axum::extract::Multipart,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     if user.role != "agency" {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
     let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
-    if body.is_empty() {
+
+    let mut file_data = Vec::new();
+    let mut content_type = "application/pdf".to_string();
+
+    while let Some(field) = multipart.next_field().await.map_err(|e| {
+        error!(error = %e, "Failed to get next field from multipart");
+        (StatusCode::BAD_REQUEST, e.to_string())
+    })? {
+        let name = field.name().unwrap_or("").to_string();
+        if name == "file" {
+            content_type = field
+                .content_type()
+                .unwrap_or("application/pdf")
+                .to_string();
+            file_data = field
+                .bytes()
+                .await
+                .map_err(|e| {
+                    error!(error = %e, "Failed to read bytes from multipart field");
+                    (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+                })?
+                .to_vec();
+        }
+    }
+
+    if file_data.is_empty() {
         return Err((StatusCode::BAD_REQUEST, "missing file bytes".to_string()));
     }
     const MAX_FILE_SIZE: usize = 25_000_000;
-    if body.len() > MAX_FILE_SIZE {
+    if file_data.len() > MAX_FILE_SIZE {
         return Err((
             StatusCode::PAYLOAD_TOO_LARGE,
             "file too large (max 25MB)".to_string(),
         ));
     }
-    let content_type = headers
-        .get("content-type")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("application/pdf");
-    let ext = if content_type == "application/pdf" {
+
+    let ext = if content_type.contains("pdf") {
         "pdf"
     } else {
         "bin"
@@ -6039,8 +6060,8 @@ pub async fn upload_offer_asset_request_file(
             format!("Bearer {}", state.supabase_service_key),
         )
         .header("apikey", state.supabase_service_key.clone())
-        .header("content-type", content_type)
-        .body(body)
+        .header("content-type", &content_type)
+        .body(file_data)
         .send()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;

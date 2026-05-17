@@ -1198,23 +1198,6 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                               "agencyDashboard.licenseTemplates.wizard.clientEmail",
                             )}
                           </Label>
-                          {!brandRequestBrandId && brandOptions.length > 0 && (
-                            <div className="flex items-center gap-2">
-                              <Label
-                                htmlFor="allow-brand-change-wizard"
-                                className="text-xs text-gray-500 cursor-pointer"
-                              >
-                                {t(
-                                  "agencyDashboard.licenseTemplates.wizard.sendToConnectedBrands",
-                                )}
-                              </Label>
-                              <Switch
-                                id="allow-brand-change-wizard"
-                                checked={allowBrandChange}
-                                onCheckedChange={setAllowBrandChange}
-                              />
-                            </div>
-                          )}
                         </div>
 
                         {brandRequestBrandId ? (
@@ -1295,13 +1278,6 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                               )}
                               className="h-12 bg-slate-50 border-slate-200 rounded-xl font-medium focus:ring-4 focus:ring-indigo-50 transition-all"
                             />
-                            {brandOptions.length > 0 && (
-                              <p className="text-xs text-gray-500 ml-1">
-                                {t(
-                                  "agencyDashboard.licenseTemplates.wizard.toggleConnectedBrands",
-                                )}
-                              </p>
-                            )}
                           </>
                         )}
                         <p className="text-[11px] font-medium text-amber-700 ml-1 dark:text-amber-400">

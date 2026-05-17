@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   MessageSquare,
   UserX,
+  Info,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Card } from "@/components/ui/card";
@@ -135,6 +136,14 @@ const LicensingRequestsView = ({
     if (status === "approved") return "bg-green-100 text-green-700";
     if (status === "rejected" || status === "declined")
       return "bg-red-100 text-red-700";
+    if (status === "signed" || status === "completed")
+      return "bg-green-100 text-green-700";
+    if (status === "sent" || status === "client_pending")
+      return "bg-blue-100 text-blue-700";
+    if (status === "agency_pending") return "bg-purple-100 text-purple-700";
+    if (status === "opened") return "bg-yellow-100 text-yellow-700";
+    if (status === "archived" || status === "expired")
+      return "bg-gray-100 text-gray-700";
     return "bg-gray-100 text-gray-700";
   };
 
@@ -142,6 +151,43 @@ const LicensingRequestsView = ({
     t(`agencyDashboard.licensingRequests.status.${status}`, {
       defaultValue: status,
     });
+
+  const submissionStatusLabel = (status: string) => {
+    const translationKeys: Record<string, string> = {
+      draft: "draft",
+      sent: "sent",
+      opened: "opened",
+      signed: "signed",
+      completed: "signed",
+      declined: "declined",
+      archived: "archived",
+      expired: "expired",
+      client_pending: "clientPending",
+      agency_pending: "agencyPending",
+    };
+    const normalized = status.toLowerCase();
+    const translationKey = translationKeys[normalized];
+    if (!translationKey) return status;
+    return t(`agencyDashboard.licenseSubmissions.status.${translationKey}`, {
+      defaultValue: status,
+    });
+  };
+
+  const getDisplayStatus = (group: any) => {
+    const submissionStatus = String(group?.submission_status || "")
+      .trim()
+      .toLowerCase();
+    if (submissionStatus) {
+      return {
+        value: submissionStatus,
+        label: submissionStatusLabel(submissionStatus),
+      };
+    }
+    return {
+      value: String(group?.status || "pending").toLowerCase(),
+      label: statusLabel(group?.status || "pending"),
+    };
+  };
 
   const formatLicenseFee = (fee?: number | null) => {
     if (typeof fee !== "number" || !Number.isFinite(fee)) return "—";
@@ -794,23 +840,37 @@ const LicensingRequestsView = ({
 
         <div className="space-y-6">
           {activeRequestTab === "Active" && (
-            <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
-              <svg
-                className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <p className="text-xs text-amber-800">
-                {t("agencyDashboard.licensingRequests.archiveNotice")}
-              </p>
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl shadow-sm">
+                <Info className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm text-blue-800 font-medium leading-relaxed">
+                    {t("agencyDashboard.licensingRequests.info.paidRequests", {
+                      defaultValue:
+                        "Fully paid licensing requests are systematically moved to the Archive tab. They will remain available to be linked to new Catalogs in the Catalog Builder until their license expiration date.",
+                    })}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                <svg
+                  className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <p className="text-xs text-amber-800">
+                  {t("agencyDashboard.licensingRequests.archiveNotice")}
+                </p>
+              </div>
             </div>
           )}
 
@@ -844,227 +904,203 @@ const LicensingRequestsView = ({
             )}
 
           {activeRequestTab !== "Brand Requests" &&
-            filteredRegularData.map((group: any) => (
-              <Card
-                key={group.group_key}
-                className="p-8 bg-white border-2 border-gray-900 rounded-none overflow-hidden relative"
-              >
-                <div className="flex justify-between items-start mb-6">
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-1">
-                      {group.brand_name ||
-                        t("agencyDashboard.licensingRequests.unknownBrand")}
-                    </h3>
-                    <p className="text-gray-500 font-medium">
-                      {(group.campaign_title || "").trim() || "\u2014"}
-                    </p>
-                  </div>
-                  <span
-                    className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${statusStyle(group.status)}`}
-                  >
-                    {statusLabel(group.status)}
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap gap-2 mb-8">
-                  {(group.talents || []).map((t: any) => {
-                    const names = (t.talent_name || "")
-                      .split(",")
-                      .map((s: string) => s.trim())
-                      .filter(Boolean);
-                    return names.map((name: string, i: number) => (
-                      <span
-                        key={`${t.licensing_request_id}-${i}`}
-                        className="px-3 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded uppercase"
-                      >
-                        {name || entitySingularTitle}
-                      </span>
-                    ));
-                  })}
-                </div>
-
-                <div className="mb-8 grid grid-cols-2 gap-3">
-                  <DetailMetric
-                    label={t(
-                      "agencyDashboard.licensingRequests.fields.licenseFee",
-                    )}
-                    value={formatLicenseFee(group.license_fee)}
-                  />
-                  <DetailMetric
-                    label={t(
-                      "agencyDashboard.licensingRequests.fields.regions",
-                    )}
-                    value={group.regions || "\u2014"}
-                  />
-                  <DetailMetric
-                    label={t(
-                      "agencyDashboard.licensingRequests.fields.usageScope",
-                    )}
-                    value={(() => {
-                      const details = getRequestDetails(group);
-                      const territory = String(details?.territory || "").trim();
-                      if (territory) return territory;
-                      return (group.usage_scope || "").trim() || "\u2014";
-                    })()}
-                  />
-                  <DetailMetric
-                    label={
-                      group.license_start_date
-                        ? t("agencyDashboard.licensingRequests.fields.duration")
-                        : t("agencyDashboard.licensingRequests.fields.deadline")
-                    }
-                    value={
-                      group.license_start_date && group.license_end_date
-                        ? `${new Date(group.license_start_date).toLocaleDateString()} - ${new Date(group.license_end_date).toLocaleDateString()}`
-                        : group.license_start_date
-                          ? t("agencyDashboard.licensingRequests.fromDate", {
-                              date: new Date(
-                                group.license_start_date,
-                              ).toLocaleDateString(),
-                            })
-                          : group.deadline
-                            ? new Date(group.deadline).toLocaleDateString()
-                            : "\u2014"
-                    }
-                  />
-                </div>
-
-                {group.status === "approved" ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-center h-11 bg-green-50 rounded-md border border-green-200">
-                      <p className="text-xs font-black text-green-700 uppercase tracking-widest flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4" />{" "}
-                        {t("agencyDashboard.licensingRequests.status.approved")}
+            filteredRegularData.map((group: any) => {
+              const displayStatus = getDisplayStatus(group);
+              return (
+                <Card
+                  key={group.group_key}
+                  className="p-8 bg-white border-2 border-gray-900 rounded-none overflow-hidden relative"
+                >
+                  <div className="flex justify-between items-start mb-6">
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-1">
+                        {group.brand_name ||
+                          t("agencyDashboard.licensingRequests.unknownBrand")}
+                      </h3>
+                      <p className="text-gray-500 font-medium">
+                        {(group.campaign_title || "").trim() || "\u2014"}
                       </p>
                     </div>
-                    {group.payment_link_id || group.payment_link_url ? (
-                      <Button
-                        onClick={() => sendPaymentLinkForGroup(group)}
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
-                        disabled={
-                          !!sendPaymentBusyKey &&
-                          sendPaymentBusyKey === String(group?.group_key || "")
-                        }
-                      >
-                        <Send className="w-4 h-4" />
-                        {sendPaymentBusyKey === String(group?.group_key || "")
+                    <span
+                      className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${statusStyle(displayStatus.value)}`}
+                    >
+                      {displayStatus.label}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 mb-8">
+                    {(group.talents || []).map((t: any) => {
+                      const names = (t.talent_name || "")
+                        .split(",")
+                        .map((s: string) => s.trim())
+                        .filter(Boolean);
+                      return names.map((name: string, i: number) => (
+                        <span
+                          key={`${t.licensing_request_id}-${i}`}
+                          className="px-3 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded uppercase"
+                        >
+                          {name || entitySingularTitle}
+                        </span>
+                      ));
+                    })}
+                  </div>
+
+                  <div className="mb-8 grid grid-cols-2 gap-3">
+                    <DetailMetric
+                      label={t(
+                        "agencyDashboard.licensingRequests.fields.licenseFee",
+                      )}
+                      value={formatLicenseFee(group.license_fee)}
+                    />
+                    <DetailMetric
+                      label={t(
+                        "agencyDashboard.licensingRequests.fields.regions",
+                      )}
+                      value={group.regions || "\u2014"}
+                    />
+                    <DetailMetric
+                      label={t(
+                        "agencyDashboard.licensingRequests.fields.usageScope",
+                      )}
+                      value={(() => {
+                        const details = getRequestDetails(group);
+                        const territory = String(
+                          details?.territory || "",
+                        ).trim();
+                        if (territory) return territory;
+                        return (group.usage_scope || "").trim() || "\u2014";
+                      })()}
+                    />
+                    <DetailMetric
+                      label={
+                        group.license_start_date
                           ? t(
-                              "agencyDashboard.licensingRequests.buttons.sending",
+                              "agencyDashboard.licensingRequests.fields.duration",
                             )
                           : t(
-                              "agencyDashboard.licensingRequests.buttons.resendPaymentLink",
-                            )}
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={() => sendPaymentLinkForGroup(group)}
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
-                        disabled={
-                          !!sendPaymentBusyKey &&
-                          sendPaymentBusyKey === String(group?.group_key || "")
-                        }
-                      >
-                        <Send className="w-4 h-4" />
-                        {sendPaymentBusyKey === String(group?.group_key || "")
-                          ? t(
-                              "agencyDashboard.licensingRequests.buttons.sending",
+                              "agencyDashboard.licensingRequests.fields.deadline",
                             )
-                          : t(
-                              "agencyDashboard.licensingRequests.buttons.sendPaymentLink",
+                      }
+                      value={
+                        group.license_start_date && group.license_end_date
+                          ? `${new Date(group.license_start_date).toLocaleDateString()} - ${new Date(group.license_end_date).toLocaleDateString()}`
+                          : group.license_start_date
+                            ? t("agencyDashboard.licensingRequests.fromDate", {
+                                date: new Date(
+                                  group.license_start_date,
+                                ).toLocaleDateString(),
+                              })
+                            : group.deadline
+                              ? new Date(group.deadline).toLocaleDateString()
+                              : "\u2014"
+                      }
+                    />
+                  </div>
+
+                  {group.status === "approved" ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-center h-11 bg-green-50 rounded-md border border-green-200">
+                        <p className="text-xs font-black text-green-700 uppercase tracking-widest flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4" />{" "}
+                          {t(
+                            "agencyDashboard.licensingRequests.status.approved",
+                          )}
+                        </p>
+                      </div>
+                      {group.payment_link_id || group.payment_link_url ? (
+                        <Button
+                          onClick={() => sendPaymentLinkForGroup(group)}
+                          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                          disabled={
+                            !!sendPaymentBusyKey &&
+                            sendPaymentBusyKey ===
+                              String(group?.group_key || "")
+                          }
+                        >
+                          <Send className="w-4 h-4" />
+                          {sendPaymentBusyKey === String(group?.group_key || "")
+                            ? t(
+                                "agencyDashboard.licensingRequests.buttons.sending",
+                              )
+                            : t(
+                                "agencyDashboard.licensingRequests.buttons.resendPaymentLink",
+                              )}
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={() => sendPaymentLinkForGroup(group)}
+                          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                          disabled={
+                            !!sendPaymentBusyKey &&
+                            sendPaymentBusyKey ===
+                              String(group?.group_key || "")
+                          }
+                        >
+                          <Send className="w-4 h-4" />
+                          {sendPaymentBusyKey === String(group?.group_key || "")
+                            ? t(
+                                "agencyDashboard.licensingRequests.buttons.sending",
+                              )
+                            : t(
+                                "agencyDashboard.licensingRequests.buttons.sendPaymentLink",
+                              )}
+                        </Button>
+                      )}
+                    </div>
+                  ) : activeRequestTab === "Archive" ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Button
+                        variant="outline"
+                        onClick={() => handleRecoverGroup(group)}
+                        disabled={recoveringGroup === group.group_key}
+                        className="border-gray-300 text-gray-700 font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                      >
+                        {recoveringGroup === group.group_key ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            {t(
+                              "agencyDashboard.licensingRequests.messages.recovering",
                             )}
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="w-4 h-4" />
+                            {t(
+                              "agencyDashboard.licensingRequests.actions.recoverToActive",
+                            )}
+                          </>
+                        )}
                       </Button>
-                    )}
-                  </div>
-                ) : activeRequestTab === "Archive" ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Button
-                      variant="outline"
-                      onClick={() => handleRecoverGroup(group)}
-                      disabled={recoveringGroup === group.group_key}
-                      className="border-gray-300 text-gray-700 font-bold h-11 rounded-md flex items-center justify-center gap-2"
-                    >
-                      {recoveringGroup === group.group_key ? (
-                        <>
-                          <RefreshCw className="w-4 h-4 animate-spin" />
-                          {t(
-                            "agencyDashboard.licensingRequests.messages.recovering",
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          <RefreshCw className="w-4 h-4" />
-                          {t(
-                            "agencyDashboard.licensingRequests.actions.recoverToActive",
-                          )}
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setGroupToDelete(group);
-                        setShowDeleteConfirm(true);
-                      }}
-                      disabled={deletingGroup === group.group_key}
-                      className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
-                    >
-                      {deletingGroup === group.group_key ? (
-                        <>
-                          <RefreshCw className="w-4 h-4 animate-spin" />
-                          {t(
-                            "agencyDashboard.licensingRequests.messages.deleting",
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          <Trash2 className="w-4 h-4" />
-                          {t(
-                            "agencyDashboard.licensingRequests.actions.deletePermanently",
-                          )}
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Button
-                      onClick={() => updateGroupStatus(group, "approved")}
-                      className="bg-green-600 hover:bg-green-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
-                    >
-                      <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
-                        <span className="text-[10px] font-bold">✓</span>
-                      </div>
-                      {t("agencyDashboard.licensingRequests.actions.approve")}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setGroupToCounter(group);
-                        setCounterOfferModalOpen(true);
-                      }}
-                      className="border-gray-300 text-gray-700 font-bold h-11 rounded-md"
-                    >
-                      {t(
-                        "agencyDashboard.licensingRequests.actions.counterOffer",
-                      )}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setGroupToDecline(group);
-                        setShowDeclineConfirm(true);
-                      }}
-                      className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
-                    >
-                      <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
-                        <X className="w-3 h-3" />
-                      </div>
-                      {t("agencyDashboard.licensingRequests.actions.decline")}
-                    </Button>
-                  </div>
-                )}
-              </Card>
-            ))}
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setGroupToDelete(group);
+                          setShowDeleteConfirm(true);
+                        }}
+                        disabled={deletingGroup === group.group_key}
+                        className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                      >
+                        {deletingGroup === group.group_key ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            {t(
+                              "agencyDashboard.licensingRequests.messages.deleting",
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="w-4 h-4" />
+                            {t(
+                              "agencyDashboard.licensingRequests.actions.deletePermanently",
+                            )}
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  ) : null}
+                </Card>
+              );
+            })}
 
           {activeRequestTab === "Brand Requests" &&
             !isLoadingBrandRequests &&
