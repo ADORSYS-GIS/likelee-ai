@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import { createBookDemoUrl } from "@/utils/bookDemo";
 import { getOrganizationSignupPathForType } from "@/auth/onboarding";
 

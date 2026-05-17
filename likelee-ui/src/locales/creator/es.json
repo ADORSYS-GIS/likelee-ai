@@ -354,6 +354,10 @@
     "contracts": {
       "title": "Licencias y Contratos",
       "subtitle": "Gestiona tus acuerdos activos y uso de derechos",
+      "comingSoonBadge": "Próximamente",
+      "featurePreview": "Vista previa de la función",
+      "comingSoonTitle": "Licencias y Contratos estará disponible pronto",
+      "comingSoonDescription": "Estamos preparando un espacio dedicado para la visibilidad de contratos, el seguimiento de licencias y el historial de acuerdos.",
       "welcome": {
         "title": "¡Bienvenido!",
         "message": "Gestiona tus contratos activos aquí. Pausa, revoca o renueva en cualquier momento."

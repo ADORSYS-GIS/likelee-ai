@@ -1,4 +1,10 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useMemo,
+  useCallback,
+} from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { DobInput } from "@/components/ui/DobInput";
@@ -26,6 +32,14 @@ import {
   listTalentLicensingRequests,
   markTalentAssetRequestViewed,
   scrapeInstagramProfile,
+  createCreatorBillingPortal,
+  getPayoutsAccountStatus,
+  getPayoutBalance,
+  getHistory,
+  getCreatorTransferStatus,
+  exchangeStripeOAuthCode,
+  getStripeOAuthUrl,
+  requestTalentPayout,
 } from "@/api/functions";
 import { getCacheItem, setCacheItem } from "@/lib/localStorageCache";
 import { Button } from "@/components/ui/button";
@@ -598,6 +612,30 @@ export default function CreatorDashboard() {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [settingsTab, setSettingsTab] = useState("profile"); // 'profile' | 'rules' | 'billing'
 
+  const updateDashboardSearchParams = useCallback(
+    (updates: Record<string, string | null | undefined>) => {
+      const nextParams = new URLSearchParams(window.location.search);
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === undefined || value === "") {
+          nextParams.delete(key);
+        } else {
+          nextParams.set(key, value);
+        }
+      });
+      const nextSearch = nextParams.toString();
+      const currentSearch = window.location.search.replace(/^\?/, "");
+      if (nextSearch === currentSearch) return;
+      navigate(
+        {
+          pathname: window.location.pathname,
+          search: nextSearch ? `?${nextSearch}` : "",
+        },
+        { replace: true },
+      );
+    },
+    [navigate],
+  );
+
   // ── Billing — multi-layer cache ──────────────────────────────────────────
   // Layer 1: localStorage — survives page refresh, seeds initial state instantly
   // Layer 2: React Query — in-memory, stale-while-revalidate, shared with prefetcher
@@ -701,7 +739,6 @@ export default function CreatorDashboard() {
   const handleManageSubscription = async () => {
     try {
       setPortalLoading(true);
-      const { createCreatorBillingPortal } = await import("@/api/functions");
       const res = await createCreatorBillingPortal();
       // base44Client returns the payload directly
       const url =
@@ -3325,12 +3362,7 @@ export default function CreatorDashboard() {
   const fetchPayoutStatus = async () => {
     if (!initialized || !authenticated || !user?.id) return;
     try {
-      const {
-        getPayoutsAccountStatus,
-        getPayoutBalance,
-        getHistory,
-        getCreatorTransferStatus,
-      } = await import("@/api/functions");
+      // Statically imported payout functions
       const [statusRes, balanceRes, historyRes, transfersRes] =
         await Promise.all([
           getPayoutsAccountStatus(user.id),
@@ -3352,7 +3384,6 @@ export default function CreatorDashboard() {
     if (loadingCreatorTransfers) return;
     setLoadingCreatorTransfers(true);
     try {
-      const { getCreatorTransferStatus } = await import("@/api/functions");
       const res = await getCreatorTransferStatus();
       setCreatorTransfers((res as any)?.transfers ?? []);
     } catch (_) {
@@ -3437,7 +3468,6 @@ export default function CreatorDashboard() {
 
         try {
           setIsLoadingPayout(true);
-          const { exchangeStripeOAuthCode } = await import("@/api/functions");
           const res = await exchangeStripeOAuthCode(code, user.id);
 
           if (res.data.status === "ok") {
@@ -3992,6 +4022,15 @@ export default function CreatorDashboard() {
       setSettingsTab(nextSettings);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    updateDashboardSearchParams({ section: activeSection });
+  }, [activeSection, updateDashboardSearchParams]);
+
+  useEffect(() => {
+    if (activeSection !== "settings") return;
+    updateDashboardSearchParams({ settings: settingsTab });
+  }, [activeSection, settingsTab, updateDashboardSearchParams]);
 
   const creatorPlanTier = String(creatorBilling?.plan_tier || "free");
   const trialActive = !!creatorBilling?.trial_active;
@@ -4550,11 +4589,17 @@ export default function CreatorDashboard() {
   };
 
   const renderTalentPortal = () => {
+    const talentPortalTab = searchParams.get("tab") || "settings";
+    const talentPortalSettings = searchParams.get("settings") || "profile";
+    const talentPortalMode =
+      (searchParams.get("mode") || "ai").toLowerCase() === "irl" ? "irl" : "ai";
+
     return (
       <TalentPortal
         embedded
-        initialTab="settings"
-        initialSettingsTab="profile"
+        initialTab={talentPortalTab}
+        initialSettingsTab={talentPortalSettings}
+        initialMode={talentPortalMode}
       />
     );
   };
@@ -5598,12 +5643,20 @@ export default function CreatorDashboard() {
         errorMessage = error.message;
       }
 
+      const normalizedError = String(errorMessage || "").toLowerCase();
+      const isVoiceLimitReached =
+        normalizedError.includes("voice_limit_reached") ||
+        normalizedError.includes("maximum amount of custom voices") ||
+        normalizedError.includes("custom voice limit");
+
       toast({
         variant: "destructive",
         title: t("creatorDashboard.toasts.voiceErrorTitle"),
-        description: t("creatorDashboard.toasts.voiceErrorDesc", {
-          error: errorMessage,
-        }),
+        description: isVoiceLimitReached
+          ? "You’ve reached your custom voice limit for your current ElevenLabs plan. Upgrade your ElevenLabs subscription or remove an existing custom voice, then try again."
+          : t("creatorDashboard.toasts.voiceErrorDesc", {
+              error: errorMessage,
+            }),
       });
     } finally {
       setGeneratingVoiceId(null);
@@ -7077,60 +7130,6 @@ export default function CreatorDashboard() {
               </strong>{" "}
               {t("creatorDashboard.myLikenessSection.qualityStandards.text")}
             </p>
-          </div>
-        </Card>
-
-        {/* Content Guidelines */}
-        <Card className="p-6 bg-white border border-gray-200">
-          <h3 className="text-2xl font-bold text-gray-900 mb-4">
-            {t("creatorDashboard.usageGuidelines.title")}
-          </h3>
-          <p className="text-gray-600 mb-6">
-            {t("creatorDashboard.usageGuidelines.subtitle")}
-          </p>
-
-          <div className="space-y-6">
-            <div>
-              <Label className="text-lg font-semibold text-gray-900 block mb-3">
-                {t("creatorDashboard.usageGuidelines.comfortableWith")}
-              </Label>
-              <div className="flex flex-wrap gap-2">
-                {contentPreferences.comfortable.map((item) => (
-                  <Badge
-                    key={item}
-                    variant="outline"
-                    className="bg-green-100 text-green-700 border border-green-300 px-3 py-2"
-                  >
-                    {t(`common.contentTypes.${item}`, { defaultValue: item })}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <Label className="text-lg font-semibold text-gray-900 block mb-3">
-                {t("creatorDashboard.usageGuidelines.notComfortableWith")}
-              </Label>
-              <div className="flex flex-wrap gap-2">
-                {contentPreferences.not_comfortable.map((item) => (
-                  <Badge
-                    key={item}
-                    variant="outline"
-                    className="bg-red-100 text-red-700 border border-red-300 px-3 py-2"
-                  >
-                    ✗ {t(`common.contentTypes.${item}`, { defaultValue: item })}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            <Button
-              variant="outline"
-              className="w-full border-2 border-gray-300"
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              {t("creatorDashboard.usageGuidelines.editPreferences")}
-            </Button>
           </div>
         </Card>
 
@@ -8914,51 +8913,143 @@ export default function CreatorDashboard() {
                   {t("brandConnections.noOffersAvailable")}
                 </p>
               )}
+
               {!selectedOfferBriefId && brandOffers.length > 0 && (
                 <div className="space-y-3">
                   {brandOffers.map((offer: any) => {
                     const offerId = String(offer?.id || "");
-                    const status = String(offer?.status || "sent");
+                    const campaign = offer?.brand_campaigns || {};
                     return (
                       <div
                         key={offerId}
-                        className="border border-gray-200 rounded-lg p-4 bg-white space-y-3"
+                        className="p-4 border border-gray-200 rounded-lg space-y-3"
                       >
                         <div className="flex items-start justify-between gap-3">
-                          <div>
+                          <div className="space-y-2">
+                            <p className="text-xs text-gray-600 uppercase tracking-wide">
+                              BRAND
+                            </p>
+                            <p className="text-base font-bold text-gray-900">
+                              {offer?.brands?.company_name ||
+                                offer?.brand_campaigns?.name ||
+                                t("brandConnections.brandFallback")}
+                            </p>
                             <div className="font-semibold text-gray-900">
-                              {offer?.brand_campaigns?.name ||
+                              {campaign?.name ||
+                                offer?.offer_title ||
                                 t("brandConnections.offerFallback")}
                             </div>
-                            <div className="text-xs text-gray-500">
-                              {offer?.brands?.company_name ||
-                                t("brandConnections.brandFallback")}{" "}
-                              • {formatStatus(status)}
-                            </div>
                           </div>
-                          <Badge variant="outline" className="capitalize">
-                            {formatStatus(status)}
+                          <Badge
+                            className={`text-xs ${offerStatusBadgeClass(offer?.status)}`}
+                          >
+                            {formatStatus(offer?.status || "sent")}
                           </Badge>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-700">
+                          <p>
+                            {t("brandConnections.offerStatusLabel")}{" "}
+                            <span className="font-semibold text-gray-900">
+                              {formatStatus(offer?.status || "sent")}
+                            </span>
+                          </p>
+                          <p>
+                            {t("brandConnections.deliverableStatus")}{" "}
+                            <span className="font-semibold text-gray-900">
+                              {(() => {
+                                const normalized = String(
+                                  offer?.status || "",
+                                ).toLowerCase();
+                                if (normalized.includes("changes_requested")) {
+                                  return t("brandConnections.requestReview");
+                                }
+                                if (
+                                  normalized.includes("deliverables_submitted")
+                                ) {
+                                  return t("brandConnections.submitted");
+                                }
+                                if (normalized.includes("approved")) {
+                                  return t("brandConnections.approved");
+                                }
+                                if (
+                                  normalized.includes(
+                                    "contract_fully_signed",
+                                  ) ||
+                                  normalized.includes("signed")
+                                ) {
+                                  return t("brandConnections.readyToSubmit");
+                                }
+                                return t("brandConnections.notStarted");
+                              })()}
+                            </span>
+                          </p>
+                          <p>
+                            Category:{" "}
+                            <span className="font-semibold text-gray-900">
+                              {String(campaign?.category || "N/A")}
+                            </span>
+                          </p>
+                          <p>
+                            Budget range:{" "}
+                            <span className="font-semibold text-gray-900">
+                              {String(campaign?.budget_range || "N/A")}
+                            </span>
+                          </p>
+                          <p>
+                            Usage scope:{" "}
+                            <span className="font-semibold text-gray-900">
+                              {String(campaign?.usage_scope || "N/A")}
+                            </span>
+                          </p>
+                          <p>
+                            Territory:{" "}
+                            <span className="font-semibold text-gray-900">
+                              {String(campaign?.territory || "N/A")}
+                            </span>
+                          </p>
+                          <p>
+                            Start date:{" "}
+                            <span className="font-semibold text-gray-900">
+                              {String(campaign?.start_date || "N/A")}
+                            </span>
+                          </p>
+                          <p>
+                            Duration:{" "}
+                            <span className="font-semibold text-gray-900">
+                              {campaign?.duration_days
+                                ? `${campaign.duration_days} days`
+                                : "N/A"}
+                            </span>
+                          </p>
                         </div>
                         {offer?.message && (
                           <p className="text-sm text-gray-700">
                             {String(offer.message)}
                           </p>
                         )}
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            variant="outline"
-                            className="border-gray-200"
-                            onClick={() => openOfferBriefPage(offerId)}
-                          >
-                            {t("brandConnections.viewBrief")}
-                          </Button>
-                        </div>
+                        {String(offer?.status || "").toLowerCase() ===
+                          "changes_requested" &&
+                          !seenOfferNotificationIds.has(
+                            String(offer?.id || ""),
+                          ) && (
+                            <div className="flex items-center rounded-md border border-amber-300 bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
+                              {t("brandConnections.editsRequestedByBrand")}.{" "}
+                              {t("brandConnections.viewBrief")}
+                            </div>
+                          )}
+                        <Button
+                          variant="outline"
+                          className="border-gray-200"
+                          onClick={() => openOfferBriefPage(offerId)}
+                        >
+                          {t("brandConnections.viewBrief")}
+                        </Button>
                       </div>
                     );
                   })}
                 </div>
               )}
+
               {selectedOfferBriefId && !selectedBriefOffer && (
                 <div className="space-y-3">
                   <Button
@@ -9396,134 +9487,6 @@ export default function CreatorDashboard() {
                   </div>
                 </div>
               )}
-              {!selectedOfferBriefId &&
-                brandOffers.map((offer: any) => {
-                  const offerId = String(offer?.id || "");
-                  const campaign = offer?.brand_campaigns || {};
-                  return (
-                    <div
-                      key={offerId}
-                      className="p-4 border border-gray-200 rounded-lg space-y-3"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="space-y-2">
-                          <p className="text-xs text-gray-600 uppercase tracking-wide">
-                            {t("brandConnections.brandFallback")}
-                          </p>
-                          <p className="text-base font-bold text-gray-900">
-                            {resolveOfferBrandName(offer)}
-                          </p>
-                          <div className="font-semibold text-gray-900">
-                            {campaign?.name ||
-                              offer?.offer_title ||
-                              t("brandConnections.offerFallback")}
-                          </div>
-                        </div>
-                        <Badge
-                          className={`text-xs ${offerStatusBadgeClass(offer?.status)}`}
-                        >
-                          {formatStatus(offer?.status || "sent")}
-                        </Badge>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-700">
-                        <p>
-                          {t("brandConnections.offerStatusLabel")}{" "}
-                          <span className="font-semibold text-gray-900">
-                            {formatStatus(offer?.status || "sent")}
-                          </span>
-                        </p>
-                        <p>
-                          {t("brandConnections.deliverableStatus")}{" "}
-                          <span className="font-semibold text-gray-900">
-                            {(() => {
-                              const normalized = String(
-                                offer?.status || "",
-                              ).toLowerCase();
-                              if (normalized.includes("changes_requested")) {
-                                return t("brandConnections.requestReview");
-                              }
-                              if (
-                                normalized.includes("deliverables_submitted")
-                              ) {
-                                return t("brandConnections.submitted");
-                              }
-                              if (normalized.includes("approved")) {
-                                return t("brandConnections.approved");
-                              }
-                              if (
-                                normalized.includes("contract_fully_signed") ||
-                                normalized.includes("signed")
-                              ) {
-                                return t("brandConnections.readyToSubmit");
-                              }
-                              return t("brandConnections.notStarted");
-                            })()}
-                          </span>
-                        </p>
-                        <p>
-                          Category:{" "}
-                          <span className="font-semibold text-gray-900">
-                            {String(campaign?.category || "N/A")}
-                          </span>
-                        </p>
-                        <p>
-                          Budget range:{" "}
-                          <span className="font-semibold text-gray-900">
-                            {String(campaign?.budget_range || "N/A")}
-                          </span>
-                        </p>
-                        <p>
-                          Usage scope:{" "}
-                          <span className="font-semibold text-gray-900">
-                            {String(campaign?.usage_scope || "N/A")}
-                          </span>
-                        </p>
-                        <p>
-                          Territory:{" "}
-                          <span className="font-semibold text-gray-900">
-                            {String(campaign?.territory || "N/A")}
-                          </span>
-                        </p>
-                        <p>
-                          Start date:{" "}
-                          <span className="font-semibold text-gray-900">
-                            {String(campaign?.start_date || "N/A")}
-                          </span>
-                        </p>
-                        <p>
-                          Duration:{" "}
-                          <span className="font-semibold text-gray-900">
-                            {campaign?.duration_days
-                              ? `${campaign.duration_days} days`
-                              : "N/A"}
-                          </span>
-                        </p>
-                      </div>
-                      {offer?.message && (
-                        <p className="text-sm text-gray-700">
-                          {String(offer.message)}
-                        </p>
-                      )}
-                      {String(offer?.status || "").toLowerCase() ===
-                        "changes_requested" &&
-                        !seenOfferNotificationIds.has(
-                          String(offer?.id || ""),
-                        ) && (
-                          <div className="flex items-center rounded-md border border-amber-300 bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
-                            {t("brandConnections.editsRequestedByBrand")}.{" "}
-                            {t("brandConnections.viewBrief")}
-                          </div>
-                        )}
-                      <Button
-                        variant="outline"
-                        className="border-gray-200"
-                        onClick={() => openOfferBriefPage(offerId)}
-                      >
-                        {t("brandConnections.viewBrief")}
-                      </Button>
-                    </div>
-                  );
-                })}
             </div>
           </Card>
         )}
@@ -10347,7 +10310,9 @@ export default function CreatorDashboard() {
 
           <Card className="p-3 sm:p-5 border border-[#DDE5EF] shadow-sm flex flex-col">
             <div className="text-xs text-gray-500 h-8 sm:h-10">
-              {t("creatorDashboard.approvals.deliverableFeedback")}
+              {t("creatorDashboard.approvals.deliverableFeedback", {
+                defaultValue: "Deliverable feedback",
+              })}
             </div>
             <div className="text-2xl sm:text-3xl font-bold text-gray-900 flex-1">
               {pendingDeliverables.length}
@@ -10356,7 +10321,9 @@ export default function CreatorDashboard() {
               className="mt-3 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white text-[10px] sm:text-sm h-9 sm:h-10 whitespace-normal leading-tight px-1 sm:px-3"
               onClick={() => openBrandConnectionSubTab("deliverables")}
             >
-              {t("creatorDashboard.approvals.viewFeedback")}
+              {t("creatorDashboard.approvals.viewFeedback", {
+                defaultValue: "View feedback",
+              })}
             </Button>
           </Card>
         </div>
@@ -10620,49 +10587,6 @@ export default function CreatorDashboard() {
                     </div>
                   </div>
                 </div>
-
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Switch
-                      checked={campaign.show_on_portfolio}
-                      className="data-[state=checked]:bg-gray-900"
-                      onCheckedChange={(checked) => {
-                        // For examples, just show a message
-                        if (campaign.isExample) {
-                          toast({
-                            title: "Demo Mode",
-                            description:
-                              "This is an example campaign. In the real app, toggling this would update your portfolio visibility settings.",
-                          });
-                          return;
-                        }
-                        // For real campaigns, update the state
-                        // TODO: Add API call to update portfolio visibility
-                        console.log(
-                          `Toggle portfolio visibility for ${campaign.id}: ${checked}`,
-                        );
-                      }}
-                    />
-                    <div>
-                      <p className="font-semibold text-gray-900">
-                        {t("creatorDashboard.archive.showOnPortfolio")}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {campaign.show_on_portfolio
-                          ? t("creatorDashboard.archive.visibleOnPortfolio")
-                          : t("creatorDashboard.archive.hiddenFromPortfolio")}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    className="border-2 border-gray-300"
-                    disabled={campaign.isExample}
-                  >
-                    <Eye className="w-4 h-4 mr-2" />
-                    {t("creatorDashboard.archive.viewDetails")}
-                  </Button>
-                </div>
               </Card>
             ))}
           </div>
@@ -10672,394 +10596,42 @@ export default function CreatorDashboard() {
   };
 
   const renderContracts = () => {
-    if (showContractDetails && selectedContract) {
-      const contract = normalizedContracts.find(
-        (c) => c.id === selectedContract,
-      );
-      if (!contract) return null;
-
-      const currentMonth = new Date().toLocaleString("default", {
-        month: "long",
-      });
-      const proratedAmount = Math.round(
-        contract.creator_earnings * (new Date().getDate() / 30),
-      );
-
-      return (
-        <div className="space-y-6">
-          <div className="flex flex-col gap-4">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowContractDetails(false);
-                setSelectedContract(null);
-              }}
-              className="border-2 border-gray-300 w-fit"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              {t("creatorDashboard.contracts.backToContracts")}
-            </Button>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                {contract.brand}
-              </h1>
-              <p className="text-gray-600 text-sm sm:text-base">
-                {contract.project_name}
-              </p>
-            </div>
-          </div>
-
-          {/* What You're Earning */}
-          <Card className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300">
-            <h3 className="text-2xl font-bold text-gray-900 mb-6">
-              {t("creatorDashboard.contracts.whatYoureEarning")}
-            </h3>
-            <div className="grid md:grid-cols-3 gap-6">
-              <div>
-                <p className="text-gray-700 mb-2">
-                  {t("creatorDashboard.contracts.monthlyPayment")}
-                </p>
-                <p className="text-4xl font-bold text-green-600">
-                  ${contract.creator_earnings}
-                </p>
-              </div>
-              <div>
-                <p className="text-gray-700 mb-2">
-                  {t("creatorDashboard.contracts.totalEarnedSoFar")}
-                </p>
-                <p className="text-3xl font-bold text-gray-900">
-                  ${contract.earnings_to_date.toLocaleString()}
-                </p>
-              </div>
-              <div>
-                <p className="text-gray-700 mb-2">
-                  {t("creatorDashboard.contracts.paymentStatus")}
-                </p>
-                <Badge className="bg-green-500 text-white text-lg">
-                  {t("creatorDashboard.contracts.paid")}
-                </Badge>
-                <p className="text-sm text-gray-600 mt-2">
-                  {t("creatorDashboard.contracts.amountReceived", {
-                    amount: contract.amount_paid,
-                  })}
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          {/* Timeline */}
-          <Card className="p-6 bg-white border border-gray-200">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">
-              {t("creatorDashboard.contracts.yourTimeline")}
-            </h3>
-            <div className="relative">
-              <div className="flex items-center justify-between mb-4">
-                <div className="text-center flex-1">
-                  <p className="text-sm text-gray-600 mb-1">
-                    {t("creatorDashboard.contracts.started")}
-                  </p>
-                  <p className="font-bold text-gray-900">
-                    {new Date(contract.effective_date).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="text-center flex-1">
-                  <p className="text-sm text-gray-600 mb-1">
-                    {t("creatorDashboard.contracts.today")}
-                  </p>
-                  <div className="w-4 h-4 bg-[#32C8D1] rounded-full mx-auto"></div>
-                </div>
-                <div className="text-center flex-1">
-                  <p className="text-sm text-gray-600 mb-1">
-                    {t("creatorDashboard.contracts.expires")}
-                  </p>
-                  <p className="font-bold text-gray-900">
-                    {new Date(contract.expiration_date).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-              <div className="h-2 bg-gray-200 rounded-full relative overflow-hidden">
-                <div
-                  className="h-full bg-[#32C8D1] rounded-full"
-                  style={{ width: "45%" }}
-                ></div>
-              </div>
-              <p className="text-center text-sm text-gray-600 mt-3">
-                {t("creatorDashboard.contracts.daysRemaining", {
-                  count: contract.days_remaining,
-                })}
-              </p>
-            </div>
-            {contract.auto_renew && (
-              <div className="mt-4 bg-blue-50 border border-blue-200">
-                <AlertCircle className="h-4 w-4 text-blue-600" />
-                <p className="text-blue-900 text-sm">
-                  <strong>
-                    {t("creatorDashboard.contracts.autoRenewal.title")}
-                  </strong>{" "}
-                  {t("creatorDashboard.contracts.autoRenewal.message")}
-                </p>
-              </div>
-            )}
-          </Card>
-
-          {/* How Your Likeness Is Being Used */}
-          <Card className="p-6 bg-white border border-gray-200">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">
-              {t("creatorDashboard.contracts.howLikenessIsUsed")}
-            </h3>
-            <div className="space-y-4">
-              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <p className="text-sm font-semibold text-gray-700 mb-2">
-                  {t("creatorDashboard.contracts.whatTheyreUsing")}
-                </p>
-                <p className="text-gray-900">{contract.deliverables}</p>
-              </div>
-              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <p className="text-sm font-semibold text-gray-700 mb-2">
-                  {t("creatorDashboard.contracts.whereTheyCanUseIt")}
-                </p>
-                <p className="text-gray-900 mb-2">
-                  <strong>{t("creatorDashboard.contracts.territory")}</strong>{" "}
-                  {contract.territory}
-                </p>
-                <p className="text-gray-900">
-                  <strong>{t("creatorDashboard.contracts.channels")}</strong>{" "}
-                  {contract.channels.join(", ")}
-                </p>
-              </div>
-              <div className="p-4 bg-red-50 rounded-lg border border-red-200">
-                <p className="text-sm font-semibold text-red-700 mb-2">
-                  {t("creatorDashboard.contracts.whatTheyCantDo")}
-                </p>
-                <p className="text-red-900">{contract.prohibited_uses}</p>
-              </div>
-              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <p className="text-sm font-semibold text-gray-700 mb-2">
-                  {t("creatorDashboard.contracts.revisions")}
-                </p>
-                <p className="text-gray-900">
-                  {t("creatorDashboard.contracts.roundsIncluded", {
-                    count: contract.revisions,
-                  })}
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          {/* Actions */}
-          <Card className="p-6 bg-white border border-gray-200">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">
-              {t("creatorDashboard.contracts.manageLicense")}
-            </h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              <Button
-                onClick={() => {
-                  setShowPauseModal(true);
-                }}
-                variant="outline"
-                className="h-12 border-2 border-amber-300 text-amber-700 hover:bg-amber-50"
-              >
-                <Pause className="w-5 h-5 mr-2" />
-                {t("creatorDashboard.contracts.pauseLicense")}
-              </Button>
-              <Button
-                onClick={() => {
-                  setShowRevokeModal(true);
-                }}
-                variant="outline"
-                className="h-12 border-2 border-red-300 text-red-600 hover:bg-red-50"
-              >
-                <XCircle className="w-5 h-5 mr-2" />
-                {t("creatorDashboard.contracts.revokeLicense")}
-              </Button>
-              <Button
-                variant="outline"
-                className="h-12 border-2 border-blue-300 text-blue-600 hover:bg-blue-50"
-              >
-                <MessageSquare className="w-5 h-5 mr-2" />
-                {t("creatorDashboard.contracts.messageBrand")}
-              </Button>
-              <Button
-                variant="outline"
-                className="h-12 border-2 border-gray-300"
-              >
-                <FileText className="w-5 h-5 mr-2" />
-                {t("creatorDashboard.contracts.viewFullLegalContract")}
-              </Button>
-            </div>
-          </Card>
-        </div>
-      );
-    }
-
-    const activeContracts = normalizedContracts.filter(
-      (c) => c.status === "active" || c.status === "expiring_soon",
-    );
-    const expiredContracts = normalizedContracts.filter(
-      (c) => c.status === "expired",
-    );
-
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900">
-              {t("creatorDashboard.contracts.title")}
-            </h2>
-            <p className="text-gray-600 mt-1">
-              {t("creatorDashboard.contracts.subtitle")}
-            </p>
-          </div>
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900">
+            {t("creatorDashboard.contracts.title")}
+          </h2>
+          <p className="text-gray-600 mt-1">
+            {t("creatorDashboard.contracts.subtitle")}
+          </p>
         </div>
 
-        {activeContracts.length === 0 && expiredContracts.length === 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
-            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <p className="text-blue-900">No licenses or contracts yet.</p>
+        <Card className="overflow-hidden border border-[#DDE5EF] bg-white shadow-sm">
+          <div className="border-b border-[#E7EDF5] bg-gradient-to-r from-[#F9FBFE] to-[#F5F8FC] px-6 py-5">
+            <div className="flex items-center gap-3">
+              <Badge className="border border-[#BFEAF0] bg-[#ECFAFC] text-[#136B86]">
+                {t("creatorDashboard.contracts.comingSoonBadge")}
+              </Badge>
+              <div className="text-sm font-medium text-[#5B667A]">
+                {t("creatorDashboard.contracts.featurePreview")}
+              </div>
+            </div>
           </div>
-        )}
-
-        {/* Contract Tabs */}
-        <div className="flex gap-2 border-b border-gray-200">
-          <button
-            onClick={() => setContractsTab("active")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractsTab === "active"
-                ? "border-[#32C8D1] text-[#32C8D1]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            {t("creatorDashboard.contracts.activeTab", {
-              count: activeContracts.length,
-            })}
-          </button>
-          <button
-            onClick={() => setContractsTab("expired")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractsTab === "expired"
-                ? "border-[#32C8D1] text-[#32C8D1]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            {t("creatorDashboard.contracts.expiredTab", {
-              count: expiredContracts.length,
-            })}
-          </button>
-        </div>
-
-        {/* Active Contracts */}
-        {contractsTab === "active" && (
-          <div className="space-y-4">
-            {activeContracts.map((contract) => (
-              <Card
-                key={contract.id}
-                className={`p-6 bg-white border-2 ${
-                  contract.status === "expiring_soon"
-                    ? "border-orange-300"
-                    : "border-gray-200"
-                }`}
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-4">
-                    <img
-                      src={contract.brand_logo}
-                      alt={contract.brand}
-                      className="w-14 h-14 rounded-lg object-cover border-2 border-gray-200"
-                    />
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-900">
-                        {contract.brand}
-                      </h3>
-                      <p className="text-gray-600">{contract.project_name}</p>
-                    </div>
-                  </div>
-                  <Badge
-                    className={
-                      contract.status === "active"
-                        ? "bg-green-100 text-green-700 border border-green-300"
-                        : "bg-orange-100 text-orange-700 border border-orange-300"
-                    }
-                  >
-                    {t(`creatorDashboard.contracts.status.${contract.status}`)}
-                  </Badge>
-                </div>
-
-                <div className="grid md:grid-cols-3 gap-4 mb-4">
-                  <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                    <p className="text-sm text-gray-600 mb-1">
-                      {t("creatorDashboard.contracts.yourMonthlyFee")}
-                    </p>
-                    <p className="text-2xl font-bold text-green-600">
-                      ${contract.creator_earnings}
-                    </p>
-                  </div>
-                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <p className="text-sm text-gray-600 mb-1">
-                      {t("creatorDashboard.contracts.earnedToDate")}
-                    </p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      ${contract.earnings_to_date.toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <p className="text-sm text-gray-600 mb-1">
-                      {t("creatorDashboard.contracts.daysRemainingLabel")}
-                    </p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {contract.days_remaining}
-                    </p>
-                  </div>
-                </div>
-
-                {contract.status === "expiring_soon" && (
-                  <div className="mb-4 bg-orange-50 border border-orange-300 rounded-lg p-3 flex items-center gap-3">
-                    <Clock className="h-5 w-5 text-orange-600 shrink-0" />
-                    <p className="text-orange-900 text-sm">
-                      <span className="font-bold">
-                        {t("creatorDashboard.contracts.expiringIn", {
-                          count: contract.days_remaining,
-                        })}
-                      </span>{" "}
-                      {t("creatorDashboard.contracts.renewLicensePrompt")}
-                    </p>
-                  </div>
-                )}
-
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => {
-                      setSelectedContract(contract.id);
-                      setShowContractDetails(true);
-                    }}
-                    className="flex-1 bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                  >
-                    <Eye className="w-4 h-4 mr-2" />
-                    {t("creatorDashboard.contracts.viewDetails")}
-                  </Button>
-                  {contract.status === "expiring_soon" && (
-                    <Button className="bg-green-600 hover:bg-green-700 text-white">
-                      <CheckCircle2 className="w-4 h-4 mr-2" />
-                      {t("creatorDashboard.contracts.renew")}
-                    </Button>
-                  )}
-                </div>
-              </Card>
-            ))}
+          <div className="p-8 sm:p-10">
+            <div className="mx-auto max-w-2xl text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#ECFAFC] text-[#136B86]">
+                <FileText className="h-8 w-8" />
+              </div>
+              <h3 className="mt-6 text-2xl font-bold text-[#142033]">
+                {t("creatorDashboard.contracts.comingSoonTitle")}
+              </h3>
+              <p className="mt-3 text-base text-[#5B667A]">
+                {t("creatorDashboard.contracts.comingSoonDescription")}
+              </p>
+            </div>
           </div>
-        )}
-
-        {/* Expired Contracts */}
-        {contractsTab === "expired" && (
-          <Card className="p-12 bg-gray-50 border border-gray-200 text-center">
-            <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
-              {t("creatorDashboard.contracts.noExpiredContracts")}
-            </h3>
-            <p className="text-gray-600">
-              {t("creatorDashboard.contracts.completedContractsWillAppearHere")}
-            </p>
-          </Card>
-        )}
+        </Card>
       </div>
     );
   };
@@ -15052,8 +14624,6 @@ export default function CreatorDashboard() {
                     try {
                       setIsLoadingPayout(true);
                       if (!user?.id) throw new Error("Not authenticated");
-                      const { getStripeOAuthUrl } =
-                        await import("@/api/functions");
                       const res = await getStripeOAuthUrl(user.id);
 
                       // Handle both possible response formats
@@ -15087,8 +14657,6 @@ export default function CreatorDashboard() {
                       const profileId = user?.id;
                       if (!profileId) throw new Error("Not authenticated");
 
-                      const { getStripeOAuthUrl } =
-                        await import("@/api/functions");
                       const res = await getStripeOAuthUrl(profileId);
 
                       const url = res?.data?.url || res?.url;
@@ -15291,8 +14859,6 @@ export default function CreatorDashboard() {
               onClick={async () => {
                 try {
                   setIsLoadingPayout(true);
-                  const { requestTalentPayout } =
-                    await import("@/api/functions");
                   const amountCents = Math.round(
                     parseFloat(requestPayoutAmount) * 100,
                   );

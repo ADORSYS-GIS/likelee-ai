@@ -289,6 +289,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           `Error fetching profile from ${table}:`,
           JSON.stringify(error, null, 2),
         );
+        profileRef.current = null;
+        setProfile(null);
+        await new Promise((resolve) => setTimeout(resolve, 0));
         return;
       }
 
@@ -393,6 +396,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
     } catch (err) {
       console.error("[AuthProvider] Error fetching/creating profile:", err);
+      profileRef.current = null;
+      setProfile(null);
+      await new Promise((resolve) => setTimeout(resolve, 0));
     } finally {
       if (fetchingRef.current === userId) {
         fetchingRef.current = null;

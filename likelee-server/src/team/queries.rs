@@ -3,7 +3,7 @@ use super::support::{
     map_membership_record, now_rfc3339,
 };
 use super::types::{AuditLogRecord, InviteRecord, MembershipRecord, OrganizationType};
-use crate::{config::AppState, errors::sanitize_db_error};
+use crate::{errors::sanitize_db_error, state::AppState};
 use axum::http::StatusCode;
 use chrono::Utc;
 use serde_json::{json, Value};

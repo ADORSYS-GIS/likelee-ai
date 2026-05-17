@@ -7,6 +7,8 @@ import {
   listBrandInvoices,
   getBrandBudgetSettings,
   getBrandLicensingRequests,
+  listBrandStorageFilesPaged,
+  listBrandStorageFoldersPaged,
 } from "@/api/functions";
 import { listGenerations } from "@/api/studio";
 import { useAuth } from "@/auth/AuthProvider";
@@ -249,8 +251,6 @@ export function BrandDataPrefetcher() {
           queryClient.prefetchQuery({
             queryKey: brandKeys.studio.files,
             queryFn: async () => {
-              const { listBrandStorageFilesPaged } =
-                await import("@/api/functions");
               return listBrandStorageFilesPaged({ limit: 100 }).catch(() => []);
             },
             ...queryOptions.moderate,
@@ -258,8 +258,6 @@ export function BrandDataPrefetcher() {
           queryClient.prefetchQuery({
             queryKey: brandKeys.studio.folders,
             queryFn: async () => {
-              const { listBrandStorageFoldersPaged } =
-                await import("@/api/functions");
               return listBrandStorageFoldersPaged().catch(() => []);
             },
             ...queryOptions.moderate,

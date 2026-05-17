@@ -96,10 +96,84 @@ type GeneralSettingsViewProps = {
 
 const CALENDLY_USE_DEFAULT_VALUE = "__use_default_mapping__";
 const CALENDLY_EVENT_TYPE_URI_PREFIX = "https://api.calendly.com/event_types/";
+const SETTINGS_I18N_DEFAULTS: Record<string, string> = {
+  "settings.integrations.calendlyEventType": "Calendly event type",
+  "settings.integrations.calendlyEventTypeDescription":
+    "Map each booking type to a Calendly event type.",
+  "settings.integrations.calendlyEventTypeManualPaste":
+    "Paste a Calendly event type URL manually.",
+  "settings.integrations.calendlyNoEventTypes":
+    "No Calendly event types found.",
+  "settings.integrations.calendlySaveTokenFirst":
+    "Save your Calendly token first.",
+  "settings.integrations.connectSuccess": "Integration settings saved.",
+  "settings.integrations.fieldStatus.saving": "Saving...",
+  "settings.integrations.fieldStatus.saved": "Saved",
+  "settings.integrations.fieldStatus.saveFailed": "Save failed",
+  "settings.team.actions.cancel": "Cancel",
+  "settings.team.actions.editRole": "Edit role",
+  "settings.team.actions.inviteUser": "Invite user",
+  "settings.team.actions.sendInvite": "Send invite",
+  "settings.team.activeMembers": "Active members",
+  "settings.team.activity.title": "Activity",
+  "settings.team.emptyMembers": "No team members yet.",
+  "settings.team.fields.email": "Email",
+  "settings.team.fields.role": "Role",
+  "settings.team.loadingMembers": "Loading team members...",
+  "settings.team.modals.confirmRoleChange": "Confirm role change",
+  "settings.team.modals.currentRole": "Current role: {{role}}",
+  "settings.team.modals.inviteDescription":
+    "Invite a teammate and assign their role.",
+  "settings.team.modals.inviteTitle": "Invite team member",
+  "settings.team.modals.roleChangeWarning":
+    "This changes what the team member can access.",
+  "settings.team.modals.saving": "Saving...",
+  "settings.team.modals.updateRoleTitle": "Update role",
+  "settings.team.newRole": "New role",
+  "settings.team.pendingInvitations.description":
+    "Invites that have not been accepted yet.",
+  "settings.team.pendingInvitations.empty": "No pending invitations.",
+  "settings.team.pendingInvitations.pending": "Pending",
+  "settings.team.pendingInvitations.title": "Pending invitations",
+  "settings.team.roles.admin.description":
+    "Full access to manage agency settings and workflows.",
+  "settings.team.roles.admin.label": "Admin",
+  "settings.team.roles.owner": "Owner",
+  "settings.team.roles.projectManager.description":
+    "Can manage projects and day-to-day operations.",
+  "settings.team.roles.projectManager.label": "Project Manager",
+  "settings.team.roles.reviewer.description":
+    "Can review activity without managing settings.",
+  "settings.team.roles.reviewer.label": "Reviewer",
+  "settings.team.roles.unknown": "Unknown role",
+  "settings.team.selectRole": "Select role",
+};
+const translateAgencySettings = (
+  key: string,
+  options?: Record<string, any>,
+) => {
+  const missingToken = "__likelee_missing_translation__";
+  const defaultValue =
+    options?.defaultValue || SETTINGS_I18N_DEFAULTS[key] || missingToken;
+  const value = i18n.t(key, {
+    ns: "agency",
+    ...options,
+    defaultValue,
+  });
+  if (value !== missingToken && value !== key) return value;
+  if (key.startsWith("settings.")) {
+    return i18n.t(`agencyDashboard.roster.${key}`, {
+      ns: "agency",
+      ...options,
+      defaultValue: options?.defaultValue || SETTINGS_I18N_DEFAULTS[key] || key,
+    });
+  }
+  return value;
+};
 const CALENDLY_BOOKING_TYPE_OPTIONS = [
   {
     key: "default",
-    label: i18n.t("settings.integrations.calendlyEventType", { ns: "agency" }),
+    label: translateAgencySettings("settings.integrations.calendlyEventType"),
   },
 ] as const;
 
@@ -194,7 +268,7 @@ const CalendlyAutosaveStatus = ({
     return (
       <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-500">
         <RefreshCw className="h-3 w-3 animate-spin" />
-        {i18n.t("settings.integrations.fieldStatus.saving", { ns: "agency" })}
+        {translateAgencySettings("settings.integrations.fieldStatus.saving")}
       </span>
     );
   }
@@ -203,7 +277,7 @@ const CalendlyAutosaveStatus = ({
     return (
       <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600">
         <Check className="h-3 w-3" />
-        {i18n.t("settings.integrations.fieldStatus.saved", { ns: "agency" })}
+        {translateAgencySettings("settings.integrations.fieldStatus.saved")}
       </span>
     );
   }
@@ -211,7 +285,7 @@ const CalendlyAutosaveStatus = ({
   return (
     <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600">
       <XCircle className="h-3 w-3" />
-      {i18n.t("settings.integrations.fieldStatus.saveFailed", { ns: "agency" })}
+      {translateAgencySettings("settings.integrations.fieldStatus.saveFailed")}
     </span>
   );
 };
@@ -275,43 +349,41 @@ const TEAM_ROLE_OPTIONS: Array<{
 }> = [
   {
     value: "admin",
-    label: i18n.t("settings.team.roles.admin.label", { ns: "agency" }),
-    description: i18n.t("settings.team.roles.admin.description", {
-      ns: "agency",
-    }),
+    label: translateAgencySettings("settings.team.roles.admin.label"),
+    description: translateAgencySettings(
+      "settings.team.roles.admin.description",
+    ),
   },
   {
     value: "project_manager",
-    label: i18n.t("settings.team.roles.projectManager.label", {
-      ns: "agency",
-    }),
-    description: i18n.t("settings.team.roles.projectManager.description", {
-      ns: "agency",
-    }),
+    label: translateAgencySettings("settings.team.roles.projectManager.label"),
+    description: translateAgencySettings(
+      "settings.team.roles.projectManager.description",
+    ),
   },
   {
     value: "reviewer",
-    label: i18n.t("settings.team.roles.reviewer.label", { ns: "agency" }),
-    description: i18n.t("settings.team.roles.reviewer.description", {
-      ns: "agency",
-    }),
+    label: translateAgencySettings("settings.team.roles.reviewer.label"),
+    description: translateAgencySettings(
+      "settings.team.roles.reviewer.description",
+    ),
   },
 ];
 
 const formatTeamRoleLabel = (role?: string) => {
   switch (role) {
     case "owner":
-      return i18n.t("settings.team.roles.owner", { ns: "agency" });
+      return translateAgencySettings("settings.team.roles.owner");
     case "admin":
-      return i18n.t("settings.team.roles.admin.label", { ns: "agency" });
+      return translateAgencySettings("settings.team.roles.admin.label");
     case "project_manager":
-      return i18n.t("settings.team.roles.projectManager.label", {
-        ns: "agency",
-      });
+      return translateAgencySettings(
+        "settings.team.roles.projectManager.label",
+      );
     case "reviewer":
-      return i18n.t("settings.team.roles.reviewer.label", { ns: "agency" });
+      return translateAgencySettings("settings.team.roles.reviewer.label");
     default:
-      return role || i18n.t("settings.team.roles.unknown", { ns: "agency" });
+      return role || translateAgencySettings("settings.team.roles.unknown");
   }
 };
 
@@ -722,7 +794,22 @@ const GeneralSettingsView = ({
   hasProAccess = false,
   agencyDisplayPlanLabel,
 }: GeneralSettingsViewProps) => {
-  const { t, i18n } = useTranslation("agency");
+  const { t: baseT, i18n } = useTranslation("agency");
+  const t = (key: string, options?: Record<string, any>) => {
+    const missingToken = "__likelee_missing_translation__";
+    const defaultValue =
+      options?.defaultValue || SETTINGS_I18N_DEFAULTS[key] || missingToken;
+    const value = baseT(key, { ...options, defaultValue });
+    if (value !== missingToken) return value;
+    if (key.startsWith("settings.")) {
+      return baseT(`agencyDashboard.roster.${key}`, {
+        ...options,
+        defaultValue:
+          options?.defaultValue || SETTINGS_I18N_DEFAULTS[key] || key,
+      });
+    }
+    return baseT(key, options);
+  };
   const st = (key: string) => {
     const lng = String(i18n.language || "en").split("-")[0];
     // Try locale file first for German and French, then fallback to SETTINGS_COPY
@@ -1208,9 +1295,14 @@ const GeneralSettingsView = ({
         }
         if (!silentSuccess) {
           toast({
-            title: t("settings.saveProfile.settingsSaved"),
+            title: t("settings.profile.toasts.saved", {
+              defaultValue: "Settings saved",
+            }),
             description:
-              data.message || t("settings.integrations.connectSuccess"),
+              data.message ||
+              t("settings.integrations.connectSuccess", {
+                defaultValue: "Integration settings saved.",
+              }),
           });
         }
         if (
@@ -2040,8 +2132,12 @@ const GeneralSettingsView = ({
 
       await refreshProfile();
       toast({
-        title: "Settings Saved",
-        description: t("settings.saveProfile.profileUpdated"),
+        title: t("settings.profile.toasts.saved", {
+          defaultValue: "Settings saved",
+        }),
+        description: t("settings.profile.toasts.savedDescription", {
+          defaultValue: "Your agency profile has been updated.",
+        }),
       });
     } catch (error: any) {
       console.error("Error saving profile:", error);
@@ -2487,8 +2583,12 @@ const GeneralSettingsView = ({
                   <Save className="w-5 h-5" />
                 )}
                 {isSaving
-                  ? t("settings.saveProfile.saving")
-                  : t("settings.saveProfile.saveProfileSettings")}
+                  ? t("settings.profile.buttons.saving", {
+                      defaultValue: "Saving...",
+                    })
+                  : t("settings.profile.buttons.save", {
+                      defaultValue: "Save Changes",
+                    })}
               </Button>
             </div>
           </div>

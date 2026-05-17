@@ -72,10 +72,13 @@ export const NewBookingModal = ({
 }) => {
   const { toast } = useToast();
   const { t } = useTranslation("agency");
-  const entitySingularTitle = isSportsAgency
-    ? t("agencyDashboard.bookings.newBooking.athlete")
-    : t("agencyDashboard.bookings.newBooking.talent");
+  const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
+  const entityTranslationVars = {
+    entitySingular: entitySingularTitle,
+    entityLower: entitySingularLower,
+    entitySingularLower,
+  };
 
   const getBookingCreateErrorMessage = (err: any) => {
     const body = err?.response?.data || err?.data;
@@ -86,7 +89,10 @@ export const NewBookingModal = ({
       err?.code ||
       err?.error?.code;
     if (String(code || "").trim() === "PGRST204") {
-      return t("agencyDashboard.bookings.newBooking.errors.processingIssue");
+      return t("agencyDashboard.bookings.newBooking.errors.processingIssue", {
+        defaultValue:
+          "We could not process this booking. Please check your input and try again.",
+      });
     }
 
     const raw =
@@ -94,12 +100,18 @@ export const NewBookingModal = ({
       (typeof err === "string" ? err : err?.message) ||
       "";
     if (/Error parsing multipart\/form-data request/i.test(String(raw))) {
-      return t("agencyDashboard.bookings.newBooking.errors.uploadIssue");
+      return t("agencyDashboard.bookings.newBooking.errors.uploadIssue", {
+        defaultValue:
+          "One or more files could not be uploaded. Please try again.",
+      });
     }
 
     const parsed = parseBackendError(err);
     if (parsed && /\bPGRST204\b/i.test(parsed)) {
-      return t("agencyDashboard.bookings.newBooking.errors.processingIssue");
+      return t("agencyDashboard.bookings.newBooking.errors.processingIssue", {
+        defaultValue:
+          "We could not process this booking. Please check your input and try again.",
+      });
     }
     return parsed;
   };
@@ -864,12 +876,12 @@ export const NewBookingModal = ({
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">
               {mode === "edit"
-                ? t("agencyDashboard.bookings.newBooking.titleEdit")
-                : t("agencyDashboard.bookings.newBooking.titleNew")}
+                ? t("agencyDashboard.bookings.newBooking.editTitle")
+                : t("agencyDashboard.bookings.newBooking.title")}
             </DialogTitle>
             <p className="text-sm text-gray-500">
               {mode === "edit"
-                ? t("agencyDashboard.bookings.newBooking.updateDetails")
+                ? t("agencyDashboard.bookings.newBooking.editSubtitle")
                 : t("agencyDashboard.bookings.newBooking.subtitle")}
             </p>
           </DialogHeader>
@@ -883,7 +895,7 @@ export const NewBookingModal = ({
                   <SelectTrigger className="flex-1">
                     <SelectValue
                       placeholder={t(
-                        "agencyDashboard.bookings.newBooking.selectBookingType",
+                        "agencyDashboard.bookings.newBooking.selectType",
                       )}
                     />
                   </SelectTrigger>
@@ -892,14 +904,10 @@ export const NewBookingModal = ({
                       {t("agencyDashboard.bookings.newBooking.casting")}
                     </SelectItem>
                     <SelectItem value="option">
-                      {t(
-                        "agencyDashboard.bookings.newBooking.pendingUnconfirmed",
-                      )}
+                      {t("agencyDashboard.bookings.newBooking.option")}
                     </SelectItem>
                     <SelectItem value="confirmed">
-                      {t(
-                        "agencyDashboard.bookings.newBooking.confirmedBooking",
-                      )}
+                      {t("agencyDashboard.bookings.newBooking.confirmed")}
                     </SelectItem>
                     <SelectItem value="test-shoot">
                       {t("agencyDashboard.bookings.newBooking.testShoot")}
@@ -916,7 +924,7 @@ export const NewBookingModal = ({
                   onClick={() => setPreviewOpen(true)}
                   disabled={!canSubmit}
                 >
-                  {t("agencyDashboard.bookings.newBooking.buttons.preview")}
+                  {t("agencyDashboard.bookings.newBooking.preview")}
                 </Button>
                 {uploadSuccess && (
                   <span className="flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1">
@@ -942,7 +950,12 @@ export const NewBookingModal = ({
 
             <div className="space-y-2">
               <div className="flex justify-between">
-                <Label>{`${entitySingularTitle} *`}</Label>
+                <Label>
+                  {t(
+                    "agencyDashboard.bookings.newBooking.talent",
+                    entityTranslationVars,
+                  )}
+                </Label>
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -957,15 +970,18 @@ export const NewBookingModal = ({
                     className="rounded border-gray-300"
                   />
                   <label htmlFor="multi" className="text-sm text-gray-600">
-                    {t("agencyDashboard.bookings.newBooking.multiSelect")}
+                    {t(
+                      "agencyDashboard.bookings.newBooking.bookMultiple",
+                      entityTranslationVars,
+                    )}
                   </label>
                 </div>
               </div>
               <div className="relative">
                 <Input
                   placeholder={t(
-                    "agencyDashboard.bookings.newBooking.searchTalent",
-                    { entity: entitySingularTitle },
+                    "agencyDashboard.bookings.newBooking.searchTalentPlaceholder",
+                    entityTranslationVars,
                   )}
                   value={talentSearch}
                   onChange={(e) => setTalentSearch(e.target.value)}
@@ -977,7 +993,12 @@ export const NewBookingModal = ({
                   <div className="p-8 text-center text-gray-500 text-sm">
                     <div className="flex items-center justify-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>{`Loading ${entitySingularLower}...`}</span>
+                      <span>
+                        {t(
+                          "agencyDashboard.bookings.newBooking.loadingTalent",
+                          entityTranslationVars,
+                        )}
+                      </span>
                     </div>
                   </div>
                 ) : (
@@ -1029,8 +1050,14 @@ export const NewBookingModal = ({
                 {!talentsLoading && filteredTalents.length === 0 && (
                   <div className="p-8 text-center text-gray-500 text-sm">
                     {talentSearch
-                      ? `No ${entitySingularLower} found matching "${talentSearch}"`
-                      : `No ${entitySingularLower} found`}
+                      ? t(
+                          "agencyDashboard.bookings.newBooking.noTalentMatching",
+                          { ...entityTranslationVars, search: talentSearch },
+                        )
+                      : t(
+                          "agencyDashboard.bookings.newBooking.noTalentFound",
+                          entityTranslationVars,
+                        )}
                   </div>
                 )}
               </div>

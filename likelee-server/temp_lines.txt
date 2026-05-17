@@ -1,7 +1,0 @@
-    });
-
-    fields.push(SubmitterField {
-        name: "Exclusivity".to_string(),
-        default_value: Some(license_template.exclusivity.clone()),
-        readonly: Some(true),
-    });

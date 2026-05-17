@@ -7,7 +7,7 @@ use futures::future::join_all;
 use serde_json::json;
 use tracing::{info, warn};
 
-use crate::{auth::AuthUser, config::AppState};
+use crate::{auth::AuthUser, state::AppState};
 
 use super::{
     current_session::identify_current_session,

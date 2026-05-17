@@ -41,6 +41,11 @@ export default function CampaignBriefStep({
 }: Props) {
   const referenceInputRef = useRef<HTMLInputElement | null>(null);
   const assetInputRef = useRef<HTMLInputElement | null>(null);
+  const today = new Date();
+  const minDate = `${today.getFullYear()}-${String(
+    today.getMonth() + 1,
+  ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const minSubmissionDeadline = campaignBrief.overview_launch_date || minDate;
 
   const fieldClass = (field: string) =>
     fieldErrors[field]
@@ -501,6 +506,7 @@ export default function CampaignBriefStep({
             <Input
               id="step2-overview_launch_date"
               type="date"
+              min={minDate}
               value={campaignBrief.overview_launch_date}
               onChange={(e) => {
                 setCampaignBrief((prev) => ({
@@ -579,6 +585,7 @@ export default function CampaignBriefStep({
             <Input
               id="step2-budget_submission_deadline"
               type="date"
+              min={minSubmissionDeadline}
               value={campaignBrief.budget_submission_deadline}
               onChange={(e) => {
                 setCampaignBrief((prev) => ({
