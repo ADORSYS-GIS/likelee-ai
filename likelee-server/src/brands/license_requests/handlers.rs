@@ -28,8 +28,13 @@ pub async fn create(
         ));
     }
 
-    let created =
-        repository::create_brand_license_request(&state, &effective_brand_id, &payload, &user.access_token).await?;
+    let created = repository::create_brand_license_request(
+        &state,
+        &effective_brand_id,
+        &payload,
+        &user.access_token,
+    )
+    .await?;
 
     Ok(Json(json!({
         "status": "ok",
