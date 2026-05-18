@@ -181,6 +181,10 @@ CREATE TABLE IF NOT EXISTS public.license_submissions (
     requires_agency_signature boolean DEFAULT false,
     agency_submitter_id uuid REFERENCES public.agencies(id) ON DELETE SET NULL,
     agency_submitter_slug text,
+    agency_embed_src text,
+    agency_signed_at timestamptz,
+    client_submitter_id bigint,
+    client_submitter_slug text,
     
     -- DocuSeal Integration
     docuseal_submission_id integer,

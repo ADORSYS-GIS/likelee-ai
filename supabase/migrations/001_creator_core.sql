@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS public.creators (
     -- Subscription & Billing
     plan_tier text DEFAULT 'free',
     plan_interval text DEFAULT 'month',
+    plan_updated_at timestamptz,
     stripe_customer_id text,
     stripe_subscription_id text,
     trial_started_at timestamptz,
@@ -80,6 +81,11 @@ CREATE TABLE IF NOT EXISTS public.creators (
     creatify_api_key text,
     creatify_account_id text,
     creatify_webhook_secret text,
+    creatify_job_id text,
+    creatify_job_status text DEFAULT 'idle',
+    creatify_avatar_status text DEFAULT 'not_created',
+    creatify_output_url text,
+    creatify_last_error text,
     
     -- Instagram Sync (from 2026-05-04)
     instagram_handle text,

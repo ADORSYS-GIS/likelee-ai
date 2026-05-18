@@ -106,6 +106,9 @@ CREATE TABLE IF NOT EXISTS public.agencies (
     -- Seat Management (from 0007_agency_talent_management)
     seats_limit integer,
     
+    -- Performance Config (JSONB for flexible tier configuration)
+    performance_config jsonb DEFAULT '{}'::jsonb,
+    
     -- Legacy (kept for compatibility)
     subscription_status text,
     subscription_tier text,

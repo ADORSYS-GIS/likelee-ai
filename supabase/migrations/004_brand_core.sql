@@ -67,6 +67,8 @@ CREATE TABLE IF NOT EXISTS public.brands (
     subscription_status text,
     subscription_tier text,
     subscription_current_period_end timestamptz,
+    subscription_cancel_at_period_end boolean DEFAULT false,
+    subscription_trial_end timestamptz,
     plan_updated_at timestamptz,
     
     -- Payment Methods
@@ -81,6 +83,10 @@ CREATE TABLE IF NOT EXISTS public.brands (
     studio_addon_active boolean DEFAULT false,
     studio_addon_status text DEFAULT 'inactive',
     studio_addon_activated_at timestamptz,
+    studio_addon_subscription_id text,
+    studio_addon_current_period_end timestamptz,
+    studio_addon_cancel_at_period_end boolean DEFAULT false,
+    studio_addon_updated_at timestamptz,
     
     -- Notifications (from 2026-04-09_brand_notifications)
     notification_prefs jsonb DEFAULT '{"newProjectAlerts": true, "deliverableSubmissions": true, "approvalReminders": true, "licenseExpirationAlerts": true}'::jsonb,
@@ -1227,6 +1233,8 @@ CREATE TABLE IF NOT EXISTS public.job_postings (
     invited_creator_ids uuid[],
     declined_agency_ids uuid[] DEFAULT '{}',
     declined_creator_ids uuid[] DEFAULT '{}',
+    accepted_agency_ids uuid[] DEFAULT '{}',
+    accepted_creator_ids uuid[] DEFAULT '{}',
     brand_assets jsonb,
     confidential boolean,
 
