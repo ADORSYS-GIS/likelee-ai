@@ -6,6 +6,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { getFriendlyErrorMessage } from "@/utils/errorMapping";
 import { supabase } from "@/lib/supabase";
 import { EmailOtpDialog } from "@/components/auth/EmailOtpDialog";
+import { DuplicateEmailModal } from "@/components/auth/DuplicateEmailModal";
 import {
   normalizeEmail,
   resendSignupEmailOtp,
@@ -21,6 +22,8 @@ export default function Register() {
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [otpOpen, setOtpOpen] = React.useState(false);
+  const [duplicateEmailModalOpen, setDuplicateEmailModalOpen] =
+    React.useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const creatorType = React.useMemo(
@@ -108,8 +111,7 @@ export default function Register() {
                   lower.includes("already registered") ||
                   lower.includes("already exists")
                 ) {
-                  await handleResendOtp();
-                  setOtpOpen(true);
+                  setDuplicateEmailModalOpen(true);
                   return;
                 }
                 throw error;
@@ -202,6 +204,10 @@ export default function Register() {
           activeSlotClassName: "border-black ring-black/20",
           resendButtonClassName: "text-slate-700 hover:text-slate-900",
         }}
+      />
+      <DuplicateEmailModal
+        open={duplicateEmailModalOpen}
+        onOpenChange={setDuplicateEmailModalOpen}
       />
     </div>
   );

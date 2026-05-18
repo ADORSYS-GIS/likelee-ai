@@ -62,9 +62,15 @@ export async function resendSignupEmailOtp(
   email: string,
 ) {
   const normalizedEmail = normalizeEmail(email);
-  const { error } = await client.auth.resend({
-    type: "signup",
+  // Use signInWithOtp instead of auth.resend({ type: "signup" }) so the
+  // sent email contains an OTP code that can be verified with verifyOtp.
+  // The signup confirmation link from auth.resend is incompatible with the
+  // in-app 6-digit code flow used by EmailOtpDialog.
+  const { error } = await client.auth.signInWithOtp({
     email: normalizedEmail,
+    options: {
+      shouldCreateUser: false,
+    },
   });
 
   if (error) throw error;

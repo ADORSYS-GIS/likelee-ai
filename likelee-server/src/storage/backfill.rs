@@ -4,7 +4,7 @@
 // storage_assets registry table. It supports dry-run mode for validation and
 // includes comprehensive error handling and reporting.
 
-use crate::config::AppState;
+use crate::state::AppState;
 use crate::storage::{StorageAssetRecord, StorageContextType, StorageOwnerType, StorageVisibility};
 use axum::http::StatusCode;
 use serde::{Deserialize, Serialize};

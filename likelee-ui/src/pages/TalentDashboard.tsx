@@ -111,7 +111,7 @@ export default function TalentDashboard() {
 
   // Create/Update portfolio
   const saveProfileMutation = useMutation({
-    mutationFn: async (data) => {
+    mutationFn: async (data: any) => {
       if (portfolio) {
         return await base44.entities.TalentPortfolio.update(portfolio.id, data);
       } else {

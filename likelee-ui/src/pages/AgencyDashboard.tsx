@@ -48,6 +48,9 @@ import { searchLocations } from "@/components/scouting/map/geocoding";
 import { CreatePackageWizard } from "@/components/packages/CreatePackageWizard";
 import { PackagesView } from "@/components/packages/PackagesView";
 import { CatalogsView } from "@/components/catalogs/CatalogsView";
+import { BookingsView } from "@/components/Bookings/BookingsView";
+import { CommunicationHub } from "@/components/chat/CommunicationHub";
+import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
 import { supabase } from "@/lib/supabase";
 import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
 import { AnimatePresence, motion } from "framer-motion";
@@ -150,21 +153,11 @@ import { useUnreadMessages } from "@/hooks/useChat";
 import i18n from "@/i18n";
 // ----------- LAZY TAB COMPONENTS -----------
 const t = i18n.t.bind(i18n);
-const CommunicationHub = lazy(() =>
-  import("@/components/chat/CommunicationHub").then((m) => ({
-    default: m.CommunicationHub,
-  })),
-);
 // Each import is split into its own JS chunk by Vite.
 // The browser only downloads these when the user navigates to that tab.
 const AgencyDeliverablesView = lazy(() =>
   import("@/components/agency/AgencyDeliverablesView").then((m) => ({
     default: m.AgencyDeliverablesView,
-  })),
-);
-const BookingsView = lazy(() =>
-  import("@/components/Bookings/BookingsView").then((m) => ({
-    default: m.BookingsView,
   })),
 );
 const GeneralSettingsView = lazy(
@@ -191,9 +184,6 @@ const BrandConnectionsView = lazy(
 );
 const AgencyJobInvitesView = lazy(
   () => import("@/components/agency/AgencyJobInvitesView"),
-);
-const MarketplaceSection = lazy(
-  () => import("@/components/marketplace/MarketplaceSection"),
 );
 const PerformanceTiers = lazy(
   () => import("@/components/dashboard/PerformanceTiers"),
@@ -12328,7 +12318,7 @@ const OpenCallsTab = ({
                     className="h-7 text-red-500 font-bold hover:bg-red-50 hover:text-red-600 transition-all text-[11px] px-3 rounded-md border border-transparent"
                     onClick={(e) => {
                       e.stopPropagation();
-                      onDeleteEvent(event);
+                      handleDeleteEvent(event);
                     }}
                   >
                     <Trash2 className="w-3.5 h-3.5 mr-1" />
@@ -14647,6 +14637,7 @@ const LicenseTemplatesView = () => {
 };
 
 const ProtectionUsageView = () => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("Current Alerts");
 
   // Alert Settings checkbox states
@@ -14695,1890 +14686,2071 @@ const ProtectionUsageView = () => {
 
   return (
     <div className="space-y-8">
-      {/* Hero Section */}
-      <div className="text-center py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Protect Your Talent's Likeness. Detect Threats Before They Spread.
-        </h1>
-        <p className="text-gray-600">
-          Real-Time Deepfake Detection & Response Center
-        </p>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="p-6 bg-white border border-gray-200 shadow-sm">
-          <div className="flex items-center gap-3 mb-2">
-            <Users className="w-6 h-6 text-gray-400" />
-            <p className="text-sm text-gray-500">Active Talent Monitored</p>
-          </div>
-          <p className="text-4xl font-bold text-gray-900 mb-1">9</p>
-          <p className="text-xs text-gray-500">Last scan: 2 min ago</p>
-        </Card>
-
-        <Card className="p-6 bg-white border border-gray-200 shadow-sm relative">
-          <div className="absolute top-4 right-4">
-            <span className="px-2 py-1 bg-red-600 text-white text-[10px] font-bold rounded uppercase">
-              Active
-            </span>
-          </div>
-          <div className="flex items-center gap-3 mb-2">
-            <AlertCircle className="w-6 h-6 text-orange-500" />
-            <p className="text-sm text-gray-500">Threats Detected (30 Days)</p>
-          </div>
-          <p className="text-4xl font-bold text-gray-900 mb-1">23</p>
-          <p className="text-xs text-gray-500">5 CRITICAL • 8 HIGH</p>
-        </Card>
-
-        <Card className="p-6 bg-white border border-gray-200 shadow-sm">
-          <div className="flex items-center gap-3 mb-2">
-            <Shield className="w-6 h-6 text-green-500" />
-            <p className="text-sm text-gray-500">Takedown Success Rate</p>
-          </div>
-          <p className="text-4xl font-bold text-gray-900 mb-1">89%</p>
-          <p className="text-xs text-gray-500">23/26 successful</p>
-        </Card>
-      </div>
-
-      {/* Overall Status */}
-      <Card className="p-4 bg-white border border-gray-200 shadow-sm">
-        <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
-          <div className="flex items-center gap-3">
-            <CheckCircle2 className="w-5 h-5 text-green-500" />
-            <div>
-              <p className="font-bold text-gray-900">Overall Status: GOOD</p>
-              <p className="text-sm text-gray-500">
-                Last full scan: Jan 28, 2025 at 2:30 PM • Next Scheduled: Jan
-                28, 2025 at 5:00 PM
-              </p>
-            </div>
-          </div>
-          <Button
-            variant="outline"
-            className="w-full sm:w-auto font-bold border-gray-300"
-          >
-            View All Alerts
-          </Button>
-        </div>
-      </Card>
-
-      {/* Tabs */}
-      <div className="border-b border-gray-200 overflow-x-auto">
-        <div className="flex gap-4 min-w-max">
-          {[
-            "Current Alerts",
-            "How It Works",
-            "Alert Settings",
-            "Rapid Response",
-            "Settings & Permissions",
-            "Compliance & Reporting",
-          ].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${
-                activeTab === tab
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-gray-500 hover:text-gray-900"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
+      {/* Coming Soon Banner */}
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-center gap-3">
+        <AlertCircle className="w-5 h-5 text-yellow-600" />
+        <div>
+          <p className="font-bold text-yellow-900">
+            {t("agencyDashboard.analytics.labels.comingSoon", {
+              defaultValue: "Coming Soon",
+            })}
+          </p>
+          <p className="text-sm text-yellow-700">
+            {t("agencyDashboard.protection.comingSoonDescription", {
+              defaultValue: "Protection & Usage features are coming soon.",
+            })}
+          </p>
         </div>
       </div>
 
-      {/* Alert Sections */}
-      {activeTab === "Current Alerts" && (
-        <div className="space-y-6">
-          {/* Critical Alert */}
-          <Card className="p-6 bg-white border-2 border-red-200 shadow-sm">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-red-100 rounded">
-                <AlertCircle className="w-5 h-5 text-red-600" />
+      {/* Original content preserved for future implementation - hidden with false condition */}
+      {/* TODO: Change false to true when implementing Protection & Usage features */}
+      {/* To enable the original content in the future, simply change {false && to {true && on line 14718 */}
+      {false && (
+        <>
+          {/* Hero Section */}
+          <div className="text-center py-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Protect Your Talent's Likeness. Detect Threats Before They Spread.
+            </h1>
+            <p className="text-gray-600">
+              Real-Time Deepfake Detection & Response Center
+            </p>
+          </div>
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card className="p-6 bg-white border border-gray-200 shadow-sm">
+              <div className="flex items-center gap-3 mb-2">
+                <Users className="w-6 h-6 text-gray-400" />
+                <p className="text-sm text-gray-500">Active Talent Monitored</p>
               </div>
-              <h3 className="text-lg font-bold text-gray-900">
-                CRITICAL (Requires Immediate Action)
-              </h3>
-            </div>
+              <p className="text-4xl font-bold text-gray-900 mb-1">9</p>
+              <p className="text-xs text-gray-500">Last scan: 2 min ago</p>
+            </Card>
 
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <img
-                  src={TALENT_DATA.find((t) => t.name === "Emma")?.img || ""}
-                  alt="Emma"
-                  className="w-12 h-12 rounded-full object-cover"
-                />
-                <div className="flex-1">
-                  <h4 className="font-bold text-gray-900 mb-1">
-                    [1] Deepfake - Fake Product Endorsement
-                  </h4>
-                  <p className="text-sm text-gray-600 mb-2">
-                    Talent: Emma | Platform: YouTube
+            <Card className="p-6 bg-white border border-gray-200 shadow-sm relative">
+              <div className="absolute top-4 right-4">
+                <span className="px-2 py-1 bg-red-600 text-white text-[10px] font-bold rounded uppercase">
+                  Active
+                </span>
+              </div>
+              <div className="flex items-center gap-3 mb-2">
+                <AlertCircle className="w-6 h-6 text-orange-500" />
+                <p className="text-sm text-gray-500">
+                  Threats Detected (30 Days)
+                </p>
+              </div>
+              <p className="text-4xl font-bold text-gray-900 mb-1">23</p>
+              <p className="text-xs text-gray-500">5 CRITICAL • 8 HIGH</p>
+            </Card>
+
+            <Card className="p-6 bg-white border border-gray-200 shadow-sm">
+              <div className="flex items-center gap-3 mb-2">
+                <Shield className="w-6 h-6 text-green-500" />
+                <p className="text-sm text-gray-500">Takedown Success Rate</p>
+              </div>
+              <p className="text-4xl font-bold text-gray-900 mb-1">89%</p>
+              <p className="text-xs text-gray-500">23/26 successful</p>
+            </Card>
+          </div>
+
+          {/* Overall Status */}
+          <Card className="p-4 bg-white border border-gray-200 shadow-sm">
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
+              <div className="flex items-center gap-3">
+                <CheckCircle2 className="w-5 h-5 text-green-500" />
+                <div>
+                  <p className="font-bold text-gray-900">
+                    Overall Status: GOOD
                   </p>
-                  <p className="text-sm text-gray-600">
-                    Confidence: 94% | Views: 177,000 | Posted: 1hr ago
+                  <p className="text-sm text-gray-500">
+                    Last full scan: Jan 28, 2025 at 2:30 PM • Next Scheduled:
+                    Jan 28, 2025 at 5:00 PM
                   </p>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-3 mt-4">
-                <Button className="w-full sm:w-auto bg-gray-900 hover:bg-gray-800 text-white font-bold">
-                  View Details
-                </Button>
-                <Button className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-bold">
-                  Request Takedown
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full sm:w-auto font-bold border-gray-300"
-                >
-                  Snooze 24h
-                </Button>
-              </div>
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto font-bold border-gray-300"
+              >
+                View All Alerts
+              </Button>
             </div>
           </Card>
 
-          {/* High Priority */}
-          <Card className="p-6 bg-white border border-gray-200 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
-              <div className="p-2 bg-orange-100 rounded">
-                <FileText className="w-5 h-5 text-orange-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-gray-900">
-                  HIGH PRIORITY (Review Today)
-                </h3>
-                <p className="text-sm text-gray-500">
-                  4 items requiring attention
-                </p>
-              </div>
-              <div className="flex w-full sm:w-auto flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  className="w-full sm:w-auto font-bold border-gray-300"
+          {/* Tabs */}
+          <div className="border-b border-gray-200 overflow-x-auto">
+            <div className="flex gap-4 min-w-max">
+              {[
+                "Current Alerts",
+                "How It Works",
+                "Alert Settings",
+                "Rapid Response",
+                "Settings & Permissions",
+                "Compliance & Reporting",
+              ].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${
+                    activeTab === tab
+                      ? "border-indigo-600 text-indigo-600"
+                      : "border-transparent text-gray-500 hover:text-gray-900"
+                  }`}
                 >
-                  View All High Priority
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full sm:w-auto font-bold border-gray-300"
-                >
-                  Bulk Actions
-                </Button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-sm font-bold text-gray-700 mb-2">Sample:</p>
-              {alerts.high.map((alert, idx) => (
-                <div key={idx} className="flex items-center gap-2 text-sm">
-                  <ChevronRight className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-900">{alert.platform}:</span>
-                  <span className="text-gray-600">{alert.issue}</span>
-                </div>
+                  {tab}
+                </button>
               ))}
             </div>
-          </Card>
-
-          {/* Medium Priority */}
-          <Card className="p-6 bg-white border border-gray-200 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2">
-              <div className="p-2 bg-yellow-100 rounded">
-                <Clock className="w-5 h-5 text-yellow-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-gray-900">
-                  MEDIUM PRIORITY (Review This Week)
-                </h3>
-                <p className="text-sm text-gray-500">
-                  {alerts.medium} items | Most Recent: 3 hours ago
-                </p>
-              </div>
-              <Button
-                variant="outline"
-                className="w-full sm:w-auto font-bold border-gray-300"
-              >
-                View Weekly Digest
-              </Button>
-            </div>
-            <p className="text-sm text-gray-600 ml-14">
-              Includes low-confidence AI content, fan compilations, etc.
-            </p>
-          </Card>
-
-          {/* Monitored */}
-          <Card className="p-6 bg-white border border-gray-200 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2">
-              <div className="p-2 bg-gray-100 rounded">
-                <Eye className="w-5 h-5 text-gray-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-gray-900">
-                  MONITORED (Dashboard Only)
-                </h3>
-                <p className="text-sm text-gray-500">
-                  {alerts.monitored} items | Licensed content, clear satire, old
-                  archives
-                </p>
-              </div>
-              <Button
-                variant="outline"
-                className="w-full sm:w-auto font-bold border-gray-300"
-              >
-                View Monitored Items
-              </Button>
-            </div>
-            <p className="text-sm text-gray-600 ml-14">
-              These are catalogued but require no action
-            </p>
-          </Card>
-
-          {/* Kanban Board */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-            <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900">
-                Rapid Response Kanban
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  className="w-full sm:w-auto font-bold border-gray-300"
-                >
-                  View as Kanban Board
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full sm:w-auto font-bold border-gray-300"
-                >
-                  View as List
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full sm:w-auto font-bold border-gray-300"
-                >
-                  <Download className="w-4 h-4 mr-2" /> Export All
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-bold text-gray-900 mb-1">DETECTED (New)</h4>
-                <p className="text-3xl font-bold text-gray-900 mb-1">3</p>
-                <p className="text-xs text-gray-500">New detections</p>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-bold text-gray-900 mb-1">
-                  AWAITING DECISION
-                </h4>
-                <p className="text-3xl font-bold text-gray-900 mb-1">1</p>
-                <p className="text-xs text-gray-500">Your review needed</p>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-bold text-gray-900 mb-1">
-                  TAKEDOWN ACTIVE
-                </h4>
-                <p className="text-3xl font-bold text-gray-900 mb-1">2</p>
-                <p className="text-xs text-gray-500">In progress</p>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-bold text-gray-900 mb-1">RESOLVED</h4>
-                <p className="text-3xl font-bold text-gray-900 mb-1">47</p>
-                <p className="text-xs text-gray-500">Completed</p>
-              </div>
-            </div>
-
-            <p className="text-sm text-gray-500 text-center mt-4">
-              Drag to move through workflow | Click for details
-            </p>
           </div>
 
-          {/* Help Section */}
-          <Card className="p-6 bg-white border border-gray-200 shadow-sm">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Need Help?</h3>
-            <div className="flex flex-wrap gap-3">
-              <Button variant="outline" className="font-bold border-gray-300">
-                Contact Support
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                View Documentation
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                Request Training Session
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                Watch Demo Video
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                Read FAQ
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                Schedule Consultation with CSM
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* How It Works Tab */}
-      {activeTab === "How It Works" && (
-        <div className="space-y-6">
-          <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-8 shadow-sm">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              What We're Protecting Against & How We Find It
-            </h2>
-
-            {/* Threat Categories */}
+          {/* Alert Sections */}
+          {activeTab === "Current Alerts" && (
             <div className="space-y-6">
-              {/* AI-Generated Content */}
-              <div className="border border-gray-200 rounded-lg p-6">
+              {/* Critical Alert */}
+              <Card className="p-6 bg-white border-2 border-red-200 shadow-sm">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 bg-gray-900 text-white rounded flex items-center justify-center font-bold">
-                    1
+                  <div className="p-2 bg-red-100 rounded">
+                    <AlertCircle className="w-5 h-5 text-red-600" />
                   </div>
                   <h3 className="text-lg font-bold text-gray-900">
-                    AI-GENERATED CONTENT
+                    CRITICAL (Requires Immediate Action)
                   </h3>
                 </div>
 
-                <div className="ml-11 space-y-2">
-                  <div className="flex items-start gap-2">
-                    <ChevronRight className="w-4 h-4 text-gray-400 mt-0.5" />
-                    <p className="text-sm text-gray-700">
-                      <span className="font-bold">
-                        Deepfakes (face manipulation)
-                      </span>
-                    </p>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <img
+                      src={
+                        TALENT_DATA.find((t) => t.name === "Emma")?.img || ""
+                      }
+                      alt="Emma"
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                    <div className="flex-1">
+                      <h4 className="font-bold text-gray-900 mb-1">
+                        [1] Deepfake - Fake Product Endorsement
+                      </h4>
+                      <p className="text-sm text-gray-600 mb-2">
+                        Talent: Emma | Platform: YouTube
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Confidence: 94% | Views: 177,000 | Posted: 1hr ago
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex items-start gap-2">
-                    <ChevronRight className="w-4 h-4 text-gray-400 mt-0.5" />
-                    <p className="text-sm text-gray-700">
-                      <span className="font-bold">
-                        Voice clones and audio synthesis
-                      </span>
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <ChevronRight className="w-4 h-4 text-gray-400 mt-0.5" />
-                    <p className="text-sm text-gray-700">
-                      <span className="font-bold">
-                        Fake endorsements and product placements
-                      </span>
-                    </p>
-                  </div>
-                </div>
-
-                <div className="ml-11 mt-4 bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-700">
-                    <span className="font-bold">Detection Speed:</span>{" "}
-                    Near-instant scanning across 1000+ posts
-                  </p>
-                  <p className="text-sm text-gray-700 mt-1">
-                    <span className="font-bold">Sample:</span> YouTube deepfake
-                    detected in 2 mins, flagged before reaching 1K views
-                  </p>
-                </div>
-              </div>
-
-              {/* Unauthorized Usage */}
-              <div className="border border-gray-200 rounded-lg p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 bg-gray-900 text-white rounded flex items-center justify-center font-bold">
-                    2
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-900">
-                    UNAUTHORIZED USAGE
-                  </h3>
-                </div>
-
-                <div className="ml-11 space-y-2">
-                  <div className="flex items-start gap-2">
-                    <ChevronRight className="w-4 h-4 text-gray-400 mt-0.5" />
-                    <p className="text-sm text-gray-700">
-                      <span className="font-bold">
-                        Unlicensed content repurposing
-                      </span>
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <ChevronRight className="w-4 h-4 text-gray-400 mt-0.5" />
-                    <p className="text-sm text-gray-700">
-                      <span className="font-bold">Brand impersonation</span>
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <ChevronRight className="w-4 h-4 text-gray-400 mt-0.5" />
-                    <p className="text-sm text-gray-700">
-                      <span className="font-bold">
-                        Misattributed statements
-                      </span>
-                    </p>
-                  </div>
-                </div>
-
-                <div className="ml-11 mt-4 bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-700">
-                    <span className="font-bold">Platforms:</span> YouTube,
-                    TikTok, Instagram, Twitter/X, Reddit, adult platforms,
-                    blogs, forums, darkweb (enterprise)
-                  </p>
-                  <p className="text-sm text-gray-700 mt-1">
-                    <span className="font-bold">Accuracy:</span> Matching
-                    against your approved license database
-                  </p>
-                </div>
-              </div>
-
-              {/* Reputational Threats */}
-              <div className="border border-gray-200 rounded-lg p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 bg-gray-900 text-white rounded flex items-center justify-center font-bold">
-                    3
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-900">
-                    REPUTATIONAL THREATS
-                  </h3>
-                </div>
-
-                <div className="ml-11 space-y-2">
-                  <div className="flex items-start gap-2">
-                    <ChevronRight className="w-4 h-4 text-gray-400 mt-0.5" />
-                    <p className="text-sm text-gray-700">
-                      <span className="font-bold">
-                        Manipulated statements (false admissions, political)
-                      </span>
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <ChevronRight className="w-4 h-4 text-gray-400 mt-0.5" />
-                    <p className="text-sm text-gray-700">
-                      <span className="font-bold">
-                        Deepfake intimate content (non-consensual)
-                      </span>
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <ChevronRight className="w-4 h-4 text-gray-400 mt-0.5" />
-                    <p className="text-sm text-gray-700">
-                      <span className="font-bold">
-                        Misleading AI avatars impersonating talent
-                      </span>
-                    </p>
-                  </div>
-                </div>
-
-                <div className="ml-11 mt-4 bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-700">
-                    <span className="font-bold">Why This Matters:</span> Can
-                    cause lasting damage even after correction; requires
-                    aggressive removal strategy
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Three-Layer Detection */}
-          <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-8 shadow-sm">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              Our Three-Layer Detection
-            </h2>
-
-            <div className="space-y-6">
-              {/* Layer 1 */}
-              <div className="border border-gray-200 rounded-lg p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">
-                  LAYER 1: AUTOMATED SCANNING (Instant)
-                </h3>
-
-                <div className="space-y-2">
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
-                    <p className="text-sm text-gray-700">
-                      Facial recognition across 1000+ public posts daily
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
-                    <p className="text-sm text-gray-700">
-                      Voice pattern matching for audio content
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
-                    <p className="text-sm text-gray-700">
-                      Metadata analysis (timestamp/location inconsistencies)
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
-                    <p className="text-sm text-gray-700">
-                      Engagement anomaly detection (unnatural viral spikes)
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-4 bg-blue-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-700">
-                    <span className="font-bold">Result:</span> Initial flag with
-                    confidence score
-                  </p>
-                </div>
-              </div>
-
-              {/* Layer 2 */}
-              <div className="border border-gray-200 rounded-lg p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">
-                  LAYER 2: AI CREDIBILITY SCORING (Instant)
-                </h3>
-
-                <div className="space-y-2">
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
-                    <p className="text-sm text-gray-700">
-                      Lip-sync alignment analysis
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
-                    <p className="text-sm text-gray-700">
-                      Eye movement and blinking patterns
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
-                    <p className="text-sm text-gray-700">
-                      Audio waveform analysis (clipping, tonal consistency)
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
-                    <p className="text-sm text-gray-700">
-                      Video artifact detection (compression signatures)
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-4 bg-blue-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-700">
-                    <span className="font-bold">Result:</span> Confidence Score
-                    0-100% (e.g., 94% likely fake)
-                  </p>
-                </div>
-              </div>
-
-              {/* Layer 3 */}
-              <div className="border border-gray-200 rounded-lg p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">
-                  LAYER 3: HUMAN FORENSICS (2-Hour SLA)
-                </h3>
-
-                <div className="space-y-2">
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
-                    <p className="text-sm text-gray-700">
-                      On-demand analyst review for borderline cases (60-80%
-                      confidence)
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
-                    <p className="text-sm text-gray-700">
-                      Context verification (cross-reference with talent's actual
-                      schedule/location)
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
-                    <p className="text-sm text-gray-700">
-                      Legal assessment for takedown eligibility
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-4 bg-blue-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-700">
-                    <span className="font-bold">Result:</span> Final verdict +
-                    recommended action (takedown, monitor, ignore)
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Need Help Section */}
-          <Card className="p-6 bg-white border border-gray-200 shadow-sm">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Need Help?</h3>
-            <div className="flex flex-wrap gap-3">
-              <Button variant="outline" className="font-bold border-gray-300">
-                Contact Support
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                View Documentation
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                Request Training Session
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                Watch Demo Video
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                Read FAQ
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                Schedule Consultation with CSM
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* Alert Settings Tab */}
-      {activeTab === "Alert Settings" && (
-        <div className="space-y-6">
-          <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-sm">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Customize Detection & Notifications To Your Needs
-            </h2>
-
-            {/* Smart Notification Strategy */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <h3 className="text-sm font-bold text-gray-900 mb-2">
-                Smart Notification Strategy
-              </h3>
-              <p className="text-sm text-gray-700">
-                We know platform relationships are fragile. High-volume
-                notifications can flag you as spam. We've engineered smart
-                filtering so you catch real threats without overwhelming your
-                team or platform algorithms.
-              </p>
-            </div>
-
-            {/* TIER 1: CRITICAL */}
-            <div className="border border-gray-200 rounded-lg p-6 mb-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-red-100 rounded">
-                  <AlertCircle className="w-5 h-5 text-red-600" />
-                </div>
-                <h3 className="text-lg font-bold text-gray-900">
-                  TIER 1: CRITICAL
-                </h3>
-              </div>
-
-              <div className="space-y-2 mb-4">
-                <p className="text-sm">
-                  <span className="font-bold">Notification:</span> Immediate
-                  email + SMS + Slack + In-app
-                </p>
-                <p className="text-sm">
-                  <span className="font-bold">Turnaround:</span> Instant (within
-                  2 minutes)
-                </p>
-                <p className="text-sm">
-                  <span className="font-bold">Digest or Individual:</span>{" "}
-                  Individual notifications
-                </p>
-              </div>
-
-              <div className="mb-4">
-                <p className="text-sm font-bold mb-2">Triggers:</p>
-                <ul className="text-sm space-y-1 ml-4">
-                  <li>
-                    • Deepfake 85%+ accuracy (likely viral) (200K+ engagements)
-                  </li>
-                  <li>• Fake endorsement with commercial intent</li>
-                  <li>• Non-consensual intimate content</li>
-                  <li>• Defamatory statements (legal liability)</li>
-                </ul>
-              </div>
-
-              <div className="flex items-center gap-3 mb-3">
-                <input
-                  type="checkbox"
-                  id="tier1-recommended"
-                  checked={tier1Recommended}
-                  onChange={(e) => setTier1Recommended(e.target.checked)}
-                  className="w-4 h-4"
-                />
-                <label
-                  htmlFor="tier1-recommended"
-                  className="text-sm font-bold"
-                >
-                  Receive TIER 1 alerts (RECOMMENDED: ALWAYS ON)
-                </label>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="tier1-sms"
-                  checked={tier1SMS}
-                  onChange={(e) => setTier1SMS(e.target.checked)}
-                  className="w-4 h-4"
-                />
-                <label htmlFor="tier1-sms" className="text-sm">
-                  Also send SMS (phone number on file)
-                </label>
-              </div>
-
-              <Button className="mt-4 w-full sm:w-auto whitespace-normal text-left sm:text-center bg-gray-900 hover:bg-gray-800 text-white font-bold">
-                Slack/Teams notification: Integrate Now
-              </Button>
-            </div>
-
-            {/* TIER 2: HIGH */}
-            <div className="border border-gray-200 rounded-lg p-6 mb-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-orange-100 rounded">
-                  <FileText className="w-5 h-5 text-orange-600" />
-                </div>
-                <h3 className="text-lg font-bold text-gray-900">
-                  TIER 2: HIGH
-                </h3>
-              </div>
-
-              <div className="space-y-2 mb-4">
-                <p className="text-sm">
-                  <span className="font-bold">Notification:</span> Daily digest:
-                  email (9am or 5pm)
-                </p>
-                <p className="text-sm">
-                  <span className="font-bold">Turnaround:</span> 24-hour review
-                </p>
-                <p className="text-sm">
-                  <span className="font-bold">Digest or Individual:</span>{" "}
-                  Grouped digest only
-                </p>
-              </div>
-
-              <div className="mb-4">
-                <p className="text-sm font-bold mb-2">Triggers:</p>
-                <ul className="text-sm space-y-1 ml-4">
-                  <li>• Deepfake 75-89% confidence (not yet viral)</li>
-                  <li>• AI voice in commercial context</li>
-                  <li>• Stolen content (real footage, no permission)</li>
-                  <li>• Bot-amplified engagement</li>
-                </ul>
-              </div>
-
-              <div className="flex items-center gap-3 mb-3">
-                <input
-                  type="checkbox"
-                  id="tier2-digest"
-                  checked={tier2Digest}
-                  onChange={(e) => setTier2Digest(e.target.checked)}
-                  className="w-4 h-4"
-                />
-                <label htmlFor="tier2-digest" className="text-sm font-bold">
-                  Receive TIER 2 digests
-                </label>
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-3">
-                <label className="text-sm font-bold">Delivery Time:</label>
-                <select className="px-3 py-1.5 border border-gray-200 rounded text-sm">
-                  <option>9:00 AM</option>
-                  <option>5:00 PM</option>
-                </select>
-              </div>
-            </div>
-
-            {/* TIER 3: MEDIUM */}
-            <div className="border border-gray-200 rounded-lg p-6 mb-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-yellow-100 rounded">
-                  <Clock className="w-5 h-5 text-yellow-600" />
-                </div>
-                <h3 className="text-lg font-bold text-gray-900">
-                  TIER 3: MEDIUM
-                </h3>
-              </div>
-
-              <div className="space-y-2 mb-4">
-                <p className="text-sm">
-                  <span className="font-bold">Notification:</span> Weekly digest
-                  + Dashboard
-                </p>
-                <p className="text-sm">
-                  <span className="font-bold">Turnaround:</span> 3-5 day review
-                </p>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="tier3-digest"
-                  checked={tier3Digest}
-                  onChange={(e) => setTier3Digest(e.target.checked)}
-                  className="w-4 h-4"
-                />
-                <label htmlFor="tier3-digest" className="text-sm font-bold">
-                  Receive TIER 3 digests
-                </label>
-              </div>
-            </div>
-
-            {/* Notification Channel Preferences */}
-            <div className="border border-gray-200 rounded-lg p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">
-                Notification Channel Preferences
-              </h3>
-              <p className="text-sm text-gray-600 mb-4">
-                How do you want to be alerted?
-              </p>
-
-              <div className="space-y-3 mb-4">
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    id="channel-email"
-                    checked={channelEmail}
-                    onChange={(e) => setChannelEmail(e.target.checked)}
-                    className="w-4 h-4"
-                  />
-                  <label htmlFor="channel-email" className="text-sm font-bold">
-                    Email
-                  </label>
-                </div>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    id="channel-sms"
-                    checked={channelSMS}
-                    onChange={(e) => setChannelSMS(e.target.checked)}
-                    className="w-4 h-4"
-                  />
-                  <label htmlFor="channel-sms" className="text-sm">
-                    SMS (TIER 1 only)
-                  </label>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-3 mb-6">
-                <Button className="w-full sm:w-auto bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold">
-                  Slack Integration - Connect Now
-                </Button>
-                <Button className="w-full sm:w-auto bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold">
-                  Teams Integration - Connect Now
-                </Button>
-              </div>
-
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">
-                    Primary Email
-                  </label>
-                  <input
-                    type="email"
-                    placeholder="email@agency.com"
-                    className="w-full px-3 py-2 border border-gray-200 rounded text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">
-                    Backup Email
-                  </label>
-                  <input
-                    type="email"
-                    placeholder="backup@agency.com"
-                    className="w-full px-3 py-2 border border-gray-200 rounded text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">
-                    SMS Phone
-                  </label>
-                  <input
-                    type="tel"
-                    placeholder="+1-555-XXX-XXXX"
-                    className="w-full px-3 py-2 border border-gray-200 rounded text-sm"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Need Help Section */}
-          <Card className="p-6 bg-white border border-gray-200 shadow-sm">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Need Help?</h3>
-            <div className="flex flex-wrap gap-3">
-              <Button variant="outline" className="font-bold border-gray-300">
-                Contact Support
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                View Documentation
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                Request Training Session
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                Watch Demo Video
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                Read FAQ
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                Schedule Consultation with CSM
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* Settings & Permissions Tab */}
-      {activeTab === "Settings & Permissions" && (
-        <div className="space-y-6">
-          <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-sm">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              Settings & Permissions
-            </h2>
-
-            {/* Team Structure */}
-            <div className="border border-gray-200 rounded-lg p-6 mb-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">
-                Team Structure
-              </h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Set up your agency team:
-              </p>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Primary Account Owner
-                  </label>
-                  <select className="w-full px-3 py-2 border border-gray-200 rounded text-sm mb-1">
-                    <option>Select user</option>
-                  </select>
-                  <p className="text-xs text-gray-500">
-                    └─ Full access to all features
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Talent Liaison Officer
-                  </label>
-                  <select className="w-full px-3 py-2 border border-gray-200 rounded text-sm mb-1">
-                    <option>Select user</option>
-                  </select>
-                  <p className="text-xs text-gray-500">
-                    └─ Reviews all TIER 1 alerts
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    └─ Can request takedowns
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    └─ Export & share reports
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Legal Counsel
-                  </label>
-                  <select className="w-full px-3 py-2 border border-gray-200 rounded text-sm mb-1">
-                    <option>Select user</option>
-                  </select>
-                  <p className="text-xs text-gray-500">└─ View all alerts</p>
-                  <p className="text-xs text-gray-500">
-                    └─ Export forensic reports
-                  </p>
-                  <p className="text-xs text-gray-500">└─ Archive cases</p>
-                </div>
-
-                <Button className="bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold">
-                  + Add Team Member
-                </Button>
-              </div>
-            </div>
-
-            {/* Role-Based Permissions Matrix */}
-            <div className="border border-gray-200 rounded-lg p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">
-                Role-Based Permissions Matrix
-              </h3>
-
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-3 px-4 text-sm font-bold text-gray-900">
-                        Permission
-                      </th>
-                      <th className="text-center py-3 px-4 text-sm font-bold text-gray-900">
-                        Liaison
-                      </th>
-                      <th className="text-center py-3 px-4 text-sm font-bold text-gray-900">
-                        Legal
-                      </th>
-                      <th className="text-center py-3 px-4 text-sm font-bold text-gray-900">
-                        Social Mgr
-                      </th>
-                      <th className="text-center py-3 px-4 text-sm font-bold text-gray-900">
-                        Owner
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b border-gray-200">
-                      <td className="py-3 px-4 text-sm text-gray-700">
-                        View all alerts
-                      </td>
-                      <td className="text-center py-3 px-4">
-                        <CheckCircle2 className="w-5 h-5 text-green-600 mx-auto" />
-                      </td>
-                      <td className="text-center py-3 px-4">
-                        <CheckCircle2 className="w-5 h-5 text-green-600 mx-auto" />
-                      </td>
-                      <td className="text-center py-3 px-4">
-                        <div className="w-5 h-5 rounded-full bg-gray-200 mx-auto flex items-center justify-center">
-                          <X className="w-3 h-3 text-gray-400 opacity-50" />
-                        </div>
-                      </td>
-                      <td className="text-center py-3 px-4">
-                        <CheckCircle2 className="w-5 h-5 text-green-600 mx-auto" />
-                      </td>
-                    </tr>
-                    <tr className="border-b border-gray-200">
-                      <td className="py-3 px-4 text-sm text-gray-700">
-                        Request takedown
-                      </td>
-                      <td className="text-center py-3 px-4">
-                        <CheckCircle2 className="w-5 h-5 text-green-600 mx-auto" />
-                      </td>
-                      <td className="text-center py-3 px-4">
-                        <div className="w-5 h-5 rounded-full bg-gray-200 mx-auto flex items-center justify-center">
-                          <X className="w-3 h-3 text-gray-400 opacity-50" />
-                        </div>
-                      </td>
-                      <td className="text-center py-3 px-4">
-                        <div className="w-5 h-5 rounded-full bg-gray-200 mx-auto flex items-center justify-center">
-                          <X className="w-3 h-3 text-gray-400 opacity-50" />
-                        </div>
-                      </td>
-                      <td className="text-center py-3 px-4">
-                        <CheckCircle2 className="w-5 h-5 text-green-600 mx-auto" />
-                      </td>
-                    </tr>
-                    <tr className="border-b border-gray-200">
-                      <td className="py-3 px-4 text-sm text-gray-700">
-                        Export reports
-                      </td>
-                      <td className="text-center py-3 px-4">
-                        <CheckCircle2 className="w-5 h-5 text-green-600 mx-auto" />
-                      </td>
-                      <td className="text-center py-3 px-4">
-                        <CheckCircle2 className="w-5 h-5 text-green-600 mx-auto" />
-                      </td>
-                      <td className="text-center py-3 px-4">
-                        <div className="w-5 h-5 rounded-full bg-gray-200 mx-auto flex items-center justify-center">
-                          <X className="w-3 h-3 text-gray-400 opacity-50" />
-                        </div>
-                      </td>
-                      <td className="text-center py-3 px-4">
-                        <CheckCircle2 className="w-5 h-5 text-green-600 mx-auto" />
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-3 px-4 text-sm text-gray-700">
-                        Manage team members
-                      </td>
-                      <td className="text-center py-3 px-4">
-                        <div className="w-5 h-5 rounded-full bg-gray-200 mx-auto flex items-center justify-center">
-                          <X className="w-3 h-3 text-gray-400 opacity-50" />
-                        </div>
-                      </td>
-                      <td className="text-center py-3 px-4">
-                        <div className="w-5 h-5 rounded-full bg-gray-200 mx-auto flex items-center justify-center">
-                          <X className="w-3 h-3 text-gray-400 opacity-50" />
-                        </div>
-                      </td>
-                      <td className="text-center py-3 px-4">
-                        <div className="w-5 h-5 rounded-full bg-gray-200 mx-auto flex items-center justify-center">
-                          <X className="w-3 h-3 text-gray-400 opacity-50" />
-                        </div>
-                      </td>
-                      <td className="text-center py-3 px-4">
-                        <CheckCircle2 className="w-5 h-5 text-green-600 mx-auto" />
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <Button className="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
-                Save Permissions
-              </Button>
-            </div>
-          </div>
-
-          {/* Need Help Section */}
-          <Card className="p-6 bg-white border border-gray-200 shadow-sm">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Need Help?</h3>
-            <div className="flex flex-wrap gap-3">
-              <Button variant="outline" className="font-bold border-gray-300">
-                Contact Support
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                View Documentation
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                Request Training Session
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                Watch Demo Video
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                Read FAQ
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                Schedule Consultation with CSM
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {activeTab !== "Current Alerts" &&
-        activeTab !== "How It Works" &&
-        activeTab !== "Alert Settings" &&
-        activeTab !== "Settings & Permissions" &&
-        activeTab !== "Rapid Response" &&
-        activeTab !== "Compliance & Reporting" && (
-          <div className="text-center py-12">
-            <p className="text-gray-500">
-              Content for "{activeTab}" tab coming soon...
-            </p>
-          </div>
-        )}
-
-      {/* Rapid Response Tab */}
-      {activeTab === "Rapid Response" && (
-        <div className="space-y-6">
-          <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-sm">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              From Detection to Takedown: Your 4-Phase Action Plan
-            </h2>
-
-            {/* PHASE 1: IMMEDIATE (0-2 hours) */}
-            <div className="border border-gray-200 rounded-lg p-6 mb-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">
-                PHASE 1: IMMEDIATE (0-2 hours)
-              </h3>
-
-              <div className="mb-4">
-                <p className="text-sm font-bold mb-2">Likelee Does:</p>
-                <ul className="text-sm space-y-1 ml-4">
-                  <li>✓ Confirms alert with human analyst</li>
-                  <li>
-                    ✓ Generates forensic report (metadata, confidence, platform
-                    violations)
-                  </li>
-                  <li>✓ Pre-packages DMCA evidence</li>
-                  <li>✓ Assigns dedicated liaison to your team</li>
-                </ul>
-              </div>
-
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
-                <p className="text-sm font-bold mb-2">
-                  FORENSIC REPORT READY FOR YOUR DECISION
-                </p>
-                <div className="space-y-1 text-sm">
-                  <p>
-                    <span className="font-bold">Talent:</span> Emma
-                  </p>
-                  <p>
-                    <span className="font-bold">Platform:</span> YouTube Shorts
-                  </p>
-                  <p>
-                    <span className="font-bold">Content Type:</span> Deepfake
-                    (Fake Product Endorsement)
-                  </p>
-                  <p>
-                    <span className="font-bold">Confidence Score:</span> 94%
-                  </p>
-                  <p>
-                    <span className="font-bold">Viral Status:</span> 127K views
-                    | 3.2K shares | 18 hours old
-                  </p>
-                </div>
-
-                <div className="mt-4">
-                  <p className="text-sm font-bold mb-2">RECOMMENDED ACTIONS:</p>
-                  <div className="flex flex-wrap gap-2">
-                    <Button className="w-full sm:w-auto bg-gray-900 hover:bg-gray-800 text-white font-bold text-sm">
-                      REQUEST TAKEDOWN NOW
+                  <div className="flex flex-wrap gap-3 mt-4">
+                    <Button className="w-full sm:w-auto bg-gray-900 hover:bg-gray-800 text-white font-bold">
+                      View Details
+                    </Button>
+                    <Button className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-bold">
+                      Request Takedown
                     </Button>
                     <Button
                       variant="outline"
-                      className="w-full sm:w-auto font-bold border-gray-300 text-sm"
+                      className="w-full sm:w-auto font-bold border-gray-300"
                     >
-                      Monitor 24h
+                      Snooze 24h
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+
+              {/* High Priority */}
+              <Card className="p-6 bg-white border border-gray-200 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+                  <div className="p-2 bg-orange-100 rounded">
+                    <FileText className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-gray-900">
+                      HIGH PRIORITY (Review Today)
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      4 items requiring attention
+                    </p>
+                  </div>
+                  <div className="flex w-full sm:w-auto flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      className="w-full sm:w-auto font-bold border-gray-300"
+                    >
+                      View All High Priority
                     </Button>
                     <Button
                       variant="outline"
-                      className="w-full sm:w-auto font-bold border-gray-300 text-sm"
+                      className="w-full sm:w-auto font-bold border-gray-300"
                     >
-                      Contact Liaison
+                      Bulk Actions
                     </Button>
                   </div>
                 </div>
 
-                <p className="text-xs text-gray-600 mt-3">
-                  Reasoning: Viral trajectory suggests 500K+ views by 36h
-                </p>
-
-                <div className="mt-4">
-                  <p className="text-sm font-bold mb-2">Forensic Details:</p>
-                  <ul className="text-xs space-y-1 ml-4 text-gray-700">
-                    <li>• Lip-sync misalignment: 78% deviation detected</li>
-                    <li>• Audio artifacts: Clipping in word patterns</li>
-                    <li>
-                      • Background consistency: Lighting inconsistent (AI flag)
-                    </li>
-                    <li>
-                      • Engagement pattern: 400% above talent's historical avg
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-sm font-bold mb-2">Your Decision:</p>
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      id="decision-now"
-                      name="rapid-decision"
-                      checked={rapidResponseDecision === "now"}
-                      onChange={() => setRapidResponseDecision("now")}
-                      className="w-4 h-4"
-                    />
-                    <label htmlFor="decision-now" className="text-sm">
-                      Request Takedown Now
-                    </label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      id="decision-24h"
-                      name="rapid-decision"
-                      checked={rapidResponseDecision === "24h"}
-                      onChange={() => setRapidResponseDecision("24h")}
-                      className="w-4 h-4"
-                    />
-                    <label htmlFor="decision-24h" className="text-sm">
-                      Monitor for 24 Hours
-                    </label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      id="decision-info"
-                      name="rapid-decision"
-                      checked={rapidResponseDecision === "info"}
-                      onChange={() => setRapidResponseDecision("info")}
-                      className="w-4 h-4"
-                    />
-                    <label htmlFor="decision-info" className="text-sm">
-                      Request More Information
-                    </label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      id="decision-snooze"
-                      name="rapid-decision"
-                      checked={rapidResponseDecision === "snooze"}
-                      onChange={() => setRapidResponseDecision("snooze")}
-                      className="w-4 h-4"
-                    />
-                    <label htmlFor="decision-snooze" className="text-sm">
-                      Snooze & Review Later
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* PHASE 2: ESCALATION (2-12 hours) */}
-            <div className="border border-gray-200 rounded-lg p-6 mb-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">
-                PHASE 2: ESCALATION (2-12 hours)
-              </h3>
-
-              <div className="mb-4">
-                <p className="text-sm mb-2">If You Requested Takedown:</p>
-                <ul className="text-sm space-y-1 ml-4">
-                  <li>
-                    ✓ Likelee submits certified DMCA to platform within 60 min
-                  </li>
-                  <li>✓ Real-time status tracking begins</li>
-                  <li>
-                    ✓ You receive updates every 2 hours during peak escalation
-                  </li>
-                </ul>
-              </div>
-
-              <div>
-                <p className="text-sm font-bold mb-2">
-                  Your Action Items (Template Provided):
-                </p>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="action-notify"
-                      checked={phase2Actions.notifyTalent}
-                      onChange={(e) =>
-                        setPhase2Actions({
-                          ...phase2Actions,
-                          notifyTalent: e.target.checked,
-                        })
-                      }
-                      className="w-4 h-4"
-                    />
-                    <label htmlFor="action-notify" className="text-sm">
-                      Notify affected talent (copy provided)
-                    </label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="action-brief"
-                      checked={phase2Actions.briefLegal}
-                      onChange={(e) =>
-                        setPhase2Actions({
-                          ...phase2Actions,
-                          briefLegal: e.target.checked,
-                        })
-                      }
-                      className="w-4 h-4"
-                    />
-                    <label htmlFor="action-brief" className="text-sm">
-                      Brief legal/PR team (pre-written talking points)
-                    </label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="action-draft"
-                      checked={phase2Actions.draftResponse}
-                      onChange={(e) =>
-                        setPhase2Actions({
-                          ...phase2Actions,
-                          draftResponse: e.target.checked,
-                        })
-                      }
-                      className="w-4 h-4"
-                    />
-                    <label htmlFor="action-draft" className="text-sm">
-                      Draft response statement (template ready)
-                    </label>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-2 mt-4">
-                  <Button className="w-full sm:w-auto bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold text-sm">
-                    Share Action Plan with Team
-                  </Button>
-                  <Button className="w-full sm:w-auto bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold text-sm">
-                    Send Email to Talent
-                  </Button>
-                  <Button className="w-full sm:w-auto bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold text-sm">
-                    Notify Counsel
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* PHASE 3: PLATFORM RESPONSE (12-72 hours) */}
-            <div className="border border-gray-200 rounded-lg p-6 mb-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">
-                PHASE 3: PLATFORM RESPONSE (12-72 hours)
-              </h3>
-
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
-                <p className="text-sm font-bold mb-2">
-                  TAKEDOWN REQUEST #LK-2024-11847
-                </p>
-                <p className="text-sm mb-2">
-                  <span className="font-bold">Status:</span> SUBMITTED (TO
-                  PLATFORM) (2 hours ago)
-                </p>
-                <p className="text-sm mb-2">
-                  <span className="font-bold">Platform:</span> YouTube
-                </p>
-
-                <div className="space-y-1 text-sm mt-3">
-                  <p>✓ Detection: Nov 15, 10:54 AM</p>
-                  <p>✓ Analysis: Nov 15, 10:52 AM</p>
-                  <p>✓ Your Decision: Nov 15, 10:59 AM</p>
-                  <p>✓ DMCA Submitted: Nov 15, 1:12 AM</p>
-                  <p className="text-orange-600">
-                    ⏳ Awaiting Platform: Nov 15, 2:15 PM (current)
+                  <p className="text-sm font-bold text-gray-700 mb-2">
+                    Sample:
                   </p>
+                  {alerts.high.map((alert, idx) => (
+                    <div key={idx} className="flex items-center gap-2 text-sm">
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                      <span className="text-gray-900">{alert.platform}:</span>
+                      <span className="text-gray-600">{alert.issue}</span>
+                    </div>
+                  ))}
                 </div>
+              </Card>
 
-                <p className="text-sm font-bold mt-3 mb-1">
-                  Estimated Resolution: Nov 16, 10:00 AM (24h SLA)
-                </p>
-                <p className="text-sm font-bold mb-2">Possible Outcomes:</p>
-                <ul className="text-sm space-y-1 ml-4">
-                  <li>– Content Removed</li>
-                  <li>– Content Kept / Appeal Required</li>
-                  <li>– Partial Action</li>
-                </ul>
-
-                <div className="flex flex-wrap gap-2 mt-4">
+              {/* Medium Priority */}
+              <Card className="p-6 bg-white border border-gray-200 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2">
+                  <div className="p-2 bg-yellow-100 rounded">
+                    <Clock className="w-5 h-5 text-yellow-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-gray-900">
+                      MEDIUM PRIORITY (Review This Week)
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      {alerts.medium} items | Most Recent: 3 hours ago
+                    </p>
+                  </div>
                   <Button
                     variant="outline"
-                    className="w-full sm:w-auto font-bold border-gray-300 text-sm"
+                    className="w-full sm:w-auto font-bold border-gray-300"
                   >
-                    View DMCA Details
+                    View Weekly Digest
                   </Button>
+                </div>
+                <p className="text-sm text-gray-600 ml-14">
+                  Includes low-confidence AI content, fan compilations, etc.
+                </p>
+              </Card>
+
+              {/* Monitored */}
+              <Card className="p-6 bg-white border border-gray-200 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2">
+                  <div className="p-2 bg-gray-100 rounded">
+                    <Eye className="w-5 h-5 text-gray-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-gray-900">
+                      MONITORED (Dashboard Only)
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      {alerts.monitored} items | Licensed content, clear satire,
+                      old archives
+                    </p>
+                  </div>
                   <Button
                     variant="outline"
-                    className="w-full sm:w-auto font-bold border-gray-300 text-sm"
+                    className="w-full sm:w-auto font-bold border-gray-300"
+                  >
+                    View Monitored Items
+                  </Button>
+                </div>
+                <p className="text-sm text-gray-600 ml-14">
+                  These are catalogued but require no action
+                </p>
+              </Card>
+
+              {/* Kanban Board */}
+              <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-6">
+                  <h3 className="text-xl font-bold text-gray-900">
+                    Rapid Response Kanban
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      className="w-full sm:w-auto font-bold border-gray-300"
+                    >
+                      View as Kanban Board
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full sm:w-auto font-bold border-gray-300"
+                    >
+                      View as List
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full sm:w-auto font-bold border-gray-300"
+                    >
+                      <Download className="w-4 h-4 mr-2" /> Export All
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-bold text-gray-900 mb-1">
+                      DETECTED (New)
+                    </h4>
+                    <p className="text-3xl font-bold text-gray-900 mb-1">3</p>
+                    <p className="text-xs text-gray-500">New detections</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-bold text-gray-900 mb-1">
+                      AWAITING DECISION
+                    </h4>
+                    <p className="text-3xl font-bold text-gray-900 mb-1">1</p>
+                    <p className="text-xs text-gray-500">Your review needed</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-bold text-gray-900 mb-1">
+                      TAKEDOWN ACTIVE
+                    </h4>
+                    <p className="text-3xl font-bold text-gray-900 mb-1">2</p>
+                    <p className="text-xs text-gray-500">In progress</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-bold text-gray-900 mb-1">RESOLVED</h4>
+                    <p className="text-3xl font-bold text-gray-900 mb-1">47</p>
+                    <p className="text-xs text-gray-500">Completed</p>
+                  </div>
+                </div>
+
+                <p className="text-sm text-gray-500 text-center mt-4">
+                  Drag to move through workflow | Click for details
+                </p>
+              </div>
+
+              {/* Help Section */}
+              <Card className="p-6 bg-white border border-gray-200 shadow-sm">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">
+                  Need Help?
+                </h3>
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
                   >
                     Contact Support
                   </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    View Documentation
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    Request Training Session
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    Watch Demo Video
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    Read FAQ
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    Schedule Consultation with CSM
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {/* How It Works Tab */}
+          {activeTab === "How It Works" && (
+            <div className="space-y-6">
+              <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-8 shadow-sm">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                  What We're Protecting Against & How We Find It
+                </h2>
+
+                {/* Threat Categories */}
+                <div className="space-y-6">
+                  {/* AI-Generated Content */}
+                  <div className="border border-gray-200 rounded-lg p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-8 h-8 bg-gray-900 text-white rounded flex items-center justify-center font-bold">
+                        1
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-900">
+                        AI-GENERATED CONTENT
+                      </h3>
+                    </div>
+
+                    <div className="ml-11 space-y-2">
+                      <div className="flex items-start gap-2">
+                        <ChevronRight className="w-4 h-4 text-gray-400 mt-0.5" />
+                        <p className="text-sm text-gray-700">
+                          <span className="font-bold">
+                            Deepfakes (face manipulation)
+                          </span>
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <ChevronRight className="w-4 h-4 text-gray-400 mt-0.5" />
+                        <p className="text-sm text-gray-700">
+                          <span className="font-bold">
+                            Voice clones and audio synthesis
+                          </span>
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <ChevronRight className="w-4 h-4 text-gray-400 mt-0.5" />
+                        <p className="text-sm text-gray-700">
+                          <span className="font-bold">
+                            Fake endorsements and product placements
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="ml-11 mt-4 bg-gray-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-700">
+                        <span className="font-bold">Detection Speed:</span>{" "}
+                        Near-instant scanning across 1000+ posts
+                      </p>
+                      <p className="text-sm text-gray-700 mt-1">
+                        <span className="font-bold">Sample:</span> YouTube
+                        deepfake detected in 2 mins, flagged before reaching 1K
+                        views
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Unauthorized Usage */}
+                  <div className="border border-gray-200 rounded-lg p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-8 h-8 bg-gray-900 text-white rounded flex items-center justify-center font-bold">
+                        2
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-900">
+                        UNAUTHORIZED USAGE
+                      </h3>
+                    </div>
+
+                    <div className="ml-11 space-y-2">
+                      <div className="flex items-start gap-2">
+                        <ChevronRight className="w-4 h-4 text-gray-400 mt-0.5" />
+                        <p className="text-sm text-gray-700">
+                          <span className="font-bold">
+                            Unlicensed content repurposing
+                          </span>
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <ChevronRight className="w-4 h-4 text-gray-400 mt-0.5" />
+                        <p className="text-sm text-gray-700">
+                          <span className="font-bold">Brand impersonation</span>
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <ChevronRight className="w-4 h-4 text-gray-400 mt-0.5" />
+                        <p className="text-sm text-gray-700">
+                          <span className="font-bold">
+                            Misattributed statements
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="ml-11 mt-4 bg-gray-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-700">
+                        <span className="font-bold">Platforms:</span> YouTube,
+                        TikTok, Instagram, Twitter/X, Reddit, adult platforms,
+                        blogs, forums, darkweb (enterprise)
+                      </p>
+                      <p className="text-sm text-gray-700 mt-1">
+                        <span className="font-bold">Accuracy:</span> Matching
+                        against your approved license database
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Reputational Threats */}
+                  <div className="border border-gray-200 rounded-lg p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-8 h-8 bg-gray-900 text-white rounded flex items-center justify-center font-bold">
+                        3
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-900">
+                        REPUTATIONAL THREATS
+                      </h3>
+                    </div>
+
+                    <div className="ml-11 space-y-2">
+                      <div className="flex items-start gap-2">
+                        <ChevronRight className="w-4 h-4 text-gray-400 mt-0.5" />
+                        <p className="text-sm text-gray-700">
+                          <span className="font-bold">
+                            Manipulated statements (false admissions, political)
+                          </span>
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <ChevronRight className="w-4 h-4 text-gray-400 mt-0.5" />
+                        <p className="text-sm text-gray-700">
+                          <span className="font-bold">
+                            Deepfake intimate content (non-consensual)
+                          </span>
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <ChevronRight className="w-4 h-4 text-gray-400 mt-0.5" />
+                        <p className="text-sm text-gray-700">
+                          <span className="font-bold">
+                            Misleading AI avatars impersonating talent
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="ml-11 mt-4 bg-gray-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-700">
+                        <span className="font-bold">Why This Matters:</span> Can
+                        cause lasting damage even after correction; requires
+                        aggressive removal strategy
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* PHASE 4: POST-REMOVAL (Days 3-30) */}
-            <div className="border border-gray-200 rounded-lg p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">
-                PHASE 4: POST-REMOVAL (Days 3-30)
-              </h3>
+              {/* Three-Layer Detection */}
+              <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-8 shadow-sm">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                  Our Three-Layer Detection
+                </h2>
 
-              <div className="mb-4">
-                <p className="text-sm font-bold mb-2">
-                  Outcome A: Content Removed
-                </p>
-                <ul className="text-sm space-y-1 ml-4">
-                  <li>✓ Removal confirmed & certified</li>
-                  <li>✓ Re-upload monitoring begins (catches 2nd accounts)</li>
-                  <li>✓ Final case report generated for legal file</li>
-                </ul>
-                <Button className="mt-2 w-full sm:w-auto whitespace-normal bg-gray-900 hover:bg-gray-800 text-white font-bold text-sm">
-                  RESOLVED - REMOVAL CONFIRMED
-                </Button>
-              </div>
+                <div className="space-y-6">
+                  {/* Layer 1 */}
+                  <div className="border border-gray-200 rounded-lg p-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">
+                      LAYER 1: AUTOMATED SCANNING (Instant)
+                    </h3>
 
-              <div className="mb-4">
-                <p className="text-sm font-bold mb-2">
-                  Outcome B: Content Kept / Appeal Required
-                </p>
-                <ul className="text-sm space-y-1 ml-4">
-                  <li>✓ Platform's rejection reason analyzed</li>
-                  <li>✓ Stronger evidence re-packaged</li>
-                  <li>✓ Appeal resubmitted within 24 hours</li>
-                </ul>
-                <Button className="mt-2 w-full sm:w-auto whitespace-normal bg-gray-700 hover:bg-gray-600 text-white font-bold text-sm">
-                  UNDER APPEAL
-                </Button>
-              </div>
+                    <div className="space-y-2">
+                      <div className="flex items-start gap-2">
+                        <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
+                        <p className="text-sm text-gray-700">
+                          Facial recognition across 1000+ public posts daily
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
+                        <p className="text-sm text-gray-700">
+                          Voice pattern matching for audio content
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
+                        <p className="text-sm text-gray-700">
+                          Metadata analysis (timestamp/location inconsistencies)
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
+                        <p className="text-sm text-gray-700">
+                          Engagement anomaly detection (unnatural viral spikes)
+                        </p>
+                      </div>
+                    </div>
 
-              <div className="mb-4">
-                <p className="text-sm font-bold mb-2">
-                  Outcome C: Partial Removal
-                </p>
-                <ul className="text-sm space-y-1 ml-4">
-                  <li>✓ Clips identified and escalated</li>
-                  <li>✓ Remaining items targeted with new evidence</li>
-                  <li>✓ Secondary review initiated</li>
-                </ul>
-                <Button className="mt-2 w-full sm:w-auto whitespace-normal bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm">
-                  PARTIAL REMOVAL - ESCALATING
-                </Button>
-              </div>
-
-              <div>
-                <p className="text-sm font-bold mb-2">
-                  Your Final Documentation Package:
-                </p>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="doc-timestamp"
-                      checked={phase4Docs.alertTimestamp}
-                      onChange={(e) =>
-                        setPhase4Docs({
-                          ...phase4Docs,
-                          alertTimestamp: e.target.checked,
-                        })
-                      }
-                      className="w-4 h-4"
-                    />
-                    <label htmlFor="doc-timestamp" className="text-sm">
-                      Original alert timestamp
-                    </label>
+                    <div className="mt-4 bg-blue-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-700">
+                        <span className="font-bold">Result:</span> Initial flag
+                        with confidence score
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="doc-confidence"
-                      checked={phase4Docs.confidenceScores}
-                      onChange={(e) =>
-                        setPhase4Docs({
-                          ...phase4Docs,
-                          confidenceScores: e.target.checked,
-                        })
-                      }
-                      className="w-4 h-4"
-                    />
-                    <label htmlFor="doc-confidence" className="text-sm">
-                      Confidence scores & forensic analysis
-                    </label>
+
+                  {/* Layer 2 */}
+                  <div className="border border-gray-200 rounded-lg p-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">
+                      LAYER 2: AI CREDIBILITY SCORING (Instant)
+                    </h3>
+
+                    <div className="space-y-2">
+                      <div className="flex items-start gap-2">
+                        <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
+                        <p className="text-sm text-gray-700">
+                          Lip-sync alignment analysis
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
+                        <p className="text-sm text-gray-700">
+                          Eye movement and blinking patterns
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
+                        <p className="text-sm text-gray-700">
+                          Audio waveform analysis (clipping, tonal consistency)
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
+                        <p className="text-sm text-gray-700">
+                          Video artifact detection (compression signatures)
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 bg-blue-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-700">
+                        <span className="font-bold">Result:</span> Confidence
+                        Score 0-100% (e.g., 94% likely fake)
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="doc-dmca"
-                      checked={phase4Docs.dmcaProof}
-                      onChange={(e) =>
-                        setPhase4Docs({
-                          ...phase4Docs,
-                          dmcaProof: e.target.checked,
-                        })
-                      }
-                      className="w-4 h-4"
-                    />
-                    <label htmlFor="doc-dmca" className="text-sm">
-                      DMCA submission proof
-                    </label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="doc-platform"
-                      checked={phase4Docs.platformResponses}
-                      onChange={(e) =>
-                        setPhase4Docs({
-                          ...phase4Docs,
-                          platformResponses: e.target.checked,
-                        })
-                      }
-                      className="w-4 h-4"
-                    />
-                    <label htmlFor="doc-platform" className="text-sm">
-                      Platform responses
-                    </label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="doc-removal"
-                      checked={phase4Docs.removalConfirmation}
-                      onChange={(e) =>
-                        setPhase4Docs({
-                          ...phase4Docs,
-                          removalConfirmation: e.target.checked,
-                        })
-                      }
-                      className="w-4 h-4"
-                    />
-                    <label htmlFor="doc-removal" className="text-sm">
-                      Removal confirmation
-                    </label>
+
+                  {/* Layer 3 */}
+                  <div className="border border-gray-200 rounded-lg p-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">
+                      LAYER 3: HUMAN FORENSICS (2-Hour SLA)
+                    </h3>
+
+                    <div className="space-y-2">
+                      <div className="flex items-start gap-2">
+                        <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
+                        <p className="text-sm text-gray-700">
+                          On-demand analyst review for borderline cases (60-80%
+                          confidence)
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
+                        <p className="text-sm text-gray-700">
+                          Context verification (cross-reference with talent's
+                          actual schedule/location)
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
+                        <p className="text-sm text-gray-700">
+                          Legal assessment for takedown eligibility
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 bg-blue-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-700">
+                        <span className="font-bold">Result:</span> Final verdict
+                        + recommended action (takedown, monitor, ignore)
+                      </p>
+                    </div>
                   </div>
                 </div>
-
-                <p className="text-sm text-gray-600 mt-3">
-                  Purpose: Insurance claims, regulatory tracking, legal cases
-                </p>
-
-                <Button className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
-                  Download Complete Report
-                </Button>
               </div>
+
+              {/* Need Help Section */}
+              <Card className="p-6 bg-white border border-gray-200 shadow-sm">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">
+                  Need Help?
+                </h3>
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    Contact Support
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    View Documentation
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    Request Training Session
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    Watch Demo Video
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    Read FAQ
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    Schedule Consultation with CSM
+                  </Button>
+                </div>
+              </Card>
             </div>
-          </div>
+          )}
 
-          {/* Need Help Section */}
-          <Card className="p-6 bg-white border border-gray-200 shadow-sm">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Need Help?</h3>
-            <div className="flex flex-wrap gap-3">
-              <Button variant="outline" className="font-bold border-gray-300">
-                Contact Support
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                View Documentation
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                Request Training Session
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                Watch Demo Video
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                Read FAQ
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                Schedule Consultation with CSM
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
+          {/* Alert Settings Tab */}
+          {activeTab === "Alert Settings" && (
+            <div className="space-y-6">
+              <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-sm">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  Customize Detection & Notifications To Your Needs
+                </h2>
 
-      {/* Compliance & Reporting Tab */}
-      {activeTab === "Compliance & Reporting" && (
-        <div className="space-y-6">
-          <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-sm">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              Compliance & Reporting
-            </h2>
-
-            {/* Legal Documentation Center */}
-            <div className="border border-gray-200 rounded-lg p-6 mb-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">
-                Legal Documentation Center
-              </h3>
-
-              <p className="text-sm mb-3">
-                ✓ Built for AI-regulation landscape:
-              </p>
-              <ul className="text-sm space-y-1 ml-4 mb-4">
-                <li>• California AB 730 (deepfake penalties)</li>
-                <li>• Virginia SB/PA (synthetic voice protection)</li>
-                <li>• EU Digital Services Act</li>
-                <li>• Global NIL rights standards</li>
-              </ul>
-
-              <p className="text-sm font-bold mb-2">What Likelee Provides:</p>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-gray-900 rounded-sm flex items-center justify-center">
-                    <CheckCircle2 className="w-3 h-3 text-white" />
-                  </div>
-                  <p className="text-sm">
-                    Timestamped detection records (admissible in court)
+                {/* Smart Notification Strategy */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                  <h3 className="text-sm font-bold text-gray-900 mb-2">
+                    Smart Notification Strategy
+                  </h3>
+                  <p className="text-sm text-gray-700">
+                    We know platform relationships are fragile. High-volume
+                    notifications can flag you as spam. We've engineered smart
+                    filtering so you catch real threats without overwhelming
+                    your team or platform algorithms.
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-gray-900 rounded-sm flex items-center justify-center">
-                    <CheckCircle2 className="w-3 h-3 text-white" />
+
+                {/* TIER 1: CRITICAL */}
+                <div className="border border-gray-200 rounded-lg p-6 mb-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-red-100 rounded">
+                      <AlertCircle className="w-5 h-5 text-red-600" />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900">
+                      TIER 1: CRITICAL
+                    </h3>
                   </div>
-                  <p className="text-sm">
-                    Chain of custody for forensic evidence
+
+                  <div className="space-y-2 mb-4">
+                    <p className="text-sm">
+                      <span className="font-bold">Notification:</span> Immediate
+                      email + SMS + Slack + In-app
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-bold">Turnaround:</span> Instant
+                      (within 2 minutes)
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-bold">Digest or Individual:</span>{" "}
+                      Individual notifications
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <p className="text-sm font-bold mb-2">Triggers:</p>
+                    <ul className="text-sm space-y-1 ml-4">
+                      <li>
+                        • Deepfake 85%+ accuracy (likely viral) (200K+
+                        engagements)
+                      </li>
+                      <li>• Fake endorsement with commercial intent</li>
+                      <li>• Non-consensual intimate content</li>
+                      <li>• Defamatory statements (legal liability)</li>
+                    </ul>
+                  </div>
+
+                  <div className="flex items-center gap-3 mb-3">
+                    <input
+                      type="checkbox"
+                      id="tier1-recommended"
+                      checked={tier1Recommended}
+                      onChange={(e) => setTier1Recommended(e.target.checked)}
+                      className="w-4 h-4"
+                    />
+                    <label
+                      htmlFor="tier1-recommended"
+                      className="text-sm font-bold"
+                    >
+                      Receive TIER 1 alerts (RECOMMENDED: ALWAYS ON)
+                    </label>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="tier1-sms"
+                      checked={tier1SMS}
+                      onChange={(e) => setTier1SMS(e.target.checked)}
+                      className="w-4 h-4"
+                    />
+                    <label htmlFor="tier1-sms" className="text-sm">
+                      Also send SMS (phone number on file)
+                    </label>
+                  </div>
+
+                  <Button className="mt-4 w-full sm:w-auto whitespace-normal text-left sm:text-center bg-gray-900 hover:bg-gray-800 text-white font-bold">
+                    Slack/Teams notification: Integrate Now
+                  </Button>
+                </div>
+
+                {/* TIER 2: HIGH */}
+                <div className="border border-gray-200 rounded-lg p-6 mb-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-orange-100 rounded">
+                      <FileText className="w-5 h-5 text-orange-600" />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900">
+                      TIER 2: HIGH
+                    </h3>
+                  </div>
+
+                  <div className="space-y-2 mb-4">
+                    <p className="text-sm">
+                      <span className="font-bold">Notification:</span> Daily
+                      digest: email (9am or 5pm)
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-bold">Turnaround:</span> 24-hour
+                      review
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-bold">Digest or Individual:</span>{" "}
+                      Grouped digest only
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <p className="text-sm font-bold mb-2">Triggers:</p>
+                    <ul className="text-sm space-y-1 ml-4">
+                      <li>• Deepfake 75-89% confidence (not yet viral)</li>
+                      <li>• AI voice in commercial context</li>
+                      <li>• Stolen content (real footage, no permission)</li>
+                      <li>• Bot-amplified engagement</li>
+                    </ul>
+                  </div>
+
+                  <div className="flex items-center gap-3 mb-3">
+                    <input
+                      type="checkbox"
+                      id="tier2-digest"
+                      checked={tier2Digest}
+                      onChange={(e) => setTier2Digest(e.target.checked)}
+                      className="w-4 h-4"
+                    />
+                    <label htmlFor="tier2-digest" className="text-sm font-bold">
+                      Receive TIER 2 digests
+                    </label>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-3">
+                    <label className="text-sm font-bold">Delivery Time:</label>
+                    <select className="px-3 py-1.5 border border-gray-200 rounded text-sm">
+                      <option>9:00 AM</option>
+                      <option>5:00 PM</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* TIER 3: MEDIUM */}
+                <div className="border border-gray-200 rounded-lg p-6 mb-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-yellow-100 rounded">
+                      <Clock className="w-5 h-5 text-yellow-600" />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900">
+                      TIER 3: MEDIUM
+                    </h3>
+                  </div>
+
+                  <div className="space-y-2 mb-4">
+                    <p className="text-sm">
+                      <span className="font-bold">Notification:</span> Weekly
+                      digest + Dashboard
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-bold">Turnaround:</span> 3-5 day
+                      review
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="tier3-digest"
+                      checked={tier3Digest}
+                      onChange={(e) => setTier3Digest(e.target.checked)}
+                      className="w-4 h-4"
+                    />
+                    <label htmlFor="tier3-digest" className="text-sm font-bold">
+                      Receive TIER 3 digests
+                    </label>
+                  </div>
+                </div>
+
+                {/* Notification Channel Preferences */}
+                <div className="border border-gray-200 rounded-lg p-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">
+                    Notification Channel Preferences
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    How do you want to be alerted?
                   </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-gray-900 rounded-sm flex items-center justify-center">
-                    <CheckCircle2 className="w-3 h-3 text-white" />
+
+                  <div className="space-y-3 mb-4">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id="channel-email"
+                        checked={channelEmail}
+                        onChange={(e) => setChannelEmail(e.target.checked)}
+                        className="w-4 h-4"
+                      />
+                      <label
+                        htmlFor="channel-email"
+                        className="text-sm font-bold"
+                      >
+                        Email
+                      </label>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id="channel-sms"
+                        checked={channelSMS}
+                        onChange={(e) => setChannelSMS(e.target.checked)}
+                        className="w-4 h-4"
+                      />
+                      <label htmlFor="channel-sms" className="text-sm">
+                        SMS (TIER 1 only)
+                      </label>
+                    </div>
                   </div>
-                  <p className="text-sm">Platform takedown confirmations</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-gray-900 rounded-sm flex items-center justify-center">
-                    <CheckCircle2 className="w-3 h-3 text-white" />
+
+                  <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                    <Button className="w-full sm:w-auto bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold">
+                      Slack Integration - Connect Now
+                    </Button>
+                    <Button className="w-full sm:w-auto bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold">
+                      Teams Integration - Connect Now
+                    </Button>
                   </div>
-                  <p className="text-sm">DMCA-compliant documentation</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-gray-900 rounded-sm flex items-center justify-center">
-                    <CheckCircle2 className="w-3 h-3 text-white" />
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-1">
+                        Primary Email
+                      </label>
+                      <input
+                        type="email"
+                        placeholder="email@agency.com"
+                        className="w-full px-3 py-2 border border-gray-200 rounded text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-1">
+                        Backup Email
+                      </label>
+                      <input
+                        type="email"
+                        placeholder="backup@agency.com"
+                        className="w-full px-3 py-2 border border-gray-200 rounded text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-1">
+                        SMS Phone
+                      </label>
+                      <input
+                        type="tel"
+                        placeholder="+1-555-XXX-XXXX"
+                        className="w-full px-3 py-2 border border-gray-200 rounded text-sm"
+                      />
+                    </div>
                   </div>
-                  <p className="text-sm">Export-ready legal reports</p>
                 </div>
               </div>
+
+              {/* Need Help Section */}
+              <Card className="p-6 bg-white border border-gray-200 shadow-sm">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">
+                  Need Help?
+                </h3>
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    Contact Support
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    View Documentation
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    Request Training Session
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    Watch Demo Video
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    Read FAQ
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    Schedule Consultation with CSM
+                  </Button>
+                </div>
+              </Card>
             </div>
+          )}
 
-            {/* QUARTERLY PERFORMANCE SUMMARY */}
-            <div className="border border-gray-200 rounded-lg p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">
-                QUARTERLY PERFORMANCE SUMMARY
-              </h3>
+          {/* Settings & Permissions Tab */}
+          {activeTab === "Settings & Permissions" && (
+            <div className="space-y-6">
+              <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-sm">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                  Settings & Permissions
+                </h2>
 
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm font-bold mb-2">Total Alerts: 247</p>
-                  <ul className="text-sm space-y-1 ml-4">
-                    <li>├─ CRITICAL: 8 (100% escalated)</li>
-                    <li>├─ HIGH: 34 (68% resulted in takedown)</li>
-                    <li>├─ MEDIUM: 127 (23% resulted in takedown)</li>
-                    <li>└─ LOW: 78 (monitored only)</li>
+                {/* Team Structure */}
+                <div className="border border-gray-200 rounded-lg p-6 mb-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">
+                    Team Structure
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Set up your agency team:
+                  </p>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">
+                        Primary Account Owner
+                      </label>
+                      <select className="w-full px-3 py-2 border border-gray-200 rounded text-sm mb-1">
+                        <option>Select user</option>
+                      </select>
+                      <p className="text-xs text-gray-500">
+                        └─ Full access to all features
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">
+                        Talent Liaison Officer
+                      </label>
+                      <select className="w-full px-3 py-2 border border-gray-200 rounded text-sm mb-1">
+                        <option>Select user</option>
+                      </select>
+                      <p className="text-xs text-gray-500">
+                        └─ Reviews all TIER 1 alerts
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        └─ Can request takedowns
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        └─ Export & share reports
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">
+                        Legal Counsel
+                      </label>
+                      <select className="w-full px-3 py-2 border border-gray-200 rounded text-sm mb-1">
+                        <option>Select user</option>
+                      </select>
+                      <p className="text-xs text-gray-500">
+                        └─ View all alerts
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        └─ Export forensic reports
+                      </p>
+                      <p className="text-xs text-gray-500">└─ Archive cases</p>
+                    </div>
+
+                    <Button className="bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold">
+                      + Add Team Member
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Role-Based Permissions Matrix */}
+                <div className="border border-gray-200 rounded-lg p-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">
+                    Role-Based Permissions Matrix
+                  </h3>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-gray-200">
+                          <th className="text-left py-3 px-4 text-sm font-bold text-gray-900">
+                            Permission
+                          </th>
+                          <th className="text-center py-3 px-4 text-sm font-bold text-gray-900">
+                            Liaison
+                          </th>
+                          <th className="text-center py-3 px-4 text-sm font-bold text-gray-900">
+                            Legal
+                          </th>
+                          <th className="text-center py-3 px-4 text-sm font-bold text-gray-900">
+                            Social Mgr
+                          </th>
+                          <th className="text-center py-3 px-4 text-sm font-bold text-gray-900">
+                            Owner
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="border-b border-gray-200">
+                          <td className="py-3 px-4 text-sm text-gray-700">
+                            View all alerts
+                          </td>
+                          <td className="text-center py-3 px-4">
+                            <CheckCircle2 className="w-5 h-5 text-green-600 mx-auto" />
+                          </td>
+                          <td className="text-center py-3 px-4">
+                            <CheckCircle2 className="w-5 h-5 text-green-600 mx-auto" />
+                          </td>
+                          <td className="text-center py-3 px-4">
+                            <div className="w-5 h-5 rounded-full bg-gray-200 mx-auto flex items-center justify-center">
+                              <X className="w-3 h-3 text-gray-400 opacity-50" />
+                            </div>
+                          </td>
+                          <td className="text-center py-3 px-4">
+                            <CheckCircle2 className="w-5 h-5 text-green-600 mx-auto" />
+                          </td>
+                        </tr>
+                        <tr className="border-b border-gray-200">
+                          <td className="py-3 px-4 text-sm text-gray-700">
+                            Request takedown
+                          </td>
+                          <td className="text-center py-3 px-4">
+                            <CheckCircle2 className="w-5 h-5 text-green-600 mx-auto" />
+                          </td>
+                          <td className="text-center py-3 px-4">
+                            <div className="w-5 h-5 rounded-full bg-gray-200 mx-auto flex items-center justify-center">
+                              <X className="w-3 h-3 text-gray-400 opacity-50" />
+                            </div>
+                          </td>
+                          <td className="text-center py-3 px-4">
+                            <div className="w-5 h-5 rounded-full bg-gray-200 mx-auto flex items-center justify-center">
+                              <X className="w-3 h-3 text-gray-400 opacity-50" />
+                            </div>
+                          </td>
+                          <td className="text-center py-3 px-4">
+                            <CheckCircle2 className="w-5 h-5 text-green-600 mx-auto" />
+                          </td>
+                        </tr>
+                        <tr className="border-b border-gray-200">
+                          <td className="py-3 px-4 text-sm text-gray-700">
+                            Export reports
+                          </td>
+                          <td className="text-center py-3 px-4">
+                            <CheckCircle2 className="w-5 h-5 text-green-600 mx-auto" />
+                          </td>
+                          <td className="text-center py-3 px-4">
+                            <CheckCircle2 className="w-5 h-5 text-green-600 mx-auto" />
+                          </td>
+                          <td className="text-center py-3 px-4">
+                            <div className="w-5 h-5 rounded-full bg-gray-200 mx-auto flex items-center justify-center">
+                              <X className="w-3 h-3 text-gray-400 opacity-50" />
+                            </div>
+                          </td>
+                          <td className="text-center py-3 px-4">
+                            <CheckCircle2 className="w-5 h-5 text-green-600 mx-auto" />
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="py-3 px-4 text-sm text-gray-700">
+                            Manage team members
+                          </td>
+                          <td className="text-center py-3 px-4">
+                            <div className="w-5 h-5 rounded-full bg-gray-200 mx-auto flex items-center justify-center">
+                              <X className="w-3 h-3 text-gray-400 opacity-50" />
+                            </div>
+                          </td>
+                          <td className="text-center py-3 px-4">
+                            <div className="w-5 h-5 rounded-full bg-gray-200 mx-auto flex items-center justify-center">
+                              <X className="w-3 h-3 text-gray-400 opacity-50" />
+                            </div>
+                          </td>
+                          <td className="text-center py-3 px-4">
+                            <div className="w-5 h-5 rounded-full bg-gray-200 mx-auto flex items-center justify-center">
+                              <X className="w-3 h-3 text-gray-400 opacity-50" />
+                            </div>
+                          </td>
+                          <td className="text-center py-3 px-4">
+                            <CheckCircle2 className="w-5 h-5 text-green-600 mx-auto" />
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <Button className="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
+                    Save Permissions
+                  </Button>
+                </div>
+              </div>
+
+              {/* Need Help Section */}
+              <Card className="p-6 bg-white border border-gray-200 shadow-sm">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">
+                  Need Help?
+                </h3>
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    Contact Support
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    View Documentation
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    Request Training Session
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    Watch Demo Video
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    Read FAQ
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    Schedule Consultation with CSM
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {activeTab !== "Current Alerts" &&
+            activeTab !== "How It Works" &&
+            activeTab !== "Alert Settings" &&
+            activeTab !== "Settings & Permissions" &&
+            activeTab !== "Rapid Response" &&
+            activeTab !== "Compliance & Reporting" && (
+              <div className="text-center py-12">
+                <p className="text-gray-500">
+                  Content for "{activeTab}" tab coming soon...
+                </p>
+              </div>
+            )}
+
+          {/* Rapid Response Tab */}
+          {activeTab === "Rapid Response" && (
+            <div className="space-y-6">
+              <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-sm">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                  From Detection to Takedown: Your 4-Phase Action Plan
+                </h2>
+
+                {/* PHASE 1: IMMEDIATE (0-2 hours) */}
+                <div className="border border-gray-200 rounded-lg p-6 mb-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">
+                    PHASE 1: IMMEDIATE (0-2 hours)
+                  </h3>
+
+                  <div className="mb-4">
+                    <p className="text-sm font-bold mb-2">Likelee Does:</p>
+                    <ul className="text-sm space-y-1 ml-4">
+                      <li>✓ Confirms alert with human analyst</li>
+                      <li>
+                        ✓ Generates forensic report (metadata, confidence,
+                        platform violations)
+                      </li>
+                      <li>✓ Pre-packages DMCA evidence</li>
+                      <li>✓ Assigns dedicated liaison to your team</li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                    <p className="text-sm font-bold mb-2">
+                      FORENSIC REPORT READY FOR YOUR DECISION
+                    </p>
+                    <div className="space-y-1 text-sm">
+                      <p>
+                        <span className="font-bold">Talent:</span> Emma
+                      </p>
+                      <p>
+                        <span className="font-bold">Platform:</span> YouTube
+                        Shorts
+                      </p>
+                      <p>
+                        <span className="font-bold">Content Type:</span>{" "}
+                        Deepfake (Fake Product Endorsement)
+                      </p>
+                      <p>
+                        <span className="font-bold">Confidence Score:</span> 94%
+                      </p>
+                      <p>
+                        <span className="font-bold">Viral Status:</span> 127K
+                        views | 3.2K shares | 18 hours old
+                      </p>
+                    </div>
+
+                    <div className="mt-4">
+                      <p className="text-sm font-bold mb-2">
+                        RECOMMENDED ACTIONS:
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <Button className="w-full sm:w-auto bg-gray-900 hover:bg-gray-800 text-white font-bold text-sm">
+                          REQUEST TAKEDOWN NOW
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="w-full sm:w-auto font-bold border-gray-300 text-sm"
+                        >
+                          Monitor 24h
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="w-full sm:w-auto font-bold border-gray-300 text-sm"
+                        >
+                          Contact Liaison
+                        </Button>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-gray-600 mt-3">
+                      Reasoning: Viral trajectory suggests 500K+ views by 36h
+                    </p>
+
+                    <div className="mt-4">
+                      <p className="text-sm font-bold mb-2">
+                        Forensic Details:
+                      </p>
+                      <ul className="text-xs space-y-1 ml-4 text-gray-700">
+                        <li>• Lip-sync misalignment: 78% deviation detected</li>
+                        <li>• Audio artifacts: Clipping in word patterns</li>
+                        <li>
+                          • Background consistency: Lighting inconsistent (AI
+                          flag)
+                        </li>
+                        <li>
+                          • Engagement pattern: 400% above talent's historical
+                          avg
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-bold mb-2">Your Decision:</p>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          id="decision-now"
+                          name="rapid-decision"
+                          checked={rapidResponseDecision === "now"}
+                          onChange={() => setRapidResponseDecision("now")}
+                          className="w-4 h-4"
+                        />
+                        <label htmlFor="decision-now" className="text-sm">
+                          Request Takedown Now
+                        </label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          id="decision-24h"
+                          name="rapid-decision"
+                          checked={rapidResponseDecision === "24h"}
+                          onChange={() => setRapidResponseDecision("24h")}
+                          className="w-4 h-4"
+                        />
+                        <label htmlFor="decision-24h" className="text-sm">
+                          Monitor for 24 Hours
+                        </label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          id="decision-info"
+                          name="rapid-decision"
+                          checked={rapidResponseDecision === "info"}
+                          onChange={() => setRapidResponseDecision("info")}
+                          className="w-4 h-4"
+                        />
+                        <label htmlFor="decision-info" className="text-sm">
+                          Request More Information
+                        </label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          id="decision-snooze"
+                          name="rapid-decision"
+                          checked={rapidResponseDecision === "snooze"}
+                          onChange={() => setRapidResponseDecision("snooze")}
+                          className="w-4 h-4"
+                        />
+                        <label htmlFor="decision-snooze" className="text-sm">
+                          Snooze & Review Later
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* PHASE 2: ESCALATION (2-12 hours) */}
+                <div className="border border-gray-200 rounded-lg p-6 mb-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">
+                    PHASE 2: ESCALATION (2-12 hours)
+                  </h3>
+
+                  <div className="mb-4">
+                    <p className="text-sm mb-2">If You Requested Takedown:</p>
+                    <ul className="text-sm space-y-1 ml-4">
+                      <li>
+                        ✓ Likelee submits certified DMCA to platform within 60
+                        min
+                      </li>
+                      <li>✓ Real-time status tracking begins</li>
+                      <li>
+                        ✓ You receive updates every 2 hours during peak
+                        escalation
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-bold mb-2">
+                      Your Action Items (Template Provided):
+                    </p>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="action-notify"
+                          checked={phase2Actions.notifyTalent}
+                          onChange={(e) =>
+                            setPhase2Actions({
+                              ...phase2Actions,
+                              notifyTalent: e.target.checked,
+                            })
+                          }
+                          className="w-4 h-4"
+                        />
+                        <label htmlFor="action-notify" className="text-sm">
+                          Notify affected talent (copy provided)
+                        </label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="action-brief"
+                          checked={phase2Actions.briefLegal}
+                          onChange={(e) =>
+                            setPhase2Actions({
+                              ...phase2Actions,
+                              briefLegal: e.target.checked,
+                            })
+                          }
+                          className="w-4 h-4"
+                        />
+                        <label htmlFor="action-brief" className="text-sm">
+                          Brief legal/PR team (pre-written talking points)
+                        </label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="action-draft"
+                          checked={phase2Actions.draftResponse}
+                          onChange={(e) =>
+                            setPhase2Actions({
+                              ...phase2Actions,
+                              draftResponse: e.target.checked,
+                            })
+                          }
+                          className="w-4 h-4"
+                        />
+                        <label htmlFor="action-draft" className="text-sm">
+                          Draft response statement (template ready)
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      <Button className="w-full sm:w-auto bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold text-sm">
+                        Share Action Plan with Team
+                      </Button>
+                      <Button className="w-full sm:w-auto bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold text-sm">
+                        Send Email to Talent
+                      </Button>
+                      <Button className="w-full sm:w-auto bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold text-sm">
+                        Notify Counsel
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* PHASE 3: PLATFORM RESPONSE (12-72 hours) */}
+                <div className="border border-gray-200 rounded-lg p-6 mb-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">
+                    PHASE 3: PLATFORM RESPONSE (12-72 hours)
+                  </h3>
+
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                    <p className="text-sm font-bold mb-2">
+                      TAKEDOWN REQUEST #LK-2024-11847
+                    </p>
+                    <p className="text-sm mb-2">
+                      <span className="font-bold">Status:</span> SUBMITTED (TO
+                      PLATFORM) (2 hours ago)
+                    </p>
+                    <p className="text-sm mb-2">
+                      <span className="font-bold">Platform:</span> YouTube
+                    </p>
+
+                    <div className="space-y-1 text-sm mt-3">
+                      <p>✓ Detection: Nov 15, 10:54 AM</p>
+                      <p>✓ Analysis: Nov 15, 10:52 AM</p>
+                      <p>✓ Your Decision: Nov 15, 10:59 AM</p>
+                      <p>✓ DMCA Submitted: Nov 15, 1:12 AM</p>
+                      <p className="text-orange-600">
+                        ⏳ Awaiting Platform: Nov 15, 2:15 PM (current)
+                      </p>
+                    </div>
+
+                    <p className="text-sm font-bold mt-3 mb-1">
+                      Estimated Resolution: Nov 16, 10:00 AM (24h SLA)
+                    </p>
+                    <p className="text-sm font-bold mb-2">Possible Outcomes:</p>
+                    <ul className="text-sm space-y-1 ml-4">
+                      <li>– Content Removed</li>
+                      <li>– Content Kept / Appeal Required</li>
+                      <li>– Partial Action</li>
+                    </ul>
+
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      <Button
+                        variant="outline"
+                        className="w-full sm:w-auto font-bold border-gray-300 text-sm"
+                      >
+                        View DMCA Details
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full sm:w-auto font-bold border-gray-300 text-sm"
+                      >
+                        Contact Support
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* PHASE 4: POST-REMOVAL (Days 3-30) */}
+                <div className="border border-gray-200 rounded-lg p-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">
+                    PHASE 4: POST-REMOVAL (Days 3-30)
+                  </h3>
+
+                  <div className="mb-4">
+                    <p className="text-sm font-bold mb-2">
+                      Outcome A: Content Removed
+                    </p>
+                    <ul className="text-sm space-y-1 ml-4">
+                      <li>✓ Removal confirmed & certified</li>
+                      <li>
+                        ✓ Re-upload monitoring begins (catches 2nd accounts)
+                      </li>
+                      <li>✓ Final case report generated for legal file</li>
+                    </ul>
+                    <Button className="mt-2 w-full sm:w-auto whitespace-normal bg-gray-900 hover:bg-gray-800 text-white font-bold text-sm">
+                      RESOLVED - REMOVAL CONFIRMED
+                    </Button>
+                  </div>
+
+                  <div className="mb-4">
+                    <p className="text-sm font-bold mb-2">
+                      Outcome B: Content Kept / Appeal Required
+                    </p>
+                    <ul className="text-sm space-y-1 ml-4">
+                      <li>✓ Platform's rejection reason analyzed</li>
+                      <li>✓ Stronger evidence re-packaged</li>
+                      <li>✓ Appeal resubmitted within 24 hours</li>
+                    </ul>
+                    <Button className="mt-2 w-full sm:w-auto whitespace-normal bg-gray-700 hover:bg-gray-600 text-white font-bold text-sm">
+                      UNDER APPEAL
+                    </Button>
+                  </div>
+
+                  <div className="mb-4">
+                    <p className="text-sm font-bold mb-2">
+                      Outcome C: Partial Removal
+                    </p>
+                    <ul className="text-sm space-y-1 ml-4">
+                      <li>✓ Clips identified and escalated</li>
+                      <li>✓ Remaining items targeted with new evidence</li>
+                      <li>✓ Secondary review initiated</li>
+                    </ul>
+                    <Button className="mt-2 w-full sm:w-auto whitespace-normal bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm">
+                      PARTIAL REMOVAL - ESCALATING
+                    </Button>
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-bold mb-2">
+                      Your Final Documentation Package:
+                    </p>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="doc-timestamp"
+                          checked={phase4Docs.alertTimestamp}
+                          onChange={(e) =>
+                            setPhase4Docs({
+                              ...phase4Docs,
+                              alertTimestamp: e.target.checked,
+                            })
+                          }
+                          className="w-4 h-4"
+                        />
+                        <label htmlFor="doc-timestamp" className="text-sm">
+                          Original alert timestamp
+                        </label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="doc-confidence"
+                          checked={phase4Docs.confidenceScores}
+                          onChange={(e) =>
+                            setPhase4Docs({
+                              ...phase4Docs,
+                              confidenceScores: e.target.checked,
+                            })
+                          }
+                          className="w-4 h-4"
+                        />
+                        <label htmlFor="doc-confidence" className="text-sm">
+                          Confidence scores & forensic analysis
+                        </label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="doc-dmca"
+                          checked={phase4Docs.dmcaProof}
+                          onChange={(e) =>
+                            setPhase4Docs({
+                              ...phase4Docs,
+                              dmcaProof: e.target.checked,
+                            })
+                          }
+                          className="w-4 h-4"
+                        />
+                        <label htmlFor="doc-dmca" className="text-sm">
+                          DMCA submission proof
+                        </label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="doc-platform"
+                          checked={phase4Docs.platformResponses}
+                          onChange={(e) =>
+                            setPhase4Docs({
+                              ...phase4Docs,
+                              platformResponses: e.target.checked,
+                            })
+                          }
+                          className="w-4 h-4"
+                        />
+                        <label htmlFor="doc-platform" className="text-sm">
+                          Platform responses
+                        </label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="doc-removal"
+                          checked={phase4Docs.removalConfirmation}
+                          onChange={(e) =>
+                            setPhase4Docs({
+                              ...phase4Docs,
+                              removalConfirmation: e.target.checked,
+                            })
+                          }
+                          className="w-4 h-4"
+                        />
+                        <label htmlFor="doc-removal" className="text-sm">
+                          Removal confirmation
+                        </label>
+                      </div>
+                    </div>
+
+                    <p className="text-sm text-gray-600 mt-3">
+                      Purpose: Insurance claims, regulatory tracking, legal
+                      cases
+                    </p>
+
+                    <Button className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
+                      Download Complete Report
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Need Help Section */}
+              <Card className="p-6 bg-white border border-gray-200 shadow-sm">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">
+                  Need Help?
+                </h3>
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    Contact Support
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    View Documentation
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    Request Training Session
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    Watch Demo Video
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    Read FAQ
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    Schedule Consultation with CSM
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {/* Compliance & Reporting Tab */}
+          {activeTab === "Compliance & Reporting" && (
+            <div className="space-y-6">
+              <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-sm">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                  Compliance & Reporting
+                </h2>
+
+                {/* Legal Documentation Center */}
+                <div className="border border-gray-200 rounded-lg p-6 mb-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">
+                    Legal Documentation Center
+                  </h3>
+
+                  <p className="text-sm mb-3">
+                    ✓ Built for AI-regulation landscape:
+                  </p>
+                  <ul className="text-sm space-y-1 ml-4 mb-4">
+                    <li>• California AB 730 (deepfake penalties)</li>
+                    <li>• Virginia SB/PA (synthetic voice protection)</li>
+                    <li>• EU Digital Services Act</li>
+                    <li>• Global NIL rights standards</li>
                   </ul>
-                </div>
 
-                <div>
                   <p className="text-sm font-bold mb-2">
-                    Takedown Success Rate: 89%
+                    What Likelee Provides:
                   </p>
-                  <ul className="text-sm space-y-1 ml-4">
-                    <li>├─ Successful removals: 34</li>
-                    <li>├─ Pending: 2</li>
-                    <li>├─ Under appeal: 4</li>
-                    <li>└─ Rejected: 1</li>
-                  </ul>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-gray-900 rounded-sm flex items-center justify-center">
+                        <CheckCircle2 className="w-3 h-3 text-white" />
+                      </div>
+                      <p className="text-sm">
+                        Timestamped detection records (admissible in court)
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-gray-900 rounded-sm flex items-center justify-center">
+                        <CheckCircle2 className="w-3 h-3 text-white" />
+                      </div>
+                      <p className="text-sm">
+                        Chain of custody for forensic evidence
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-gray-900 rounded-sm flex items-center justify-center">
+                        <CheckCircle2 className="w-3 h-3 text-white" />
+                      </div>
+                      <p className="text-sm">Platform takedown confirmations</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-gray-900 rounded-sm flex items-center justify-center">
+                        <CheckCircle2 className="w-3 h-3 text-white" />
+                      </div>
+                      <p className="text-sm">DMCA-compliant documentation</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-gray-900 rounded-sm flex items-center justify-center">
+                        <CheckCircle2 className="w-3 h-3 text-white" />
+                      </div>
+                      <p className="text-sm">Export-ready legal reports</p>
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <p className="text-sm font-bold">
-                    Average Time to Removal: 18 hours
-                  </p>
+                {/* QUARTERLY PERFORMANCE SUMMARY */}
+                <div className="border border-gray-200 rounded-lg p-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">
+                    QUARTERLY PERFORMANCE SUMMARY
+                  </h3>
+
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm font-bold mb-2">
+                        Total Alerts: 247
+                      </p>
+                      <ul className="text-sm space-y-1 ml-4">
+                        <li>├─ CRITICAL: 8 (100% escalated)</li>
+                        <li>├─ HIGH: 34 (68% resulted in takedown)</li>
+                        <li>├─ MEDIUM: 127 (23% resulted in takedown)</li>
+                        <li>└─ LOW: 78 (monitored only)</li>
+                      </ul>
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-bold mb-2">
+                        Takedown Success Rate: 89%
+                      </p>
+                      <ul className="text-sm space-y-1 ml-4">
+                        <li>├─ Successful removals: 34</li>
+                        <li>├─ Pending: 2</li>
+                        <li>├─ Under appeal: 4</li>
+                        <li>└─ Rejected: 1</li>
+                      </ul>
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-bold">
+                        Average Time to Removal: 18 hours
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-bold mb-2">
+                        Top Threat Categories:
+                      </p>
+                      <ul className="text-sm space-y-1 ml-4">
+                        <li>1. Deepfake endorsements (42%)</li>
+                        <li>2. Voice clones (commercial) (28%)</li>
+                        <li>3. Unauthorized reposts (18%)</li>
+                        <li>4. Intimate deepfakes (7%)</li>
+                        <li>5. Political misattribution (5%)</li>
+                      </ul>
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-bold mb-2">
+                        Platform Breakdown:
+                      </p>
+                      <ul className="text-sm space-y-1 ml-4">
+                        <li>• YouTube: 89 alerts (36%)</li>
+                        <li>• TikTok: 71 alerts (29%)</li>
+                        <li>• Instagram: 54 alerts (22%)</li>
+                        <li>• Twitter/X: 21 alerts (8%)</li>
+                        <li>• Other: 12 alerts (5%)</li>
+                      </ul>
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-bold mb-2">
+                        Financial Impact Prevented:
+                      </p>
+                      <p className="text-sm ml-4">
+                        Estimated brand damage avoided: $2.4M (based on viral
+                        trajectory analysis)
+                      </p>
+                    </div>
+
+                    <Button className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
+                      Export Quarterly Report (PDF)
+                    </Button>
+                  </div>
+
+                  {/* Average Time to Removal */}
+                  <div className="mt-6">
+                    <p className="text-sm font-bold mb-2">
+                      Average Time to Removal: 18 hours
+                    </p>
+
+                    <p className="text-sm font-bold mb-2">
+                      Platform Performance Breakdown:
+                    </p>
+                    <ul className="text-sm space-y-1 ml-4">
+                      <li>├─ YouTube: 12h avg (94% success) 🟢</li>
+                      <li>├─ TikTok: 18h avg (87% success) 🟡</li>
+                      <li>├─ Instagram: 27h avg (78% success) 🟡</li>
+                      <li>└─ Twitter/X: 48h avg (92% success) 🟠</li>
+                    </ul>
+                  </div>
+
+                  {/* Most Common Threat Type */}
+                  <div className="mt-6">
+                    <p className="text-sm font-bold mb-2">
+                      Most Common Threat Type:
+                    </p>
+                    <ul className="text-sm space-y-1 ml-4">
+                      <li>1. Deepfake Endorsements (35%)</li>
+                      <li>2. Voice Clones (28%)</li>
+                      <li>3. Unauthorized Reposts (22%)</li>
+                      <li>4. Impersonation (15%)</li>
+                    </ul>
+                  </div>
                 </div>
 
-                <div>
-                  <p className="text-sm font-bold mb-2">
-                    Top Threat Categories:
-                  </p>
-                  <ul className="text-sm space-y-1 ml-4">
-                    <li>1. Deepfake endorsements (42%)</li>
-                    <li>2. Voice clones (commercial) (28%)</li>
-                    <li>3. Unauthorized reposts (18%)</li>
-                    <li>4. Intimate deepfakes (7%)</li>
-                    <li>5. Political misattribution (5%)</li>
-                  </ul>
-                </div>
+                {/* Generate Reports */}
+                <div className="border border-gray-200 rounded-lg p-6 mt-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">
+                    Generate Reports
+                  </h3>
 
-                <div>
-                  <p className="text-sm font-bold mb-2">Platform Breakdown:</p>
-                  <ul className="text-sm space-y-1 ml-4">
-                    <li>• YouTube: 89 alerts (36%)</li>
-                    <li>• TikTok: 71 alerts (29%)</li>
-                    <li>• Instagram: 54 alerts (22%)</li>
-                    <li>• Twitter/X: 21 alerts (8%)</li>
-                    <li>• Other: 12 alerts (5%)</li>
-                  </ul>
-                </div>
+                  <div className="space-y-3 mb-4">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="report-executive"
+                        className="w-4 h-4"
+                      />
+                      <label htmlFor="report-executive" className="text-sm">
+                        Monthly Executive Summary (For board/investor reports)
+                      </label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="report-forensic"
+                        className="w-4 h-4"
+                      />
+                      <label htmlFor="report-forensic" className="text-sm">
+                        Detailed Forensic Report (For legal team)
+                      </label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="report-takedown"
+                        className="w-4 h-4"
+                      />
+                      <label htmlFor="report-takedown" className="text-sm">
+                        Takedown History (For insurance claims, legal disputes)
+                      </label>
+                    </div>
+                  </div>
 
-                <div>
-                  <p className="text-sm font-bold mb-2">
-                    Financial Impact Prevented:
-                  </p>
-                  <p className="text-sm ml-4">
-                    Estimated brand damage avoided: $2.4M (based on viral
-                    trajectory analysis)
-                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    <Button className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
+                      Generate Report
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full sm:w-auto font-bold border-gray-300"
+                    >
+                      Email to Team
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full sm:w-auto font-bold border-gray-300"
+                    >
+                      Download
+                    </Button>
+                  </div>
                 </div>
-
-                <Button className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
-                  Export Quarterly Report (PDF)
-                </Button>
               </div>
 
-              {/* Average Time to Removal */}
-              <div className="mt-6">
-                <p className="text-sm font-bold mb-2">
-                  Average Time to Removal: 18 hours
-                </p>
-
-                <p className="text-sm font-bold mb-2">
-                  Platform Performance Breakdown:
-                </p>
-                <ul className="text-sm space-y-1 ml-4">
-                  <li>├─ YouTube: 12h avg (94% success) 🟢</li>
-                  <li>├─ TikTok: 18h avg (87% success) 🟡</li>
-                  <li>├─ Instagram: 27h avg (78% success) 🟡</li>
-                  <li>└─ Twitter/X: 48h avg (92% success) 🟠</li>
-                </ul>
-              </div>
-
-              {/* Most Common Threat Type */}
-              <div className="mt-6">
-                <p className="text-sm font-bold mb-2">
-                  Most Common Threat Type:
-                </p>
-                <ul className="text-sm space-y-1 ml-4">
-                  <li>1. Deepfake Endorsements (35%)</li>
-                  <li>2. Voice Clones (28%)</li>
-                  <li>3. Unauthorized Reposts (22%)</li>
-                  <li>4. Impersonation (15%)</li>
-                </ul>
-              </div>
+              {/* Need Help Section */}
+              <Card className="p-6 bg-white border border-gray-200 shadow-sm">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">
+                  Need Help?
+                </h3>
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    Contact Support
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    View Documentation
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    Request Training Session
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    Watch Demo Video
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    Read FAQ
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="font-bold border-gray-300"
+                  >
+                    Schedule Consultation with CSM
+                  </Button>
+                </div>
+              </Card>
             </div>
-
-            {/* Generate Reports */}
-            <div className="border border-gray-200 rounded-lg p-6 mt-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">
-                Generate Reports
-              </h3>
-
-              <div className="space-y-3 mb-4">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="report-executive"
-                    className="w-4 h-4"
-                  />
-                  <label htmlFor="report-executive" className="text-sm">
-                    Monthly Executive Summary (For board/investor reports)
-                  </label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="report-forensic"
-                    className="w-4 h-4"
-                  />
-                  <label htmlFor="report-forensic" className="text-sm">
-                    Detailed Forensic Report (For legal team)
-                  </label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="report-takedown"
-                    className="w-4 h-4"
-                  />
-                  <label htmlFor="report-takedown" className="text-sm">
-                    Takedown History (For insurance claims, legal disputes)
-                  </label>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                <Button className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
-                  Generate Report
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full sm:w-auto font-bold border-gray-300"
-                >
-                  Email to Team
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full sm:w-auto font-bold border-gray-300"
-                >
-                  Download
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Need Help Section */}
-          <Card className="p-6 bg-white border border-gray-200 shadow-sm">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Need Help?</h3>
-            <div className="flex flex-wrap gap-3">
-              <Button variant="outline" className="font-bold border-gray-300">
-                Contact Support
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                View Documentation
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                Request Training Session
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                Watch Demo Video
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                Read FAQ
-              </Button>
-              <Button variant="outline" className="font-bold border-gray-300">
-                Schedule Consultation with CSM
-              </Button>
-            </div>
-          </Card>
-        </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -18601,12 +18773,25 @@ export default function AgencyDashboard() {
   } | null>(null);
 
   // Initialize state from URL params
-  const [agencyMode, setAgencyModeState] = useState<"AI" | "IRL">(
-    (searchParams.get("mode") as "AI" | "IRL") || "AI",
-  );
-  const [activeTab, setActiveTabState] = useState(
-    searchParams.get("tab") || "dashboard",
-  );
+  const [agencyMode, setAgencyModeState] = useState<"AI" | "IRL">(() => {
+    const modeFromUrl = searchParams.get("mode") as "AI" | "IRL";
+    if (modeFromUrl === "AI" || modeFromUrl === "IRL") return modeFromUrl;
+    if (typeof window !== "undefined") {
+      const savedMode = window.localStorage.getItem("agencyDashboard_mode");
+      if (savedMode === "AI" || savedMode === "IRL") return savedMode;
+    }
+    return "AI";
+  });
+  const [activeTab, setActiveTabState] = useState(() => {
+    const tabFromUrl = searchParams.get("tab");
+    if (tabFromUrl) return tabFromUrl;
+    if (typeof window !== "undefined") {
+      return (
+        window.localStorage.getItem("agencyDashboard_activeTab") || "dashboard"
+      );
+    }
+    return "dashboard";
+  });
   // openTalentId: when set, RosterView auto-opens that talent's side modal
   const [openTalentId, setOpenTalentId] = useState<string | undefined>(
     searchParams.get("openTalentId") || undefined,
@@ -18642,10 +18827,18 @@ export default function AgencyDashboard() {
         return "All Talent";
     }
   };
-  const [activeSubTab, setActiveSubTabState] = useState(
-    normalizeSubTab(searchParams.get("subTab")) ||
-      getDefaultSubTab(searchParams.get("tab") || "dashboard"),
-  );
+  const [activeSubTab, setActiveSubTabState] = useState(() => {
+    const tab = searchParams.get("tab") || activeTab || "dashboard";
+    const subTabFromUrl = normalizeSubTab(searchParams.get("subTab"));
+    if (subTabFromUrl) return subTabFromUrl;
+    if (typeof window !== "undefined") {
+      const savedSubTab = normalizeSubTab(
+        window.localStorage.getItem("agencyDashboard_activeSubTab"),
+      );
+      if (savedSubTab) return savedSubTab;
+    }
+    return getDefaultSubTab(tab);
+  });
   const checkoutSuccess = searchParams.get("success") === "1";
   const checkoutSessionId = String(searchParams.get("session_id") || "").trim();
   const billingSyncRequested =
@@ -18666,9 +18859,34 @@ export default function AgencyDashboard() {
     }
   }, [searchParams, activeTab]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("agencyDashboard_mode", agencyMode);
+    window.localStorage.setItem("agencyDashboard_activeTab", activeTab);
+    window.localStorage.setItem("agencyDashboard_activeSubTab", activeSubTab);
+  }, [activeSubTab, activeTab, agencyMode]);
+
+  useEffect(() => {
+    if (searchParams.get("tab")) return;
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set("mode", agencyMode);
+        next.set("tab", activeTab || "dashboard");
+        if (activeSubTab) {
+          next.set("subTab", activeSubTab);
+        } else {
+          next.delete("subTab");
+        }
+        return next;
+      },
+      { replace: true, preventScrollReset: true },
+    );
+  }, [activeSubTab, activeTab, agencyMode, searchParams, setSearchParams]);
+
   const [expandedItems, setExpandedItems] = useState<string[]>(() => {
     const tabFromUrl = searchParams.get("tab");
-    return tabFromUrl ? [tabFromUrl] : ["dashboard"];
+    return tabFromUrl ? [tabFromUrl] : [activeTab || "dashboard"];
   });
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     const saved = localStorage.getItem("agency-sidebar-width");
@@ -20063,6 +20281,9 @@ export default function AgencyDashboard() {
         ? "AI"
         : mode;
     setAgencyModeState(resolvedMode);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("agencyDashboard_mode", resolvedMode);
+    }
     setSearchParams(
       (prev) => {
         const newParams = new URLSearchParams(prev);
@@ -20116,6 +20337,13 @@ export default function AgencyDashboard() {
         setActiveSubTabState(resolvedSubTab);
       });
     }
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("agencyDashboard_activeTab", tab);
+      window.localStorage.setItem(
+        "agencyDashboard_activeSubTab",
+        resolvedSubTab,
+      );
+    }
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev);
@@ -20136,6 +20364,12 @@ export default function AgencyDashboard() {
     startTransition(() => {
       setActiveSubTabState(normalizedSubTab);
     });
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(
+        "agencyDashboard_activeSubTab",
+        normalizedSubTab,
+      );
+    }
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev);
@@ -20152,6 +20386,13 @@ export default function AgencyDashboard() {
       setActiveTabState(tab);
       setActiveSubTabState(resolvedSubTab);
     });
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("agencyDashboard_activeTab", tab);
+      window.localStorage.setItem(
+        "agencyDashboard_activeSubTab",
+        resolvedSubTab,
+      );
+    }
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev);
@@ -22295,6 +22536,8 @@ export default function AgencyDashboard() {
                   }}
                 />
               )}
+            {activeTab === "protection" &&
+              activeSubTab === "Protection & Usage" && <ProtectionUsageView />}
             {activeTab === "messages" &&
               (hasProAccess ? (
                 <CommunicationHub

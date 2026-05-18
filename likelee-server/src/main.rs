@@ -124,9 +124,9 @@ async fn main() {
         "Cache layers initialized"
     );
 
-    let state = likelee_server::config::AppState {
+    let state = likelee_server::state::AppState {
         pg,
-        veriff: likelee_server::config::VeriffConfig {
+        veriff: likelee_server::state::VeriffConfig {
             base_url: cfg.veriff_base_url,
             api_key: cfg.veriff_api_key,
             shared_secret: cfg.veriff_shared_secret,
@@ -138,169 +138,177 @@ async fn main() {
         supabase_bucket_private: cfg.supabase_bucket_private.clone(),
         supabase_bucket_temp: cfg.supabase_bucket_temp.clone(),
         elevenlabs_api_key: cfg.elevenlabs_api_key.clone(),
-        stripe_secret_key: cfg.stripe_secret_key.clone(),
-        stripe_publishable_key: cfg.stripe_publishable_key.clone(),
-        stripe_client_id: cfg.stripe_client_id.clone(),
-        stripe_return_url: cfg.stripe_return_url.clone(),
-        stripe_refresh_url: cfg.stripe_refresh_url.clone(),
-        stripe_webhook_secret: cfg.stripe_webhook_secret.clone(),
-        stripe_agency_price_id: cfg.stripe_agency_price_id.clone(),
-        stripe_scale_price_id: cfg.stripe_scale_price_id.clone(),
-        stripe_licensing_basic_price_id: cfg.stripe_licensing_basic_price_id.clone(),
-        stripe_licensing_pro_price_id: cfg.stripe_licensing_pro_price_id.clone(),
-        stripe_licensing_enterprise_price_id: cfg.stripe_licensing_enterprise_price_id.clone(),
-        stripe_agency_basic_base_price_id: cfg.stripe_agency_basic_base_price_id.clone(),
-        stripe_agency_basic_base_annual_price_id: cfg
-            .stripe_agency_basic_base_annual_price_id
-            .clone(),
-        stripe_agency_basic_headcount_price_id: cfg.stripe_agency_basic_headcount_price_id.clone(),
-        stripe_agency_basic_headcount_annual_price_id: cfg
-            .stripe_agency_basic_headcount_annual_price_id
-            .clone(),
-        stripe_agency_pro_base_price_id: cfg.stripe_agency_pro_base_price_id.clone(),
-        stripe_creator_basic_price_id: cfg.stripe_creator_basic_price_id.clone(),
-        stripe_creator_pro_price_id: cfg.stripe_creator_pro_price_id.clone(),
-        stripe_creator_basic_annual_price_id: cfg.stripe_creator_basic_annual_price_id.clone(),
-        stripe_creator_pro_annual_price_id: cfg.stripe_creator_pro_annual_price_id.clone(),
-        stripe_agency_pro_base_annual_price_id: cfg.stripe_agency_pro_base_annual_price_id.clone(),
-        stripe_agency_pro_headcount_price_id: cfg.stripe_agency_pro_headcount_price_id.clone(),
-        stripe_agency_pro_headcount_annual_price_id: cfg
-            .stripe_agency_pro_headcount_annual_price_id
-            .clone(),
-        stripe_agency_irl_booking_price_id: cfg.stripe_agency_irl_booking_price_id.clone(),
-        stripe_agency_irl_booking_annual_price_id: cfg
-            .stripe_agency_irl_booking_annual_price_id
-            .clone(),
-        stripe_brand_basic_price_id: cfg.stripe_brand_basic_price_id.clone(),
-        stripe_brand_basic_annual_price_id: cfg.stripe_brand_basic_annual_price_id.clone(),
-        stripe_brand_pro_price_id: cfg.stripe_brand_pro_price_id.clone(),
-        stripe_brand_pro_annual_price_id: cfg.stripe_brand_pro_annual_price_id.clone(),
-        stripe_brand_studio_addon_price_id: cfg.stripe_brand_studio_addon_price_id.clone(),
-        stripe_checkout_success_url: if cfg.stripe_checkout_success_url.trim().is_empty() {
-            format!(
-                "{}/payment-success?session_id={{CHECKOUT_SESSION_ID}}",
-                cfg.frontend_url.trim().trim_end_matches('/')
-            )
-        } else {
-            cfg.stripe_checkout_success_url.trim().to_string()
-        },
-        stripe_checkout_cancel_url: if cfg.stripe_checkout_cancel_url.trim().is_empty() {
-            format!(
-                "{}/payment-cancelled",
-                cfg.frontend_url.trim().trim_end_matches('/')
-            )
-        } else {
-            cfg.stripe_checkout_cancel_url.trim().to_string()
-        },
-        stripe_licensing_success_url: if cfg.stripe_licensing_success_url.trim().is_empty() {
-            format!(
-                "{}/licensing/success?session_id={{CHECKOUT_SESSION_ID}}",
-                cfg.frontend_url.trim().trim_end_matches('/')
-            )
-        } else {
-            cfg.stripe_licensing_success_url.trim().to_string()
-        },
-        stripe_licensing_cancel_url: if cfg.stripe_licensing_cancel_url.trim().is_empty() {
-            format!(
-                "{}/licensing/cancel",
-                cfg.frontend_url.trim().trim_end_matches('/')
-            )
-        } else {
-            cfg.stripe_licensing_cancel_url.trim().to_string()
-        },
-        stripe_creator_success_url: if cfg.stripe_creator_success_url.trim().is_empty() {
-            format!(
-                "{}/CreatorSubscribe?success=1&session_id={{CHECKOUT_SESSION_ID}}",
-                cfg.frontend_url.trim().trim_end_matches('/')
-            )
-        } else {
-            cfg.stripe_creator_success_url.trim().to_string()
-        },
-        stripe_creator_cancel_url: if cfg.stripe_creator_cancel_url.trim().is_empty() {
-            format!(
-                "{}/CreatorSubscribe?canceled=1",
-                cfg.frontend_url.trim().trim_end_matches('/')
-            )
-        } else {
-            cfg.stripe_creator_cancel_url.trim().to_string()
-        },
+        stripe: likelee_server::state::StripeConfig {
+            secret_key: cfg.stripe_secret_key.clone(),
+            publishable_key: cfg.stripe_publishable_key.clone(),
+            client_id: cfg.stripe_client_id.clone(),
+            return_url: cfg.stripe_return_url.clone(),
+            refresh_url: cfg.stripe_refresh_url.clone(),
+            webhook_secret: cfg.stripe_webhook_secret.clone(),
 
-        stripe_studio_success_url: {
-            let url = if cfg.stripe_studio_success_url.trim().is_empty() {
+            agency_price_id: cfg.stripe_agency_price_id.clone(),
+            scale_price_id: cfg.stripe_scale_price_id.clone(),
+            licensing_basic_price_id: cfg.stripe_licensing_basic_price_id.clone(),
+            licensing_pro_price_id: cfg.stripe_licensing_pro_price_id.clone(),
+            licensing_enterprise_price_id: cfg.stripe_licensing_enterprise_price_id.clone(),
+
+            agency_basic_base_price_id: cfg.stripe_agency_basic_base_price_id.clone(),
+            agency_basic_base_annual_price_id: cfg.stripe_agency_basic_base_annual_price_id.clone(),
+            agency_basic_headcount_price_id: cfg.stripe_agency_basic_headcount_price_id.clone(),
+            agency_basic_headcount_annual_price_id: cfg
+                .stripe_agency_basic_headcount_annual_price_id
+                .clone(),
+            agency_pro_base_price_id: cfg.stripe_agency_pro_base_price_id.clone(),
+            creator_basic_price_id: cfg.stripe_creator_basic_price_id.clone(),
+            creator_pro_price_id: cfg.stripe_creator_pro_price_id.clone(),
+            creator_basic_annual_price_id: cfg.stripe_creator_basic_annual_price_id.clone(),
+            creator_pro_annual_price_id: cfg.stripe_creator_pro_annual_price_id.clone(),
+            agency_pro_base_annual_price_id: cfg.stripe_agency_pro_base_annual_price_id.clone(),
+            agency_pro_headcount_price_id: cfg.stripe_agency_pro_headcount_price_id.clone(),
+            agency_pro_headcount_annual_price_id: cfg
+                .stripe_agency_pro_headcount_annual_price_id
+                .clone(),
+            agency_irl_booking_price_id: cfg.stripe_agency_irl_booking_price_id.clone(),
+            agency_irl_booking_annual_price_id: cfg
+                .stripe_agency_irl_booking_annual_price_id
+                .clone(),
+            brand_basic_price_id: cfg.stripe_brand_basic_price_id.clone(),
+            brand_basic_annual_price_id: cfg.stripe_brand_basic_annual_price_id.clone(),
+            brand_pro_price_id: cfg.stripe_brand_pro_price_id.clone(),
+            brand_pro_annual_price_id: cfg.stripe_brand_pro_annual_price_id.clone(),
+            brand_studio_addon_price_id: cfg.stripe_brand_studio_addon_price_id.clone(),
+
+            checkout_success_url: if cfg.stripe_checkout_success_url.trim().is_empty() {
                 format!(
-                    "{}/studiosubscribe?success=1&session_id={{CHECKOUT_SESSION_ID}}",
+                    "{}/payment-success?session_id={{CHECKOUT_SESSION_ID}}",
                     cfg.frontend_url.trim().trim_end_matches('/')
                 )
             } else {
-                cfg.stripe_studio_success_url.trim().to_string()
-            };
-            info!("Stripe Studio Success URL: {}", url);
-            url
-        },
-        stripe_studio_cancel_url: {
-            let url = if cfg.stripe_studio_cancel_url.trim().is_empty() {
+                cfg.stripe_checkout_success_url.trim().to_string()
+            },
+            checkout_cancel_url: if cfg.stripe_checkout_cancel_url.trim().is_empty() {
                 format!(
-                    "{}/studiosubscribe?canceled=1",
+                    "{}/payment-cancelled",
                     cfg.frontend_url.trim().trim_end_matches('/')
                 )
             } else {
-                cfg.stripe_studio_cancel_url.trim().to_string()
-            };
-            info!("Stripe Studio Cancel URL: {}", url);
-            url
+                cfg.stripe_checkout_cancel_url.trim().to_string()
+            },
+            licensing_success_url: if cfg.stripe_licensing_success_url.trim().is_empty() {
+                format!(
+                    "{}/licensing/success?session_id={{CHECKOUT_SESSION_ID}}",
+                    cfg.frontend_url.trim().trim_end_matches('/')
+                )
+            } else {
+                cfg.stripe_licensing_success_url.trim().to_string()
+            },
+            licensing_cancel_url: if cfg.stripe_licensing_cancel_url.trim().is_empty() {
+                format!(
+                    "{}/licensing/cancel",
+                    cfg.frontend_url.trim().trim_end_matches('/')
+                )
+            } else {
+                cfg.stripe_licensing_cancel_url.trim().to_string()
+            },
+            creator_success_url: if cfg.stripe_creator_success_url.trim().is_empty() {
+                format!(
+                    "{}/CreatorSubscribe?success=1&session_id={{CHECKOUT_SESSION_ID}}",
+                    cfg.frontend_url.trim().trim_end_matches('/')
+                )
+            } else {
+                cfg.stripe_creator_success_url.trim().to_string()
+            },
+            creator_cancel_url: if cfg.stripe_creator_cancel_url.trim().is_empty() {
+                format!(
+                    "{}/CreatorSubscribe?canceled=1",
+                    cfg.frontend_url.trim().trim_end_matches('/')
+                )
+            } else {
+                cfg.stripe_creator_cancel_url.trim().to_string()
+            },
+
+            studio_success_url: {
+                let url = if cfg.stripe_studio_success_url.trim().is_empty() {
+                    format!(
+                        "{}/studiosubscribe?success=1&session_id={{CHECKOUT_SESSION_ID}}",
+                        cfg.frontend_url.trim().trim_end_matches('/')
+                    )
+                } else {
+                    cfg.stripe_studio_success_url.trim().to_string()
+                };
+                info!("Stripe Studio Success URL: {}", url);
+                url
+            },
+            studio_cancel_url: {
+                let url = if cfg.stripe_studio_cancel_url.trim().is_empty() {
+                    format!(
+                        "{}/studiosubscribe?canceled=1",
+                        cfg.frontend_url.trim().trim_end_matches('/')
+                    )
+                } else {
+                    cfg.stripe_studio_cancel_url.trim().to_string()
+                };
+                info!("Stripe Studio Cancel URL: {}", url);
+                url
+            },
+
+            studio_price_ids: cfg.stripe_studio_price_ids.clone(),
+            studio_lite_price_ids: cfg.stripe_studio_lite_price_ids.clone(),
+            studio_pro_price_ids: cfg.stripe_studio_pro_price_ids.clone(),
         },
-        stripe_studio_price_ids: cfg.stripe_studio_price_ids.clone(),
-        stripe_studio_lite_price_ids: cfg.stripe_studio_lite_price_ids.clone(),
-        stripe_studio_pro_price_ids: cfg.stripe_studio_pro_price_ids.clone(),
-        payouts_enabled: cfg.payouts_enabled,
-        payout_auto_approve_threshold_cents: cfg.payout_auto_approve_threshold_cents,
-        min_payout_amount_cents: cfg.min_payout_amount_cents,
-        instant_payouts_enabled: cfg.instant_payouts_enabled,
-        payout_fee_bps: cfg.payout_fee_bps,
-        payout_currency: cfg.payout_currency.clone(),
-        payout_allowed_currencies: cfg
-            .payout_allowed_currencies
-            .split(',')
-            .map(|s| s.trim().to_uppercase())
-            .filter(|s| !s.is_empty())
-            .collect(),
-
-        agency_payout_scheduler_enabled: cfg.agency_payout_scheduler_enabled,
-        agency_payout_scheduler_interval_secs: cfg.agency_payout_scheduler_interval_secs,
-
-        smtp_host: cfg.smtp_host.clone(),
-        smtp_port: cfg.smtp_port,
-        smtp_user: cfg.smtp_user.clone(),
-        smtp_password: cfg.smtp_password.clone(),
-        email_from: cfg.email_from.clone(),
-        email_contact_to: cfg.email_contact_to.clone(),
-
-        smtp_sales_host: cfg.smtp_sales_host.clone(),
-        smtp_sales_port: cfg.smtp_sales_port,
-        smtp_sales_user: cfg.smtp_sales_user.clone(),
-        smtp_sales_password: cfg.smtp_sales_password.clone(),
-        email_from_sales: cfg.email_from_sales.clone(),
-        email_sales_to: cfg.email_sales_to.clone(),
-
-        docuseal_api_key: cfg.docuseal_api_key.clone(),
-        docuseal_base_url: cfg.docuseal_api_url.clone(),
-        docuseal_api_url: cfg.docuseal_api_url.clone(),
-        docuseal_app_url: cfg.docuseal_app_url.clone(),
-        docuseal_webhook_url: cfg.docuseal_webhook_url.clone(),
-        docuseal_user_email: cfg.docuseal_user_email.clone(),
-        docuseal_master_template_id: cfg.docuseal_master_template_id.clone(),
-        docuseal_master_template_name: cfg.docuseal_master_template_name.clone(),
+        payout: likelee_server::state::PayoutConfig {
+            enabled: cfg.payouts_enabled,
+            auto_approve_threshold_cents: cfg.payout_auto_approve_threshold_cents,
+            min_amount_cents: cfg.min_payout_amount_cents,
+            instant_enabled: cfg.instant_payouts_enabled,
+            fee_bps: cfg.payout_fee_bps,
+            currency: cfg.payout_currency.clone(),
+            allowed_currencies: cfg
+                .payout_allowed_currencies
+                .split(',')
+                .map(|s| s.trim().to_uppercase())
+                .filter(|s| !s.is_empty())
+                .collect(),
+            agency_scheduler_enabled: cfg.agency_payout_scheduler_enabled,
+            agency_scheduler_interval_secs: cfg.agency_payout_scheduler_interval_secs,
+        },
+        smtp: likelee_server::state::SmtpConfig {
+            host: cfg.smtp_host.clone(),
+            port: cfg.smtp_port,
+            user: cfg.smtp_user.clone(),
+            password: cfg.smtp_password.clone(),
+            from: cfg.email_from.clone(),
+            contact_to: cfg.email_contact_to.clone(),
+        },
+        smtp_sales: likelee_server::state::SmtpSalesConfig {
+            host: cfg.smtp_sales_host.clone(),
+            port: cfg.smtp_sales_port,
+            user: cfg.smtp_sales_user.clone(),
+            password: cfg.smtp_sales_password.clone(),
+            from: cfg.email_from_sales.clone(),
+            to: cfg.email_sales_to.clone(),
+        },
+        docuseal: likelee_server::state::DocuSealConfig {
+            api_key: cfg.docuseal_api_key.clone(),
+            base_url: cfg.docuseal_api_url.clone(),
+            api_url: cfg.docuseal_api_url.clone(),
+            app_url: cfg.docuseal_app_url.clone(),
+            webhook_url: cfg.docuseal_webhook_url.clone(),
+            user_email: cfg.docuseal_user_email.clone(),
+            master_template_id: cfg.docuseal_master_template_id.clone(),
+            master_template_name: cfg.docuseal_master_template_name.clone(),
+        },
+        calendly: likelee_server::state::CalendlyConfig {
+            booking_url: cfg.calendly_booking_url.clone(),
+            webhook_signing_key: cfg.calendly_webhook_signing_key.clone(),
+            api_token: cfg.calendly_api_token.clone(),
+        },
 
         frontend_url: cfg.frontend_url.clone(),
 
         // Studio Provider API Keys
         fal_api_key: cfg.fal_api_key.clone(),
         fal_api_url: cfg.fal_api_url.clone(),
-
-        // Calendly Integration (IRL Booking)
-        calendly_booking_url: cfg.calendly_booking_url.clone(),
-        calendly_webhook_signing_key: cfg.calendly_webhook_signing_key.clone(),
-        calendly_api_token: cfg.calendly_api_token.clone(),
 
         // Cache Layers
         cache_l2,
@@ -335,7 +343,7 @@ async fn main() {
         state.clone(),
     ));
 
-    let app = likelee_server::router::build_router(state);
+    let app = likelee_server::app::build_router(state);
 
     let listener = tokio::net::TcpListener::bind(("0.0.0.0", port))
         .await

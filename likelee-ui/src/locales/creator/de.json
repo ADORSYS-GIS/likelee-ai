@@ -356,6 +356,10 @@
     "contracts": {
       "title": "Lizenzen & Verträge",
       "subtitle": "Verwalten Sie Ihre aktiven Verträge und Rechte",
+      "comingSoonBadge": "Demnächst",
+      "featurePreview": "Funktionsvorschau",
+      "comingSoonTitle": "Lizenzen & Verträge kommen bald",
+      "comingSoonDescription": "Wir bereiten einen eigenen Bereich für Vertragstransparenz, Lizenzverfolgung und Vereinbarungshistorie vor.",
       "welcome": {
         "title": "Willkommen!",
         "message": "Verwalten Sie hier Ihre aktiven Verträge. Jederzeit pausieren, widerrufen oder verlängern."

@@ -1142,7 +1142,9 @@ export function CreatePackageWizard({
                                       )}
                                     </Badge>
                                     <p className="text-[10px] text-gray-600 font-bold uppercase tracking-widest">
-                                      Selected
+                                      {t(
+                                        "agencyDashboard.packages.wizard.selectTalents.selected",
+                                      )}
                                     </p>
                                   </div>
                                 </div>
@@ -1443,33 +1445,59 @@ export function CreatePackageWizard({
                             Recipient Brand *
                           </Label>
                           {canViewConnections ? (
-                            <select
-                              value={selectedBrandId}
-                              onChange={(e) => {
-                                setSelectedBrandId(e.target.value);
-                              }}
-                              className="w-full h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium"
-                            >
-                              <option value="">Select a brand…</option>
-                              {(Array.isArray(connectedBrands)
-                                ? connectedBrands
-                                : []
-                              ).map((c: any) => {
-                                const id = String(c?.brand_id || "").trim();
-                                const label =
-                                  String(
-                                    c?.brands?.company_name || "",
-                                  ).trim() ||
-                                  String(c?.brands?.email || "").trim() ||
-                                  id;
-                                if (!id) return null;
-                                return (
-                                  <option key={id} value={id}>
-                                    {label}
-                                  </option>
+                            isOfferMode ? (
+                              (() => {
+                                const list = Array.isArray(connectedBrands)
+                                  ? connectedBrands
+                                  : [];
+                                const match = list.find(
+                                  (c: any) =>
+                                    String(c?.brand_id || "").trim() ===
+                                    String(selectedBrandId || "").trim(),
                                 );
-                              })}
-                            </select>
+                                const brandName =
+                                  String(
+                                    match?.brands?.company_name || "",
+                                  ).trim() ||
+                                  String(match?.brands?.email || "").trim() ||
+                                  "Selected Brand";
+                                return (
+                                  <Input
+                                    readOnly
+                                    value={brandName}
+                                    className="w-full h-12 bg-gray-50 border border-gray-200 rounded-lg px-4 font-medium text-gray-700 cursor-default"
+                                  />
+                                );
+                              })()
+                            ) : (
+                              <select
+                                value={selectedBrandId}
+                                onChange={(e) => {
+                                  setSelectedBrandId(e.target.value);
+                                }}
+                                className="w-full h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium"
+                              >
+                                <option value="">Select a brand…</option>
+                                {(Array.isArray(connectedBrands)
+                                  ? connectedBrands
+                                  : []
+                                ).map((c: any) => {
+                                  const id = String(c?.brand_id || "").trim();
+                                  const label =
+                                    String(
+                                      c?.brands?.company_name || "",
+                                    ).trim() ||
+                                    String(c?.brands?.email || "").trim() ||
+                                    id;
+                                  if (!id) return null;
+                                  return (
+                                    <option key={id} value={id}>
+                                      {label}
+                                    </option>
+                                  );
+                                })}
+                              </select>
+                            )
                           ) : (
                             <div className="bg-red-50 border border-red-200 p-4 rounded-lg flex items-center gap-3">
                               <Lock className="w-5 h-5 text-red-600" />
@@ -1513,9 +1541,9 @@ export function CreatePackageWizard({
                                     Client Contact
                                   </Label>
                                   <Input
-                                    readOnly
+                                    readOnly={isOfferMode}
                                     value={displayName}
-                                    className="h-12 bg-gray-50 border border-gray-200 rounded-lg px-4 font-medium text-gray-700 cursor-default"
+                                    className={`h-12 bg-gray-50 border border-gray-200 rounded-lg px-4 font-medium ${isOfferMode ? "text-gray-700 cursor-default" : "text-gray-700 cursor-not-allowed"}`}
                                   />
                                 </div>
                                 <div className="space-y-3">
@@ -1523,10 +1551,10 @@ export function CreatePackageWizard({
                                     Delivery Email
                                   </Label>
                                   <Input
-                                    readOnly
+                                    readOnly={isOfferMode}
                                     type="email"
                                     value={displayEmail}
-                                    className="h-12 bg-gray-50 border border-gray-200 rounded-lg px-4 font-medium text-gray-700 cursor-default"
+                                    className={`h-12 bg-gray-50 border border-gray-200 rounded-lg px-4 font-medium ${isOfferMode ? "text-gray-700 cursor-default" : "text-gray-700 cursor-not-allowed"}`}
                                   />
                                   <p className="text-xs text-gray-500 font-medium">
                                     Delivered via inbox (email is
@@ -1739,7 +1767,8 @@ export function CreatePackageWizard({
                 t("agencyDashboard.packages.wizard.buttons.cancel")
               ) : (
                 <>
-                  <ArrowLeft className="w-4 h-4 mr-2" /> Back
+                  <ArrowLeft className="w-4 h-4 mr-2" />{" "}
+                  {t("agencyDashboard.packages.wizard.buttons.back")}
                 </>
               )}
             </Button>

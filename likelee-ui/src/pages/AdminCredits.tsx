@@ -50,7 +50,15 @@ export default function AdminCredits() {
   });
 
   const addCreditsMutation = useMutation({
-    mutationFn: async ({ email, amount, plan }) => {
+    mutationFn: async ({
+      email,
+      amount,
+      plan,
+    }: {
+      email: string;
+      amount: number;
+      plan: string;
+    }) => {
       const existing = await base44.entities.StudioCredits.filter({
         user_email: email,
       });
@@ -77,7 +85,13 @@ export default function AdminCredits() {
   });
 
   const removeCreditsMutation = useMutation({
-    mutationFn: async ({ email, amount }) => {
+    mutationFn: async ({
+      email,
+      amount,
+    }: {
+      email: string;
+      amount: number;
+    }) => {
       const existing = await base44.entities.StudioCredits.filter({
         user_email: email,
       });

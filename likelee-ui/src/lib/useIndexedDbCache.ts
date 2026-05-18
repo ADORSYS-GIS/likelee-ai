@@ -28,6 +28,8 @@ import {
   type CachedTalent,
 } from "./indexedDb";
 import { registerBackgroundSync } from "./swRegistration";
+import { base44 } from "@/api/base44Client";
+import { getAgencyRoster } from "@/api/functions";
 
 interface UseIndexedDbQueryOptions<T> extends Omit<
   UseQueryOptions<T, Error, T>,
@@ -151,7 +153,6 @@ export function useAgencyRosterIndexedDb(agencyId: string | undefined) {
   const query = useIndexedDbQuery<{ talents: CachedTalent[] }>({
     queryKey,
     queryFn: async () => {
-      const { getAgencyRoster } = await import("@/api/functions");
       const resp = await getAgencyRoster();
       return { talents: (resp as any)?.talents || [] };
     },
@@ -191,7 +192,6 @@ export function useJobsIndexedDb(agencyId: string | undefined) {
   return useIndexedDbQuery<{ jobs: any[] }>({
     queryKey: ["agency-job-invites", agencyId] as const,
     queryFn: async () => {
-      const { base44 } = await import("@/api/base44Client");
       const resp = await base44.get<{ jobs?: any[] }>("/api/jobs", {
         params: { limit: 100 },
       });

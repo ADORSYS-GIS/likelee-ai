@@ -140,6 +140,7 @@ export default function JobBoardContent() {
   const loading = jobsQuery.isLoading && !jobsQuery.data;
   const error = jobsQuery.error?.message ?? null;
   const totalCount = jobs.length;
+  const fetchJobs = () => jobsQuery.refetch();
 
   useEffect(() => {
     checkUser();

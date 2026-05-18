@@ -58,17 +58,18 @@ export const LicensingRequestsTab = ({
     queryFn: async () => {
       const resp = await getAgencyLicensingRequests();
       // Ensure we always return an array even if backend returns an object or null
-      return Array.isArray(resp) ? resp : (resp as any)?.data || [];
+      const rows = Array.isArray(resp) ? resp : (resp as any)?.data || [];
+      // Filter out campaign-offer billing stubs — they are internal accounting
+      // records and have nothing to do with actual licensing requests.
+      return rows.filter(
+        (r: any) => String(r?.context_type || "").toLowerCase() !== "campaign",
+      );
     },
   });
 
   const [sendingPaymentLink, setSendingPaymentLink] = useState<
     Record<string, boolean>
   >({});
-  const [counterOfferModalOpen, setCounterOfferModalOpen] = useState(false);
-  const [counterOfferMessage, setCounterOfferMessage] = useState("");
-  const [groupToCounter, setGroupToCounter] = useState<any>(null);
-  const [sendingCounterOffer, setSendingCounterOffer] = useState(false);
   const [activeRequestTab, setActiveRequestTab] = useState<
     "Active" | "Archive"
   >("Active");
@@ -85,14 +86,31 @@ export const LicensingRequestsTab = ({
   const [deletingGroup, setDeletingGroup] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [groupToDelete, setGroupToDelete] = useState<any>(null);
-  const [decliningGroup, setDecliningGroup] = useState<string | null>(null);
-  const [showDeclineConfirm, setShowDeclineConfirm] = useState(false);
-  const [groupToDecline, setGroupToDecline] = useState<any>(null);
 
   const statusStyle = (status: string) => {
     if (status === "approved") return "bg-green-100 text-green-700";
     if (status === "rejected") return "bg-red-100 text-red-700";
+    // DocuSeal submission statuses
+    if (status === "signed" || status === "completed")
+      return "bg-green-100 text-green-700";
+    if (status === "sent") return "bg-blue-100 text-blue-700";
+    if (status === "opened") return "bg-indigo-100 text-indigo-700";
+    if (status === "declined") return "bg-red-100 text-red-700";
+    if (status === "draft") return "bg-slate-100 text-slate-600";
     return "bg-gray-100 text-gray-700";
+  };
+
+  const submissionStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      draft: "Draft",
+      sent: "Awaiting Signature",
+      opened: "Opened",
+      signed: "Signed",
+      completed: "Signed",
+      declined: "Declined",
+      archived: "Archived",
+    };
+    return labels[status.toLowerCase()] ?? status;
   };
 
   const statusLabel = (status: string) =>
@@ -108,126 +126,6 @@ export const LicensingRequestsTab = ({
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     });
-  };
-
-  const handleDecline = async (group: any) => {
-    setDecliningGroup(group.group_key);
-    try {
-      await updateAgencyLicensingRequestsStatus({
-        licensing_request_ids: (group?.talents || [])
-          .map((t: any) => t.licensing_request_id)
-          .filter(Boolean),
-        status: "rejected",
-      });
-      // Fire-and-forget cache invalidation
-      queryClient.invalidateQueries({
-        queryKey: ["agency", "licensing-requests"],
-      });
-      toast({
-        title: t("agencyDashboard.licensingRequests.messages.requestDeclined"),
-        description: t(
-          "agencyDashboard.licensingRequests.messages.requestDeclinedDescription",
-        ),
-      });
-    } catch (e: any) {
-      toast({
-        title: t("agencyDashboard.licensingRequests.messages.updateFailed"),
-        description:
-          e?.message ||
-          t("agencyDashboard.licensingRequests.messages.couldNotUpdate"),
-        variant: "destructive" as any,
-      });
-    } finally {
-      setDecliningGroup(null);
-      setShowDeclineConfirm(false);
-      setGroupToDecline(null);
-    }
-  };
-
-  const handleSendCounterOffer = async () => {
-    if (!groupToCounter || !counterOfferMessage.trim()) return;
-    setSendingCounterOffer(true);
-    try {
-      const ids = (groupToCounter?.talents || [])
-        .map((t: any) => t.licensing_request_id)
-        .filter(Boolean);
-      await updateAgencyLicensingRequestsStatus({
-        licensing_request_ids: ids,
-        status: "negotiating",
-        notes: counterOfferMessage,
-      });
-      // Fire-and-forget cache invalidation
-      queryClient.invalidateQueries({
-        queryKey: ["agency", "licensing-requests"],
-      });
-      toast({
-        title: t("agencyDashboard.licensingRequests.messages.counterOfferSent"),
-        description: t(
-          "agencyDashboard.licensingRequests.messages.clientNotified",
-        ),
-      });
-      setCounterOfferModalOpen(false);
-      setCounterOfferMessage("");
-      setGroupToCounter(null);
-    } catch (e: any) {
-      toast({
-        title: t(
-          "agencyDashboard.licensingRequests.messages.failedToSendCounterOffer",
-        ),
-        description:
-          e?.message ||
-          t(
-            "agencyDashboard.licensingRequests.messages.couldNotSendCounterOffer",
-          ),
-        variant: "destructive" as any,
-      });
-    } finally {
-      setSendingCounterOffer(false);
-    }
-  };
-
-  const updateGroupStatus = async (
-    group: any,
-    status: "pending" | "approved" | "rejected" | "negotiating" | "archived",
-    notes?: string,
-  ) => {
-    const ids = (group?.talents || [])
-      .map((t: any) => t.licensing_request_id)
-      .filter(Boolean);
-    if (!ids.length) return;
-
-    try {
-      await updateAgencyLicensingRequestsStatus({
-        licensing_request_ids: ids,
-        status,
-        notes,
-      });
-      // Fire-and-forget cache invalidation
-      queryClient.invalidateQueries({
-        queryKey: ["agency", "licensing-requests"],
-      });
-      if (status === "negotiating") {
-        setCounterOfferModalOpen(false);
-        setCounterOfferMessage("");
-        setGroupToCounter(null);
-        toast({
-          title: t(
-            "agencyDashboard.licensingRequests.messages.counterOfferSent",
-          ),
-          description: t(
-            "agencyDashboard.licensingRequests.messages.clientNotified",
-          ),
-        });
-      }
-    } catch (e: any) {
-      toast({
-        title: t("agencyDashboard.licensingRequests.messages.updateFailed"),
-        description:
-          e?.message ||
-          t("agencyDashboard.licensingRequests.messages.couldNotUpdate"),
-        variant: "destructive" as any,
-      });
-    }
   };
 
   const handleSendPaymentLink = async (group: any) => {
@@ -611,9 +509,13 @@ export const LicensingRequestsTab = ({
                   </p>
                 </div>
                 <span
-                  className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${statusStyle(group.status)}`}
+                  className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${statusStyle(group.submission_id ? group.submission_status || group.status : group.status)}`}
                 >
-                  {statusLabel(group.status)}
+                  {group.submission_id
+                    ? submissionStatusLabel(
+                        group.submission_status || group.status,
+                      )
+                    : statusLabel(group.status)}
                 </span>
               </div>
 
@@ -687,205 +589,82 @@ export const LicensingRequestsTab = ({
                 </div>
               </div>
 
-              {group.status === "approved" ? (
-                <div>
-                  <Button
-                    onClick={() => handleSendPaymentLink(group)}
-                    disabled={sendingPaymentLink[group.group_key]}
-                    className="w-full font-bold h-10 rounded-md flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white shadow-lg shadow-indigo-200"
-                  >
-                    {sendingPaymentLink[group.group_key] ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />{" "}
-                        {t("agencyDashboard.licensingRequests.buttons.sending")}
-                      </>
-                    ) : group.payment_link_id || group.payment_link_url ? (
-                      <>
-                        <Send className="w-4 h-4" />{" "}
-                        {t(
-                          "agencyDashboard.licensingRequests.buttons.resendPaymentLink",
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4" />{" "}
-                        {t(
-                          "agencyDashboard.licensingRequests.buttons.sendPaymentLink",
-                        )}
-                      </>
-                    )}
-                  </Button>
-                </div>
-              ) : activeRequestTab === "Archive" ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => updateGroupStatus(group, "pending")}
-                    className="border-gray-300 text-gray-700 font-bold h-10 rounded-md flex items-center justify-center gap-2"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                    {t(
-                      "agencyDashboard.licensingRequests.buttons.recoverToActive",
-                    )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setGroupToDelete(group);
-                      setShowDeleteConfirm(true);
-                    }}
-                    disabled={deletingGroup === group.group_key}
-                    className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-10 rounded-md flex items-center justify-center gap-2"
-                  >
-                    {deletingGroup === group.group_key ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        {t(
-                          "agencyDashboard.licensingRequests.messages.deleting",
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <Trash2 className="w-4 h-4" />
-                        {t(
-                          "agencyDashboard.licensingRequests.actions.deletePermanently",
-                        )}
-                      </>
-                    )}
-                  </Button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Button
-                    onClick={() => handleSendPaymentLink(group)}
-                    disabled={sendingPaymentLink[group.group_key]}
-                    className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-10 rounded-md flex items-center justify-center gap-2"
-                  >
-                    {sendingPaymentLink[group.group_key] ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />{" "}
-                        {t("agencyDashboard.licensingRequests.buttons.sending")}
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4" />{" "}
-                        {t(
-                          "agencyDashboard.licensingRequests.actionButtons.sendPaymentLink",
-                        )}
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setGroupToCounter(group);
-                      setCounterOfferModalOpen(true);
-                    }}
-                    className="border-gray-300 text-gray-700 font-bold h-10 rounded-md"
-                  >
-                    {t(
-                      "agencyDashboard.licensingRequests.actionButtons.counterOffer",
-                    )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setGroupToDecline(group);
-                      setShowDeclineConfirm(true);
-                    }}
-                    disabled={decliningGroup === group.group_key}
-                    className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-10 rounded-md flex items-center justify-center gap-2"
-                  >
-                    {decliningGroup === group.group_key ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        {t(
-                          "agencyDashboard.licensingRequests.declineModal.declining",
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
-                          <span className="text-[10px]">✕</span>
-                        </div>
-                        {t(
-                          "agencyDashboard.licensingRequests.actionButtons.decline",
-                        )}
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )}
+              {
+                group.status === "approved" ? (
+                  <div>
+                    <Button
+                      onClick={() => handleSendPaymentLink(group)}
+                      disabled={sendingPaymentLink[group.group_key]}
+                      className="w-full font-bold h-10 rounded-md flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white shadow-lg shadow-indigo-200"
+                    >
+                      {sendingPaymentLink[group.group_key] ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />{" "}
+                          {t(
+                            "agencyDashboard.licensingRequests.buttons.sending",
+                          )}
+                        </>
+                      ) : group.payment_link_id || group.payment_link_url ? (
+                        <>
+                          <Send className="w-4 h-4" />{" "}
+                          {t(
+                            "agencyDashboard.licensingRequests.buttons.resendPaymentLink",
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4" />{" "}
+                          {t(
+                            "agencyDashboard.licensingRequests.buttons.sendPaymentLink",
+                          )}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                ) : activeRequestTab === "Archive" ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => updateGroupStatus(group, "pending")}
+                      className="border-gray-300 text-gray-700 font-bold h-10 rounded-md flex items-center justify-center gap-2"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      {t(
+                        "agencyDashboard.licensingRequests.buttons.recoverToActive",
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setGroupToDelete(group);
+                        setShowDeleteConfirm(true);
+                      }}
+                      disabled={deletingGroup === group.group_key}
+                      className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-10 rounded-md flex items-center justify-center gap-2"
+                    >
+                      {deletingGroup === group.group_key ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          {t(
+                            "agencyDashboard.licensingRequests.messages.deleting",
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="w-4 h-4" />
+                          {t(
+                            "agencyDashboard.licensingRequests.actions.deletePermanently",
+                          )}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                ) : group.submission_id || !group.brand_id ? null : null // the agency is waiting on the client to sign. Show nothing. // Agency-initiated via SubmissionWizard — no brand actions needed,
+              }
             </Card>
           ))}
         </div>
 
-        <Dialog
-          open={counterOfferModalOpen}
-          onOpenChange={setCounterOfferModalOpen}
-        >
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>
-                {t("agencyDashboard.licensingRequests.counterOfferModal.title")}
-              </DialogTitle>
-              <DialogDescription>
-                {t(
-                  "agencyDashboard.licensingRequests.counterOfferModal.description",
-                )}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4 py-2">
-              <div className="space-y-2">
-                <Label>
-                  {t(
-                    "agencyDashboard.licensingRequests.counterOfferModal.messageLabel",
-                  )}
-                </Label>
-                <Textarea
-                  value={counterOfferMessage}
-                  onChange={(e) => setCounterOfferMessage(e.target.value)}
-                  placeholder={t(
-                    "agencyDashboard.licensingRequests.counterOfferModal.messagePlaceholder",
-                  )}
-                  rows={5}
-                  className="resize-none"
-                />
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setCounterOfferModalOpen(false)}
-                className="font-bold"
-              >
-                {t(
-                  "agencyDashboard.licensingRequests.counterOfferModal.cancel",
-                )}
-              </Button>
-              <Button
-                onClick={handleSendCounterOffer}
-                disabled={!counterOfferMessage.trim() || sendingCounterOffer}
-                className="bg-indigo-500 hover:bg-indigo-500 text-white font-bold"
-              >
-                {sendingCounterOffer ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    {t(
-                      "agencyDashboard.licensingRequests.messages.sendingCounterOffer",
-                    )}
-                  </>
-                ) : (
-                  t("agencyDashboard.licensingRequests.counterOfferModal.send")
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Filter Dialog */}
         <Dialog open={showFilterDialog} onOpenChange={setShowFilterDialog}>
           <DialogContent className="max-w-md">
             <DialogHeader>
@@ -1070,67 +849,6 @@ export const LicensingRequestsTab = ({
                     <Trash2 className="w-4 h-4 mr-2" />
                     {t("agencyDashboard.licensingRequests.deleteModal.delete")}
                   </>
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Decline Confirmation Dialog */}
-        <Dialog open={showDeclineConfirm} onOpenChange={setShowDeclineConfirm}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>
-                {t("agencyDashboard.licensingRequests.declineModal.title")}
-              </DialogTitle>
-              <DialogDescription>
-                {t(
-                  "agencyDashboard.licensingRequests.declineModal.description",
-                )}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="py-4">
-              <p className="text-sm text-gray-600">
-                {t(
-                  "agencyDashboard.licensingRequests.declineModal.confirmQuestion",
-                )}{" "}
-                <span className="font-semibold">
-                  {groupToDecline?.brand_name ||
-                    t(
-                      "agencyDashboard.licensingRequests.declineModal.thisBrand",
-                    )}
-                </span>
-                .
-              </p>
-            </div>
-
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowDeclineConfirm(false);
-                  setGroupToDecline(null);
-                }}
-                className="font-bold"
-              >
-                {t("agencyDashboard.licensingRequests.declineModal.cancel")}
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => handleDecline(groupToDecline)}
-                disabled={decliningGroup === groupToDecline?.group_key}
-                className="font-bold"
-              >
-                {decliningGroup === groupToDecline?.group_key ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    {t(
-                      "agencyDashboard.licensingRequests.declineModal.declining",
-                    )}
-                  </>
-                ) : (
-                  t("agencyDashboard.licensingRequests.declineModal.yesDecline")
                 )}
               </Button>
             </DialogFooter>

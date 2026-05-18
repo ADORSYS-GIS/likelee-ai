@@ -17,11 +17,11 @@ use super::types::{
 };
 use crate::{
     auth::AuthUser,
-    config::AppState,
-    email,
-    entitlements::{
+    billing::entitlements::{
         format_seat_limit_error_with_upgrade, get_agency_seat_limit_info, get_brand_seat_limit_info,
     },
+    email,
+    state::AppState,
 };
 use axum::{
     extract::{Path, Query, State},

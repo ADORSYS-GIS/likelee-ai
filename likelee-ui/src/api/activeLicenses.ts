@@ -19,7 +19,6 @@ export interface ActiveLicense {
   modifications_allowed?: string;
   license_type: string;
   brand: string;
-  start_date?: string;
   end_date?: string;
   days_left?: number;
   usage_scope: string;

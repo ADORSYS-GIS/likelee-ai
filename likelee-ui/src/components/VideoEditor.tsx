@@ -208,7 +208,7 @@ export default function VideoEditor({ clips, onAddClip, type = "video" }) {
                   onChange={(e) => {
                     if (videoRef.current) {
                       videoRef.current.currentTime = e.target.value;
-                      setCurrentTime(e.target.value);
+                      setCurrentTime(Number(e.target.value));
                     }
                   }}
                   className="w-full"
