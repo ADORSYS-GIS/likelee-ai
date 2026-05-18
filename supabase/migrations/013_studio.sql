@@ -2,6 +2,9 @@
 -- Consolidated migration for studio domain (AI generation)
 -- Source files: 2026-02-26_studio_integration.sql, 2026-03-02_studio_wallet_current_plan.sql,
 -- 2026-03-09_studio_upscaler_cost.sql, 2026-04-14_01_studio_credit_session_unique.sql
+--
+-- FIXED (2026-05-18): Added missing columns per PR review:
+-- studio_wallets: user_id, balance (for backward compatibility with legacy wallet schema)
 
 BEGIN;
 
@@ -10,37 +13,42 @@ BEGIN;
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS public.studio_wallets (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    
-    -- Owner (polymorphic - can be agency or brand)
-    owner_type text NOT NULL CHECK (owner_type IN ('agency', 'brand', 'creator')),
-    owner_id uuid NOT NULL,
-    
+
+    -- Legacy user_id (for backward compatibility with creator wallets)
+    user_id uuid UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
+
+    -- Owner (polymorphic - can be agency, brand, or creator)
+    owner_type text CHECK (owner_type IN ('agency', 'brand', 'creator')),
+    owner_id uuid,
+
     -- Current Plan
     current_plan text NOT NULL DEFAULT 'free' CHECK (current_plan IN ('free', 'basic', 'pro', 'enterprise')),
     plan_started_at timestamptz,
     plan_expires_at timestamptz,
-    
+
     -- Balance (credits)
+    balance bigint NOT NULL DEFAULT 0 CHECK (balance >= 0),
     credits_balance integer NOT NULL DEFAULT 0,
     credits_reserved integer NOT NULL DEFAULT 0,
-    
+
     -- Billing
     stripe_customer_id text,
     stripe_subscription_id text,
-    
+
     -- Settings
     auto_recharge boolean DEFAULT false,
     auto_recharge_threshold integer DEFAULT 10,
     auto_recharge_amount integer DEFAULT 100,
-    
+
     -- Usage tracking
     total_generations integer DEFAULT 0,
     total_credits_used integer DEFAULT 0,
-    
+
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now()
 );
 
+CREATE INDEX IF NOT EXISTS idx_studio_wallets_user_id ON public.studio_wallets(user_id);
 CREATE INDEX IF NOT EXISTS idx_studio_wallets_owner ON public.studio_wallets(owner_type, owner_id);
 CREATE INDEX IF NOT EXISTS idx_studio_wallets_stripe_customer ON public.studio_wallets(stripe_customer_id);
 CREATE INDEX IF NOT EXISTS idx_studio_wallets_plan ON public.studio_wallets(current_plan);

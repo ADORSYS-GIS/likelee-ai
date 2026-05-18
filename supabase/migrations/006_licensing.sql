@@ -7,7 +7,14 @@
 -- 0040_agency_embedded_signing.sql, 0043_add_talent_ids_to_licensing_requests.sql,
 -- 0045_licensing_log_rotation_archival.sql, 20260218_add_talent_id_to_license_submissions.sql,
 -- 20260218_add_talent_ids_array_to_license_submissions.sql, 2026-03-04_weekly_licensing_rates_rollout.sql,
--- 2026-03-21_brand_license_requests_consolidated.sql, 2026-05-05_licensing_requests_add_archived_status.sql
+-- 2026-03-21_brand_license_requests_consolidated.sql, 2026-05-05_licensing_requests_add_archived_status.sql,
+-- 2026-03-27_marketplace_agency_creator_contracts.sql
+--
+-- FIXED (2026-05-18): Added missing columns per PR review:
+-- license_submissions: client_id, talent_names, license_fee, duration_days, start_date,
+--   custom_terms, agency_submitter_slug, docuseal_submission_id, docuseal_slug,
+--   docuseal_template_id, signed_document_url, sent_at, opened_at, declined_at, decline_reason
+-- ADDED: agency_creator_marketplace_contracts table with all DocuSeal columns
 
 BEGIN;
 
@@ -150,10 +157,12 @@ CREATE TABLE IF NOT EXISTS public.license_submissions (
     brand_id uuid REFERENCES public.brands(id) ON DELETE SET NULL,
     licensing_request_id uuid REFERENCES public.licensing_requests(id) ON DELETE SET NULL,
     brand_request_id uuid REFERENCES public.brand_license_requests(id) ON DELETE SET NULL,
+    client_id uuid REFERENCES public.agency_clients(id) ON DELETE SET NULL,
     
     -- Subject Talent
-    talent_id uuid REFERENCES public.agency_users(id) ON DELETE CASCADE,
+    talent_id uuid REFERENCES public.agency_users(id) ON DELETE SET NULL,
     talent_ids uuid[],
+    talent_names text,
     
     -- Submission Details
     client_name text,
@@ -163,18 +172,33 @@ CREATE TABLE IF NOT EXISTS public.license_submissions (
     
     -- Pricing
     proposed_price integer,
+    license_fee bigint,
+    duration_days integer,
+    start_date date,
+    custom_terms text,
     
     -- Brand Request
     requires_agency_signature boolean DEFAULT false,
     agency_submitter_id uuid REFERENCES public.agencies(id) ON DELETE SET NULL,
+    agency_submitter_slug text,
+    
+    -- DocuSeal Integration
+    docuseal_submission_id integer,
+    docuseal_slug text,
+    docuseal_template_id integer,
     
     -- Status
-    status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'under_review', 'approved', 'rejected', 'converted')),
+    status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'pending', 'sent', 'opened', 'under_review', 'approved', 'rejected', 'signed', 'declined', 'archived', 'completed', 'converted')),
     archived_at timestamptz,
     
     -- Contract
     contract_url text,
+    signed_document_url text,
+    sent_at timestamptz,
+    opened_at timestamptz,
     signed_at timestamptz,
+    declined_at timestamptz,
+    decline_reason text,
     
     -- Payout tracking
     payout_id uuid,
@@ -360,5 +384,81 @@ CREATE TRIGGER trigger_license_submissions_updated_at
     BEFORE UPDATE ON public.license_submissions
     FOR EACH ROW
     EXECUTE FUNCTION public.update_license_submissions_updated_at();
+
+-- ============================================================================
+-- 9. AGENCY-CREATOR MARKETPLACE CONTRACTS (from 2026-03-27)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.agency_creator_marketplace_contracts (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
+    creator_id uuid NOT NULL REFERENCES public.creators(id) ON DELETE CASCADE,
+    invite_id uuid REFERENCES public.creator_agency_invites(id) ON DELETE SET NULL,
+    template_id uuid REFERENCES public.license_templates(id) ON DELETE SET NULL,
+    template_name text,
+    contract_body text NOT NULL DEFAULT '',
+    contract_body_format text NOT NULL DEFAULT 'markdown'
+        CHECK (contract_body_format IN ('markdown', 'html')),
+    rendered_contract_body text,
+    commission_rate numeric(10, 2) NOT NULL
+        CHECK (commission_rate >= 0 AND commission_rate <= 100),
+    valid_from date NOT NULL,
+    valid_until date NOT NULL,
+    placeholder_values jsonb NOT NULL DEFAULT '{}'::jsonb,
+    status text NOT NULL DEFAULT 'draft'
+        CHECK (status IN ('draft', 'pending_signature', 'active', 'expired', 'declined', 'voided')),
+    docuseal_submission_id integer,
+    docuseal_template_id integer,
+    docuseal_status text NOT NULL DEFAULT 'draft',
+    agency_submitter_id bigint,
+    agency_submitter_slug text,
+    agency_embed_src text,
+    creator_submitter_id bigint,
+    creator_submitter_slug text,
+    signed_document_url text,
+    sent_at timestamptz,
+    signed_at timestamptz,
+    last_synced_at timestamptz,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    CONSTRAINT agency_creator_marketplace_contracts_valid_window_check
+        CHECK (valid_until >= valid_from)
+);
+
+CREATE INDEX IF NOT EXISTS idx_agency_creator_marketplace_contracts_agency_creator
+    ON public.agency_creator_marketplace_contracts (agency_id, creator_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_agency_creator_marketplace_contracts_creator_status
+    ON public.agency_creator_marketplace_contracts (creator_id, status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_agency_creator_marketplace_contracts_invite
+    ON public.agency_creator_marketplace_contracts (invite_id);
+CREATE INDEX IF NOT EXISTS idx_agency_creator_marketplace_contracts_docuseal_submission
+    ON public.agency_creator_marketplace_contracts (docuseal_submission_id);
+
+ALTER TABLE public.agency_creator_marketplace_contracts ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Agencies can view marketplace creator contracts" ON public.agency_creator_marketplace_contracts;
+CREATE POLICY "Agencies can view marketplace creator contracts"
+    ON public.agency_creator_marketplace_contracts
+    FOR SELECT
+    USING (agency_id = auth.uid());
+
+DROP POLICY IF EXISTS "Agencies can manage marketplace creator contracts" ON public.agency_creator_marketplace_contracts;
+CREATE POLICY "Agencies can manage marketplace creator contracts"
+    ON public.agency_creator_marketplace_contracts
+    FOR ALL
+    USING (agency_id = auth.uid())
+    WITH CHECK (agency_id = auth.uid());
+
+DROP POLICY IF EXISTS "Creators can view their marketplace creator contracts" ON public.agency_creator_marketplace_contracts;
+CREATE POLICY "Creators can view their marketplace creator contracts"
+    ON public.agency_creator_marketplace_contracts
+    FOR SELECT
+    USING (creator_id = auth.uid());
+
+DROP POLICY IF EXISTS "Creators can update their marketplace creator contracts" ON public.agency_creator_marketplace_contracts;
+CREATE POLICY "Creators can update their marketplace creator contracts"
+    ON public.agency_creator_marketplace_contracts
+    FOR UPDATE
+    USING (creator_id = auth.uid())
+    WITH CHECK (creator_id = auth.uid());
 
 COMMIT;

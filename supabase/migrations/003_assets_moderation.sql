@@ -3,6 +3,10 @@
 -- Source files: 0003_assets_storage_moderation.sql, 0007_agency_talent_management.sql (digitals),
 -- 0020_voice_models_allow_agencies.sql, 2026-04-15_storage_assets_registry.sql,
 -- 2026-04-21_storage_assets_new_context_types.sql
+--
+-- FIXED (2026-05-18): Added missing columns per PR review:
+-- storage_assets: original_file_name, checksum_sha256, deleted_at
+-- Added context types: booking_file, talent_asset, brand_voice_asset
 
 BEGIN;
 
@@ -242,41 +246,44 @@ CREATE POLICY "voice_models owner update" ON public.voice_models
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS public.storage_assets (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    
+
     -- Ownership (polymorphic)
     owner_type text NOT NULL CHECK (owner_type IN ('agency', 'brand', 'creator', 'talent')),
     owner_id uuid NOT NULL,
-    
+
     -- Storage Details
     bucket_id text NOT NULL,
     storage_path text NOT NULL,
     public_url text,
-    
+
     -- Asset Metadata
     file_name text NOT NULL,
+    original_file_name text,
     mime_type text,
     size_bytes bigint,
     width integer,
     height integer,
     duration_sec integer,
-    
+    checksum_sha256 text,
+
     -- Context (what this asset is used for)
     context_type text NOT NULL CHECK (context_type IN (
         'avatar', 'logo', 'portfolio', 'digitals', 'voice_sample',
         'contract', 'invoice', 'receipt', 'license', 'reference_image',
         'studio_generation', 'brand_asset', 'campaign_asset', 'booking_deliverable',
-        'message_attachment', 'email_attachment'
+        'message_attachment', 'email_attachment', 'booking_file', 'talent_asset', 'brand_voice_asset'
     )),
     context_id uuid,
-    
+
     -- Status
     is_active boolean DEFAULT true,
-    
+    deleted_at timestamptz,
+
     -- Moderation
     moderation_status text DEFAULT 'pending' CHECK (moderation_status IN ('pending', 'approved', 'rejected')),
     moderated_at timestamptz,
     moderated_by uuid REFERENCES auth.users(id),
-    
+
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now()
 );

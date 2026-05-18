@@ -1,4 +1,4 @@
--- 004_creator_core.sql
+-- 001_creator_core.sql
 -- Consolidated migration for all creator-related schema
 -- Source files: 0001_core_profiles (creators), 0004_business_logic_and_pricing,
 -- 0005_external_integrations, 0029_creator_public_visibility,
@@ -7,6 +7,14 @@
 -- 2026-04-01_creators_onboarding_step, 2026-04-08_add_creator_trial_started_at,
 -- 2026-04-09_add_plan_specific_trials, 2026-05-04_add_creator_profile_fields,
 -- 2026-05-04_add_instagram_sync_fields
+--
+-- FIXED (2026-05-18): Added missing columns per PR review:
+-- - birthdate, gender, ethnicity, creator_type, platform_handle, tiktok_handle
+-- - content_restrictions, brand_exclusivity, visibility, content_types, industries, vibes
+-- - base_monthly_price_cents, base_weekly_price_cents, pricing_updated_at
+-- - trial_basic_started_at, trial_pro_started_at, stripe_current_period_end
+-- - stripe_cancel_at_period_end, is_public_brands, instagram_connected
+-- - cameo_back_url, original_file_name, checksum_sha256
 
 BEGIN;
 
@@ -75,12 +83,36 @@ CREATE TABLE IF NOT EXISTS public.creators (
     
     -- Instagram Sync (from 2026-05-04)
     instagram_handle text,
-    instagram_followers integer,
+    instagram_followers bigint DEFAULT 0,
+    instagram_connected boolean DEFAULT false,
     instagram_engagement_rate numeric(5,2),
     instagram_last_synced_at timestamptz,
     
+    -- Profile Fields (from 2026-05-04_add_creator_profile_fields)
+    birthdate date,
+    gender text,
+    ethnicity text,
+    creator_type text,
+    platform_handle text,
+    tiktok_handle text,
+    content_restrictions text,
+    brand_exclusivity text,
+    visibility text DEFAULT 'private',
+    content_types text[] DEFAULT '{}',
+    industries text[] DEFAULT '{}',
+    vibes text[] DEFAULT '{}',
+    base_monthly_price_cents integer DEFAULT 0,
+    base_weekly_price_cents integer DEFAULT 0,
+    pricing_updated_at timestamptz,
+    trial_basic_started_at timestamptz,
+    trial_pro_started_at timestamptz,
+    stripe_current_period_end timestamptz,
+    stripe_cancel_at_period_end boolean DEFAULT false,
+    is_public_brands boolean DEFAULT true,
+    
     -- Media
     cameo_front_url text,
+    cameo_back_url text,
     
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now()
@@ -99,6 +131,11 @@ CREATE INDEX IF NOT EXISTS idx_creators_profile_avatar_id ON public.creators(pro
 CREATE INDEX IF NOT EXISTS idx_creators_stripe_customer_id ON public.creators(stripe_customer_id);
 CREATE INDEX IF NOT EXISTS idx_creators_plan_tier ON public.creators(plan_tier);
 CREATE INDEX IF NOT EXISTS idx_creators_email ON public.creators(email);
+CREATE INDEX IF NOT EXISTS idx_creators_platform_handle ON public.creators(platform_handle);
+CREATE INDEX IF NOT EXISTS idx_creators_tiktok_handle ON public.creators(tiktok_handle);
+CREATE INDEX IF NOT EXISTS idx_creators_visibility ON public.creators(visibility);
+CREATE INDEX IF NOT EXISTS idx_creators_content_types ON public.creators USING GIN (content_types);
+CREATE INDEX IF NOT EXISTS idx_creators_industries ON public.creators USING GIN (industries);
 
 -- Creators RLS
 ALTER TABLE public.creators ENABLE ROW LEVEL SECURITY;

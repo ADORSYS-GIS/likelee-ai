@@ -1,8 +1,11 @@
 -- 016_crm_integrations.sql
 -- Consolidated migration for CRM and remaining integrations
--- Source files: 0010_crm_migration.sql (already in 002_agency_core.sql), 
+-- Source files: 0010_crm_migration.sql (already in 002_agency_core.sql),
 -- 0056_agency_catalogs.sql, 2026-03-10_calendly_booking_events.sql,
 -- 2026-04-01_sales_inquiries.sql, 2026-03-10_job_postings.sql
+--
+-- FIXED (2026-05-18): Renamed job_postings/job_applications to agency_internal_jobs/agency_internal_job_applications
+-- to avoid conflict with brand-creator job board tables (moved to 004_brand_core.sql)
 
 BEGIN;
 
@@ -126,9 +129,9 @@ CREATE POLICY "Service role can manage sales inquiries" ON public.sales_inquirie
     WITH CHECK (true);
 
 -- ============================================================================
--- 3. JOB POSTINGS
+-- 3. AGENCY INTERNAL JOB POSTINGS (for hiring staff - NOT the creator job board)
 -- ============================================================================
-CREATE TABLE IF NOT EXISTS public.job_postings (
+CREATE TABLE IF NOT EXISTS public.agency_internal_jobs (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
     
@@ -176,94 +179,94 @@ CREATE TABLE IF NOT EXISTS public.job_postings (
     updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS idx_job_postings_agency ON public.job_postings(agency_id);
-CREATE INDEX IF NOT EXISTS idx_job_postings_status ON public.job_postings(status);
-CREATE INDEX IF NOT EXISTS idx_job_postings_type ON public.job_postings(job_type);
-CREATE INDEX IF NOT EXISTS idx_job_postings_location ON public.job_postings(location_city, location_state);
-CREATE INDEX IF NOT EXISTS idx_job_postings_category ON public.job_postings(category);
-CREATE INDEX IF NOT EXISTS idx_job_postings_published ON public.job_postings(published_at DESC);
-CREATE INDEX IF NOT EXISTS idx_job_postings_expires ON public.job_postings(expires_at);
+CREATE INDEX IF NOT EXISTS idx_agency_internal_jobs_agency ON public.agency_internal_jobs(agency_id);
+CREATE INDEX IF NOT EXISTS idx_agency_internal_jobs_status ON public.agency_internal_jobs(status);
+CREATE INDEX IF NOT EXISTS idx_agency_internal_jobs_type ON public.agency_internal_jobs(job_type);
+CREATE INDEX IF NOT EXISTS idx_agency_internal_jobs_location ON public.agency_internal_jobs(location_city, location_state);
+CREATE INDEX IF NOT EXISTS idx_agency_internal_jobs_category ON public.agency_internal_jobs(category);
+CREATE INDEX IF NOT EXISTS idx_agency_internal_jobs_published ON public.agency_internal_jobs(published_at DESC);
+CREATE INDEX IF NOT EXISTS idx_agency_internal_jobs_expires ON public.agency_internal_jobs(expires_at);
 
-ALTER TABLE public.job_postings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.agency_internal_jobs ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Agencies can view own job postings" ON public.job_postings;
-CREATE POLICY "Agencies can view own job postings" ON public.job_postings
+DROP POLICY IF EXISTS "Agencies can view own internal jobs" ON public.agency_internal_jobs;
+CREATE POLICY "Agencies can view own internal jobs" ON public.agency_internal_jobs
     FOR SELECT USING (agency_id = auth.uid());
 
-DROP POLICY IF EXISTS "Agencies can manage own job postings" ON public.job_postings;
-CREATE POLICY "Agencies can manage own job postings" ON public.job_postings
+DROP POLICY IF EXISTS "Agencies can manage own internal jobs" ON public.agency_internal_jobs;
+CREATE POLICY "Agencies can manage own internal jobs" ON public.agency_internal_jobs
     FOR ALL USING (agency_id = auth.uid());
 
--- Public can view published job postings
-DROP POLICY IF EXISTS "Public can view published job postings" ON public.job_postings;
-CREATE POLICY "Public can view published job postings" ON public.job_postings
+-- Public can view published internal jobs
+DROP POLICY IF EXISTS "Public can view published internal jobs" ON public.agency_internal_jobs;
+CREATE POLICY "Public can view published internal jobs" ON public.agency_internal_jobs
     FOR SELECT USING (status = 'published' AND (expires_at IS NULL OR expires_at > now()));
 
 -- ============================================================================
--- 4. JOB APPLICATIONS
+-- 4. AGENCY INTERNAL JOB APPLICATIONS
 -- ============================================================================
-CREATE TABLE IF NOT EXISTS public.job_applications (
+CREATE TABLE IF NOT EXISTS public.agency_internal_job_applications (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    job_posting_id uuid NOT NULL REFERENCES public.job_postings(id) ON DELETE CASCADE,
-    
+    job_id uuid NOT NULL REFERENCES public.agency_internal_jobs(id) ON DELETE CASCADE,
+
     -- Applicant
     applicant_name text NOT NULL,
     applicant_email text NOT NULL,
     applicant_phone text,
-    
+
     -- Application Details
     cover_letter text,
     resume_url text,
     portfolio_url text,
     linkedin_url text,
     website_url text,
-    
+
     -- Experience
     years_experience integer,
     relevant_skills text[],
-    
+
     -- Status
     status text NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'reviewed', 'shortlisted', 'interview_scheduled', 'rejected', 'hired')),
-    
+
     -- Review
     reviewed_by uuid,
     reviewed_at timestamptz,
     review_notes text,
-    
+
     -- Interview
     interview_scheduled_at timestamptz,
     interview_notes text,
-    
+
     -- Metadata
     ip_address inet,
     user_agent text,
-    
+
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS idx_job_applications_job ON public.job_applications(job_posting_id);
-CREATE INDEX IF NOT EXISTS idx_job_applications_email ON public.job_applications(applicant_email);
-CREATE INDEX IF NOT EXISTS idx_job_applications_status ON public.job_applications(status);
-CREATE INDEX IF NOT EXISTS idx_job_applications_created ON public.job_applications(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_agency_internal_job_apps_job ON public.agency_internal_job_applications(job_id);
+CREATE INDEX IF NOT EXISTS idx_agency_internal_job_apps_email ON public.agency_internal_job_applications(applicant_email);
+CREATE INDEX IF NOT EXISTS idx_agency_internal_job_apps_status ON public.agency_internal_job_applications(status);
+CREATE INDEX IF NOT EXISTS idx_agency_internal_job_apps_created ON public.agency_internal_job_applications(created_at DESC);
 
-ALTER TABLE public.job_applications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.agency_internal_job_applications ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Agencies can view applications for their jobs" ON public.job_applications;
-CREATE POLICY "Agencies can view applications for their jobs" ON public.job_applications
+DROP POLICY IF EXISTS "Agencies can view applications for their internal jobs" ON public.agency_internal_job_applications;
+CREATE POLICY "Agencies can view applications for their internal jobs" ON public.agency_internal_job_applications
     FOR SELECT USING (
         EXISTS (
-            SELECT 1 FROM public.job_postings jp
-            WHERE jp.id = job_posting_id AND jp.agency_id = auth.uid()
+            SELECT 1 FROM public.agency_internal_jobs jp
+            WHERE jp.id = job_id AND jp.agency_id = auth.uid()
         )
     );
 
-DROP POLICY IF EXISTS "Agencies can manage applications for their jobs" ON public.job_applications;
-CREATE POLICY "Agencies can manage applications for their jobs" ON public.job_applications
+DROP POLICY IF EXISTS "Agencies can manage applications for their internal jobs" ON public.agency_internal_job_applications;
+CREATE POLICY "Agencies can manage applications for their internal jobs" ON public.agency_internal_job_applications
     FOR ALL USING (
         EXISTS (
-            SELECT 1 FROM public.job_postings jp
-            WHERE jp.id = job_posting_id AND jp.agency_id = auth.uid()
+            SELECT 1 FROM public.agency_internal_jobs jp
+            WHERE jp.id = job_id AND jp.agency_id = auth.uid()
         )
     );
 

@@ -8,7 +8,13 @@
 -- 2026-04-23_brand_asset_library, 2026-03-04_brand_connections, 2026-03-06_brand_campaigns_offers_v2,
 -- 2026-03-06_brand_campaigns_phase2_workflow, 2026-03-17_brand_campaigns_mark_done,
 -- 2026-03-18_brand_activity_events_extend, 2026-03-19_brand_activity_events_rls_refinement,
--- 2026-03-21_brand_license_requests_consolidated, 2026-03-10_offer_talent_assignments_and_requests
+-- 2026-03-21_brand_license_requests_consolidated, 2026-03-10_offer_talent_assignments_and_requests,
+-- 2026-03-10_job_postings.sql, 2026-03-13_application_fields.sql
+--
+-- FIXED (2026-05-18): Added missing columns per PR review:
+-- brands: plan_interval, plan_updated_at, studio_addon_status, notification_prefs,
+--        monthly_budget_limit, budget_alert_80_sent_at, budget_alert_100_sent_at
+-- ADDED: job_postings and job_applications tables (brand-creator job board) from 2026-03-10
 
 BEGIN;
 
@@ -55,11 +61,13 @@ CREATE TABLE IF NOT EXISTS public.brands (
     
     -- Billing & Subscriptions
     plan_tier text,
+    plan_interval text DEFAULT 'month',
     stripe_customer_id text,
     stripe_subscription_id text,
     subscription_status text,
     subscription_tier text,
     subscription_current_period_end timestamptz,
+    plan_updated_at timestamptz,
     
     -- Payment Methods
     stripe_payment_method_id text,
@@ -71,12 +79,19 @@ CREATE TABLE IF NOT EXISTS public.brands (
     
     -- Studio Addon
     studio_addon_active boolean DEFAULT false,
+    studio_addon_status text DEFAULT 'inactive',
     studio_addon_activated_at timestamptz,
     
-    -- Budget Alerts
+    -- Notifications (from 2026-04-09_brand_notifications)
+    notification_prefs jsonb DEFAULT '{"newProjectAlerts": true, "deliverableSubmissions": true, "approvalReminders": true, "licenseExpirationAlerts": true}'::jsonb,
+    
+    -- Budget Alerts (from 2026-04-17_brand_budget_alerts)
+    monthly_budget_limit numeric DEFAULT NULL,
     budget_alert_threshold_percent integer DEFAULT 80,
     budget_alert_email text,
-    budget_alert_enabled boolean DEFAULT true,
+    budget_alert_enabled boolean DEFAULT false,
+    budget_alert_80_sent_at timestamptz,
+    budget_alert_100_sent_at timestamptz,
     
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now()
@@ -1159,5 +1174,200 @@ BEGIN
       AND recipient_id   = p_recipient_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================================================
+-- 17. JOB POSTINGS (Brand-Creator Job Board)
+-- Source: 2026-03-10_job_postings.sql
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.job_postings (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    brand_id uuid NOT NULL REFERENCES public.brands(id) ON DELETE CASCADE,
+
+    -- Step 1: Basic Information
+    job_title text,
+    company_name text,
+    contact_email text,
+    category text,
+    call_type text,
+    work_types text[],
+    status text NOT NULL DEFAULT 'open',
+
+    -- Step 2: Project Overview
+    location text,
+    job_type text,
+    about_role text,
+    goals text[],
+    deliverables text,
+    start_date date,
+    end_date date,
+
+    -- Step 3: Talent Requirements
+    talent_types text[],
+    region text,
+    language text,
+    required_skills text[],
+    needs_licensing boolean,
+
+    -- Step 4: Licensing Details (only when needs_licensing = true)
+    usage_type text,
+    license_duration text,
+    territories text,
+    exclusivity boolean,
+    royalty_option boolean,
+
+    -- Step 5: Budget & Compensation
+    budget numeric,
+    payment_type text,
+    currency text DEFAULT 'USD',
+
+    -- Step 6: Collaboration Preferences
+    work_with_agency boolean,
+    invite_creator boolean,
+    invited_agency_ids uuid[],
+    invited_creator_ids uuid[],
+    declined_agency_ids uuid[] DEFAULT '{}',
+    declined_creator_ids uuid[] DEFAULT '{}',
+    brand_assets jsonb,
+    confidential boolean,
+
+    -- Step 7: Preview & Publish
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now(),
+
+    CONSTRAINT job_postings_call_type_check CHECK (
+        status = 'draft' or call_type in ('creator','agency','athlete','ai_artist')
+    ),
+    CONSTRAINT job_postings_required_fields_check CHECK (
+        status = 'draft' or (
+            job_title is not null and job_title <> '' and
+            about_role is not null and about_role <> '' and
+            call_type is not null and call_type <> ''
+        )
+    ),
+    CONSTRAINT job_postings_status_check CHECK (status in ('open','closed','draft'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_job_postings_brand_id ON public.job_postings(brand_id);
+CREATE INDEX IF NOT EXISTS idx_job_postings_status ON public.job_postings(status);
+CREATE INDEX IF NOT EXISTS idx_job_postings_call_type ON public.job_postings(call_type);
+CREATE INDEX IF NOT EXISTS idx_job_postings_created_at ON public.job_postings(created_at desc);
+CREATE INDEX IF NOT EXISTS idx_job_postings_invited_agency_ids ON public.job_postings USING GIN (invited_agency_ids);
+CREATE INDEX IF NOT EXISTS idx_job_postings_invited_creator_ids ON public.job_postings USING GIN (invited_creator_ids);
+CREATE INDEX IF NOT EXISTS idx_job_postings_accepted_agency_ids ON public.job_postings USING GIN (accepted_agency_ids);
+CREATE INDEX IF NOT EXISTS idx_job_postings_accepted_creator_ids ON public.job_postings USING GIN (accepted_creator_ids);
+CREATE INDEX IF NOT EXISTS idx_job_postings_declined_agency_ids ON public.job_postings USING GIN (declined_agency_ids);
+CREATE INDEX IF NOT EXISTS idx_job_postings_declined_creator_ids ON public.job_postings USING GIN (declined_creator_ids);
+
+ALTER TABLE public.job_postings ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "job_postings_select" ON public.job_postings;
+CREATE POLICY "job_postings_select"
+    ON public.job_postings
+    FOR SELECT
+    TO authenticated
+    USING (true);
+
+DROP POLICY IF EXISTS "job_postings_insert" ON public.job_postings;
+CREATE POLICY "job_postings_insert"
+    ON public.job_postings
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (brand_id = auth.uid());
+
+DROP POLICY IF EXISTS "job_postings_update" ON public.job_postings;
+CREATE POLICY "job_postings_update"
+    ON public.job_postings
+    FOR UPDATE
+    TO authenticated
+    USING (brand_id = auth.uid())
+    WITH CHECK (brand_id = auth.uid());
+
+DROP POLICY IF EXISTS "job_postings_delete" ON public.job_postings;
+CREATE POLICY "job_postings_delete"
+    ON public.job_postings
+    FOR DELETE
+    TO authenticated
+    USING (brand_id = auth.uid());
+
+-- ============================================================================
+-- 18. JOB APPLICATIONS (Brand-Creator Job Board)
+-- Source: 2026-03-10_job_postings.sql, 2026-03-13_application_fields.sql
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.job_applications (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    job_id uuid NOT NULL REFERENCES public.job_postings(id) ON DELETE CASCADE,
+    applicant_id uuid NOT NULL,
+    applicant_role text NOT NULL,
+
+    message text,
+    resume_name text,
+    resume_url text,
+    resume_path text,
+    resume_mime text,
+    resume_size bigint,
+
+    -- Social and Portfolio Links (from 2026-03-13)
+    portfolio_link text,
+    github_link text,
+    linkedin_link text,
+
+    -- Comp Card Fields (from 2026-03-13)
+    comp_card_name text,
+    comp_card_url text,
+    comp_card_path text,
+
+    status text NOT NULL DEFAULT 'submitted',
+
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now(),
+
+    CONSTRAINT job_applications_status_check CHECK (status in ('submitted','shortlisted','rejected','withdrawn'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_job_applications_job_id ON public.job_applications(job_id);
+CREATE INDEX IF NOT EXISTS idx_job_applications_applicant_id ON public.job_applications(applicant_id);
+CREATE INDEX IF NOT EXISTS idx_job_applications_status ON public.job_applications(status);
+CREATE INDEX IF NOT EXISTS idx_job_applications_resume_name ON public.job_applications(resume_name);
+CREATE INDEX IF NOT EXISTS idx_job_applications_resume_url ON public.job_applications(resume_url);
+CREATE INDEX IF NOT EXISTS idx_job_applications_resume_path ON public.job_applications(resume_path);
+CREATE INDEX IF NOT EXISTS idx_job_applications_resume_mime ON public.job_applications(resume_mime);
+CREATE INDEX IF NOT EXISTS idx_job_applications_resume_size ON public.job_applications(resume_size);
+CREATE INDEX IF NOT EXISTS idx_job_applications_portfolio_link ON public.job_applications(portfolio_link);
+CREATE INDEX IF NOT EXISTS idx_job_applications_github_link ON public.job_applications(github_link);
+CREATE INDEX IF NOT EXISTS idx_job_applications_linkedin_link ON public.job_applications(linkedin_link);
+CREATE INDEX IF NOT EXISTS idx_job_applications_comp_card_name ON public.job_applications(comp_card_name);
+CREATE INDEX IF NOT EXISTS idx_job_applications_comp_card_url ON public.job_applications(comp_card_url);
+CREATE INDEX IF NOT EXISTS idx_job_applications_comp_card_path ON public.job_applications(comp_card_path);
+
+ALTER TABLE public.job_applications ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "job_applications_insert" ON public.job_applications;
+CREATE POLICY "job_applications_insert"
+    ON public.job_applications
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (true);
+
+DROP POLICY IF EXISTS "job_applications_select" ON public.job_applications;
+CREATE POLICY "job_applications_select"
+    ON public.job_applications
+    FOR SELECT
+    TO authenticated
+    USING (
+        applicant_id = auth.uid()
+        or job_id IN (SELECT id FROM public.job_postings WHERE brand_id = auth.uid())
+    );
+
+DROP POLICY IF EXISTS "job_applications_update" ON public.job_applications;
+CREATE POLICY "job_applications_update"
+    ON public.job_applications
+    FOR UPDATE
+    TO authenticated
+    USING (
+        job_id IN (SELECT id FROM public.job_postings WHERE brand_id = auth.uid())
+    )
+    WITH CHECK (
+        job_id IN (SELECT id FROM public.job_postings WHERE brand_id = auth.uid())
+    );
 
 COMMIT;

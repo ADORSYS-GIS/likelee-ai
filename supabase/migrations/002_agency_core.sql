@@ -2,7 +2,6 @@
 -- Consolidated migration for all agency-related schema
 -- NOTE: FK constraints for agency_files.relationship_id and agency_invoices.booking_id
 -- deferred to 018_fk_fixups.sql (forward references to 007/009)
--- Consolidated migration for all agency-related schema
 -- Source files: 0001_core_profiles (agencies), 0005_agency_users, 0007_agency_talent_management,
 -- 0007_agency_clients, 0008_agency_files, 0009_agency_invoicing, 0010_random_invoice_numbers,
 -- 0010_crm_migration, 0011_invoice_reminders, 0012_agency_expenses, 0012_client_files_notes,
@@ -11,6 +10,11 @@
 -- 0019_agency_veriff_usage, 2026-02-17_agency_payout_scheduler, 2026-03-12_agency_calendly_settings,
 -- 2026-04-02_add_calendly_scheduling_url, 2026-04-02_agency_billing_columns, 2026-04-02_agency_trial_period,
 -- 2026-04-13_01_agency_studio_addon, 2026-04-15_agency_creator_identity_compat
+--
+-- FIXED (2026-05-18): Added missing columns per PR review:
+-- agencies: seats_limit
+-- agency_users: licensing_rate_weekly_cents, licensing_rate_monthly_cents, accept_negotiations,
+--             rate_currency, organization
 
 BEGIN;
 
@@ -98,6 +102,9 @@ CREATE TABLE IF NOT EXISTS public.agencies (
       "standard": {"agency_percent": 20, "creator_percent": 80},
       "premium": {"agency_percent": 15, "creator_percent": 85}
     }'::jsonb,
+    
+    -- Seat Management (from 0007_agency_talent_management)
+    seats_limit integer,
     
     -- Legacy (kept for compatibility)
     subscription_status text,
@@ -194,11 +201,24 @@ CREATE TABLE IF NOT EXISTS public.agency_users (
     last_reminder_sent timestamptz,
     ai_usage boolean,
     
+    -- Licensing Rates (from 2026-03-04_weekly_licensing_rates_rollout)
+    licensing_rate_weekly_cents bigint,
+    licensing_rate_monthly_cents bigint,
+    accept_negotiations boolean DEFAULT true,
+    rate_currency text NOT NULL DEFAULT 'USD',
+    
+    -- Organization/Employment
+    organization text,
+    
     -- Performance Tier (cached)
     performance_tier_name text,
     
     created_at timestamptz NOT NULL DEFAULT now(),
-    updated_at timestamptz NOT NULL DEFAULT now()
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    
+    CONSTRAINT agency_users_licensing_rate_weekly_cents_non_negative CHECK (
+        licensing_rate_weekly_cents IS NULL OR licensing_rate_weekly_cents >= 0
+    )
 );
 
 -- Agency users indexes
