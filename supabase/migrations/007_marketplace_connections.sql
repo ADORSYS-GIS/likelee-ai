@@ -140,6 +140,7 @@ CREATE TABLE IF NOT EXISTS public.agency_talent_invites (
     -- Invite Details
     email text NOT NULL,
     full_name text,
+    invited_name text,
     
     -- Token
     token text NOT NULL UNIQUE,
@@ -153,6 +154,7 @@ CREATE TABLE IF NOT EXISTS public.agency_talent_invites (
     -- Response
     accepted_at timestamptz,
     declined_at timestamptz,
+    responded_at timestamptz,
     declined_reason text,
     
     -- Result

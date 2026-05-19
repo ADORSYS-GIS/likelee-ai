@@ -203,6 +203,43 @@ ALTER TABLE public.creator_agency_invites
 CREATE INDEX IF NOT EXISTS idx_creator_agency_invites_contract_id
     ON public.creator_agency_invites(contract_id);
 
+ALTER TABLE public.agency_talent_invites
+    ADD COLUMN IF NOT EXISTS invited_name text,
+    ADD COLUMN IF NOT EXISTS responded_at timestamptz;
+
+UPDATE public.agency_talent_invites
+SET invited_name = full_name
+WHERE invited_name IS NULL
+    AND full_name IS NOT NULL;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conrelid = 'public.brand_license_requests'::regclass
+            AND conname = 'brand_license_requests_submission_id_fkey'
+    ) THEN
+        IF EXISTS (
+            SELECT 1
+            FROM pg_constraint
+            WHERE conrelid = 'public.brand_license_requests'::regclass
+                AND conname = 'fk_brand_license_requests_submission_id'
+        ) THEN
+            ALTER TABLE public.brand_license_requests
+                RENAME CONSTRAINT fk_brand_license_requests_submission_id
+                TO brand_license_requests_submission_id_fkey;
+        ELSE
+            ALTER TABLE public.brand_license_requests
+                ADD CONSTRAINT brand_license_requests_submission_id_fkey
+                FOREIGN KEY (submission_id)
+                REFERENCES public.license_submissions(id)
+                ON DELETE SET NULL
+                NOT VALID;
+        END IF;
+    END IF;
+END $$;
+
 ALTER TABLE public.organization_memberships
     ADD COLUMN IF NOT EXISTS status text DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'pending'));
 
