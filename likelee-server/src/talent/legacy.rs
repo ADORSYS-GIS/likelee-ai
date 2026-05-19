@@ -2770,7 +2770,13 @@ pub async fn list_bookings(
     user: AuthUser,
     Query(q): Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let _resolved = resolve_talent(&state, &user).await?;
+    if let Err((status, message)) = resolve_talent(&state, &user).await {
+        if status == StatusCode::NOT_FOUND && message == "Talent profile not found" {
+            return Ok(Json(json!([])));
+        }
+        return Err((status, message));
+    }
+
     let connections = list_active_talent_connections(&state, &user).await?;
 
     let requested_aid = q
