@@ -3805,7 +3805,9 @@ export default function CreatorDashboard() {
           royalty_percentage: prev.royalty_percentage ?? 0,
           accept_negotiations:
             profile.accept_negotiations ?? prev.accept_negotiations ?? true,
-          content_restrictions: normalizeStringArray(profile.content_restrictions),
+          content_restrictions: normalizeStringArray(
+            profile.content_restrictions,
+          ),
           brand_exclusivity: normalizeStringArray(profile.brand_exclusivity),
           kyc_status: profile.kyc_status,
           kyc_rejection_reason: profile.kyc_rejection_reason ?? null,
@@ -6005,8 +6007,12 @@ export default function CreatorDashboard() {
             savedProfile.instagram_connected ?? prev.instagram_connected,
           tiktok_handle: savedProfile.tiktok_handle ?? prev.tiktok_handle,
           portfolio_url: savedProfile.portfolio_link ?? prev.portfolio_url,
-          content_types: normalizeStringArray(savedProfile.content_types ?? prev.content_types),
-          industries: normalizeStringArray(savedProfile.industries ?? prev.industries),
+          content_types: normalizeStringArray(
+            savedProfile.content_types ?? prev.content_types,
+          ),
+          industries: normalizeStringArray(
+            savedProfile.industries ?? prev.industries,
+          ),
           vibes: normalizeStringArray(savedProfile.vibes ?? prev.vibes),
           content_restrictions: normalizeStringArray(
             savedProfile.content_restrictions ?? prev.content_restrictions,
