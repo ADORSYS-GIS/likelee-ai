@@ -214,7 +214,9 @@ CREATE TABLE IF NOT EXISTS public.creator_custom_rates (
     creator_id uuid NOT NULL REFERENCES public.creators(id) ON DELETE CASCADE,
     
     rate_type text NOT NULL, -- 'usage', 'duration', 'exclusivity', etc.
-    rate_cents integer NOT NULL,
+    rate_name text,
+    rate_cents integer DEFAULT 0,
+    price_per_month_cents integer,
     currency text NOT NULL DEFAULT 'USD',
     
     valid_from date,

@@ -363,6 +363,79 @@ ALTER TABLE public.creator_payout_requests
         CHECK (status IN ('pending', 'approved', 'processing', 'completed', 'failed'))
         NOT VALID;
 
+ALTER TABLE public.creator_custom_rates
+    ADD COLUMN IF NOT EXISTS rate_name text,
+    ADD COLUMN IF NOT EXISTS price_per_month_cents integer;
+
+ALTER TABLE public.creator_custom_rates
+    ALTER COLUMN rate_cents DROP NOT NULL,
+    ALTER COLUMN rate_cents SET DEFAULT 0;
+
+UPDATE public.creator_custom_rates
+SET rate_name = COALESCE(NULLIF(btrim(rate_name), ''), initcap(replace(rate_type, '_', ' ')))
+WHERE rate_name IS NULL OR btrim(rate_name) = '';
+
+UPDATE public.creator_custom_rates
+SET price_per_month_cents = COALESCE(price_per_month_cents, rate_cents)
+WHERE price_per_month_cents IS NULL;
+
+ALTER TABLE public.agency_talent_packages
+    ADD COLUMN IF NOT EXISTS title text,
+    ADD COLUMN IF NOT EXISTS cover_image_url text,
+    ADD COLUMN IF NOT EXISTS primary_color text,
+    ADD COLUMN IF NOT EXISTS secondary_color text,
+    ADD COLUMN IF NOT EXISTS custom_message text,
+    ADD COLUMN IF NOT EXISTS consent_items text[] DEFAULT '{}',
+    ADD COLUMN IF NOT EXISTS allow_comments boolean DEFAULT true,
+    ADD COLUMN IF NOT EXISTS allow_favorites boolean DEFAULT true,
+    ADD COLUMN IF NOT EXISTS allow_callbacks boolean DEFAULT true,
+    ADD COLUMN IF NOT EXISTS expires_at timestamptz,
+    ADD COLUMN IF NOT EXISTS access_token text DEFAULT gen_random_uuid()::text,
+    ADD COLUMN IF NOT EXISTS password_protected boolean DEFAULT false,
+    ADD COLUMN IF NOT EXISTS password_hash text;
+
+ALTER TABLE public.agency_talent_packages
+    ALTER COLUMN name DROP NOT NULL,
+    ALTER COLUMN access_token SET DEFAULT gen_random_uuid()::text;
+
+UPDATE public.agency_talent_packages
+SET title = COALESCE(NULLIF(btrim(title), ''), NULLIF(btrim(name), ''), 'Talent Package')
+WHERE title IS NULL OR btrim(title) = '';
+
+UPDATE public.agency_talent_packages
+SET access_token = gen_random_uuid()::text
+WHERE access_token IS NULL OR btrim(access_token) = '';
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_agency_talent_packages_access_token
+    ON public.agency_talent_packages(access_token);
+
+ALTER TABLE public.agency_catalogs
+    ADD COLUMN IF NOT EXISTS title text,
+    ADD COLUMN IF NOT EXISTS licensing_request_id uuid REFERENCES public.licensing_requests(id) ON DELETE SET NULL,
+    ADD COLUMN IF NOT EXISTS client_name text,
+    ADD COLUMN IF NOT EXISTS client_email text,
+    ADD COLUMN IF NOT EXISTS access_token text DEFAULT gen_random_uuid()::text,
+    ADD COLUMN IF NOT EXISTS sent_at timestamptz,
+    ADD COLUMN IF NOT EXISTS notes text,
+    ADD COLUMN IF NOT EXISTS expires_at timestamptz;
+
+ALTER TABLE public.agency_catalogs
+    ALTER COLUMN name DROP NOT NULL,
+    ALTER COLUMN access_token SET DEFAULT gen_random_uuid()::text;
+
+UPDATE public.agency_catalogs
+SET title = COALESCE(NULLIF(btrim(title), ''), NULLIF(btrim(name), ''), 'Catalog')
+WHERE title IS NULL OR btrim(title) = '';
+
+UPDATE public.agency_catalogs
+SET access_token = gen_random_uuid()::text
+WHERE access_token IS NULL OR btrim(access_token) = '';
+
+CREATE INDEX IF NOT EXISTS idx_agency_catalogs_licensing_request
+    ON public.agency_catalogs(licensing_request_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_agency_catalogs_access_token
+    ON public.agency_catalogs(access_token);
+
 ALTER TABLE public.organization_memberships
     ADD COLUMN IF NOT EXISTS status text DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'pending'));
 

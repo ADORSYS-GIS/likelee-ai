@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS public.agency_talent_packages (
     agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
     
     -- Package Info
-    name text NOT NULL,
+    name text,
+    title text,
     description text,
     
     -- Template flag
@@ -30,10 +31,18 @@ CREATE TABLE IF NOT EXISTS public.agency_talent_packages (
     
     -- Media
     cover_photo_url text,
+    cover_image_url text,
+    primary_color text,
+    secondary_color text,
+    custom_message text,
     
     -- Consent
     consent_required boolean DEFAULT false,
     consent_text text,
+    consent_items text[] DEFAULT '{}',
+    allow_comments boolean DEFAULT true,
+    allow_favorites boolean DEFAULT true,
+    allow_callbacks boolean DEFAULT true,
     
     -- Categories
     category text,
@@ -43,6 +52,10 @@ CREATE TABLE IF NOT EXISTS public.agency_talent_packages (
     -- Client info (nullable)
     client_name text,
     client_email text,
+    expires_at timestamptz,
+    access_token text DEFAULT gen_random_uuid()::text,
+    password_protected boolean DEFAULT false,
+    password_hash text,
     
     -- Status
     is_active boolean DEFAULT true,
@@ -58,6 +71,7 @@ CREATE INDEX IF NOT EXISTS idx_agency_talent_packages_agency ON public.agency_ta
 CREATE INDEX IF NOT EXISTS idx_agency_talent_packages_template ON public.agency_talent_packages(template_id);
 CREATE INDEX IF NOT EXISTS idx_agency_talent_packages_active ON public.agency_talent_packages(agency_id, is_active);
 CREATE INDEX IF NOT EXISTS idx_agency_talent_packages_category ON public.agency_talent_packages(category);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_agency_talent_packages_access_token ON public.agency_talent_packages(access_token);
 
 ALTER TABLE public.agency_talent_packages ENABLE ROW LEVEL SECURITY;
 
