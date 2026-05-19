@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS public.licensing_requests (
     
     -- Brand Request Reference
     brand_request_id uuid,
+    submission_id uuid,
     
     -- Status
     status text NOT NULL CHECK (status IN ('pending', 'approved', 'rejected', 'archived')) DEFAULT 'pending',
@@ -78,6 +79,7 @@ CREATE INDEX IF NOT EXISTS idx_licensing_requests_agency ON public.licensing_req
 CREATE INDEX IF NOT EXISTS idx_licensing_requests_brand ON public.licensing_requests(brand_id);
 CREATE INDEX IF NOT EXISTS idx_licensing_requests_talent ON public.licensing_requests(talent_id);
 CREATE INDEX IF NOT EXISTS idx_licensing_requests_creator ON public.licensing_requests(creator_id);
+CREATE INDEX IF NOT EXISTS idx_licensing_requests_submission ON public.licensing_requests(submission_id);
 CREATE INDEX IF NOT EXISTS idx_licensing_requests_status ON public.licensing_requests(status);
 CREATE INDEX IF NOT EXISTS idx_licensing_requests_context_type ON public.licensing_requests(context_type);
 CREATE INDEX IF NOT EXISTS idx_licensing_requests_campaign_offer ON public.licensing_requests(campaign_offer_id);

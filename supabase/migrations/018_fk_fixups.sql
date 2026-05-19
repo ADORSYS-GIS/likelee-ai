@@ -22,6 +22,11 @@ ALTER TABLE public.brand_license_requests
     ADD CONSTRAINT brand_license_requests_submission_id_fkey
     FOREIGN KEY (submission_id) REFERENCES public.license_submissions(id) ON DELETE SET NULL;
 
+-- licensing_requests.submission_id -> license_submissions (006 self-reference after both tables exist)
+ALTER TABLE public.licensing_requests
+    ADD CONSTRAINT licensing_requests_submission_id_fkey
+    FOREIGN KEY (submission_id) REFERENCES public.license_submissions(id) ON DELETE SET NULL;
+
 -- ============================================================================
 -- 3. SINGLE ROLE ENFORCEMENT TRIGGERS (from 2026-04-29)
 --    These must run after all three role tables exist (001, 002, 004)

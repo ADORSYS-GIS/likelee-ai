@@ -203,6 +203,13 @@ ALTER TABLE public.creator_agency_invites
 CREATE INDEX IF NOT EXISTS idx_creator_agency_invites_contract_id
     ON public.creator_agency_invites(contract_id);
 
+ALTER TABLE public.conversations
+    ADD COLUMN IF NOT EXISTS agency_id uuid REFERENCES public.agencies(id) ON DELETE CASCADE,
+    ADD COLUMN IF NOT EXISTS creator_id uuid REFERENCES public.creators(id) ON DELETE CASCADE;
+
+CREATE INDEX IF NOT EXISTS idx_conversations_agency_creator
+    ON public.conversations(agency_id, creator_id);
+
 ALTER TABLE public.agency_talent_invites
     ADD COLUMN IF NOT EXISTS invited_name text,
     ADD COLUMN IF NOT EXISTS responded_at timestamptz;
@@ -237,6 +244,29 @@ BEGIN
                 ON DELETE SET NULL
                 NOT VALID;
         END IF;
+    END IF;
+END $$;
+
+ALTER TABLE public.licensing_requests
+    ADD COLUMN IF NOT EXISTS submission_id uuid;
+
+CREATE INDEX IF NOT EXISTS idx_licensing_requests_submission
+    ON public.licensing_requests(submission_id);
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conrelid = 'public.licensing_requests'::regclass
+            AND conname = 'licensing_requests_submission_id_fkey'
+    ) THEN
+        ALTER TABLE public.licensing_requests
+            ADD CONSTRAINT licensing_requests_submission_id_fkey
+            FOREIGN KEY (submission_id)
+            REFERENCES public.license_submissions(id)
+            ON DELETE SET NULL
+            NOT VALID;
     END IF;
 END $$;
 
