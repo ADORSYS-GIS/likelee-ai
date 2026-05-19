@@ -64,7 +64,6 @@ CREATE TABLE IF NOT EXISTS public.creators (
     stripe_customer_id text,
     stripe_subscription_id text,
     trial_started_at timestamptz,
-    trial_pro_started_at timestamptz,
     subscription_current_period_end timestamptz,
     
     -- Onboarding
