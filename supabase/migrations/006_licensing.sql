@@ -207,7 +207,7 @@ CREATE TABLE IF NOT EXISTS public.license_submissions (
     
     -- Brand Request
     requires_agency_signature boolean DEFAULT false,
-    agency_submitter_id uuid REFERENCES public.agencies(id) ON DELETE SET NULL,
+    agency_submitter_id bigint,
     agency_submitter_slug text,
     agency_embed_src text,
     agency_signed_at timestamptz,
