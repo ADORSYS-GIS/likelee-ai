@@ -485,6 +485,12 @@ CREATE INDEX IF NOT EXISTS idx_agency_creator_marketplace_contracts_invite
 CREATE INDEX IF NOT EXISTS idx_agency_creator_marketplace_contracts_docuseal_submission
     ON public.agency_creator_marketplace_contracts (docuseal_submission_id);
 
+ALTER TABLE public.creator_agency_invites
+    ADD COLUMN IF NOT EXISTS contract_id uuid REFERENCES public.agency_creator_marketplace_contracts(id) ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS idx_creator_agency_invites_contract_id
+    ON public.creator_agency_invites(contract_id);
+
 ALTER TABLE public.agency_creator_marketplace_contracts ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Agencies can view marketplace creator contracts" ON public.agency_creator_marketplace_contracts;
