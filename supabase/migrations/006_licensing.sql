@@ -138,7 +138,7 @@ CREATE TABLE IF NOT EXISTS public.license_templates (
     usage_scope text,
     
     -- Pricing (flat fee, not range)
-    license_fee integer NOT NULL DEFAULT 0,
+    license_fee integer DEFAULT 0,
     
     -- Terms
     duration_days integer,
