@@ -29,6 +29,8 @@ CREATE TABLE IF NOT EXISTS public.organization_memberships (
     
     -- Status
     is_active boolean DEFAULT true,
+    status text DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'pending')),
+    email text,
     
     -- Timestamps
     invited_at timestamptz,
@@ -49,6 +51,28 @@ CREATE INDEX IF NOT EXISTS idx_organization_memberships_active ON public.organiz
 
 ALTER TABLE public.organization_memberships ENABLE ROW LEVEL SECURITY;
 
+CREATE OR REPLACE FUNCTION public.can_manage_organization_memberships(
+    p_organization_type TEXT,
+    p_organization_id UUID
+)
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = public
+AS $$
+    SELECT EXISTS (
+        SELECT 1
+        FROM public.organization_memberships om
+        WHERE om.organization_type = p_organization_type
+            AND om.organization_id = p_organization_id
+            AND om.user_id = auth.uid()
+            AND om.role IN ('owner', 'admin')
+            AND om.is_active = true
+            AND COALESCE(om.status, 'active') = 'active'
+    );
+$$;
+
 DROP POLICY IF EXISTS "Members can view own memberships" ON public.organization_memberships;
 CREATE POLICY "Members can view own memberships" ON public.organization_memberships
     FOR SELECT USING (user_id = auth.uid());
@@ -56,14 +80,10 @@ CREATE POLICY "Members can view own memberships" ON public.organization_membersh
 DROP POLICY IF EXISTS "Owners can manage memberships" ON public.organization_memberships;
 CREATE POLICY "Owners can manage memberships" ON public.organization_memberships
     FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM public.organization_memberships om
-            WHERE om.organization_type = organization_memberships.organization_type
-                AND om.organization_id = organization_memberships.organization_id
-                AND om.user_id = auth.uid()
-                AND om.role IN ('owner', 'admin')
-                AND om.is_active = true
-        )
+        public.can_manage_organization_memberships(organization_type, organization_id)
+    )
+    WITH CHECK (
+        public.can_manage_organization_memberships(organization_type, organization_id)
     );
 
 -- ============================================================================

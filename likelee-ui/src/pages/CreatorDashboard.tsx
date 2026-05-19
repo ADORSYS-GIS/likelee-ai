@@ -235,6 +235,25 @@ const VIBES = [
   "Casual",
 ];
 
+const normalizeStringArray = (value: unknown): string[] => {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => String(item || "").trim())
+      .filter((item) => item.length > 0);
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+    return trimmed
+      .split(",")
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
+  }
+
+  return [];
+};
+
 // Voice recording scripts for different emotions
 const getVoiceScripts = (t: any) => ({
   happy: t("creatorDashboard.voiceScripts.happy"),
@@ -3774,8 +3793,8 @@ export default function CreatorDashboard() {
           portfolio_url: profile.portfolio_link ?? prev.portfolio_url,
           is_public_brands: isPublicBrands,
           instagram_connected: prev.instagram_connected ?? false,
-          content_types: profile.content_types || [],
-          industries: profile.industries || [],
+          content_types: normalizeStringArray(profile.content_types),
+          industries: normalizeStringArray(profile.industries),
           // Canonical rate is weekly; fall back to legacy monthly when needed.
           // If pricing was never explicitly set, keep it blank (0) instead of
           // showing the platform minimum default.
@@ -3786,8 +3805,10 @@ export default function CreatorDashboard() {
           royalty_percentage: prev.royalty_percentage ?? 0,
           accept_negotiations:
             profile.accept_negotiations ?? prev.accept_negotiations ?? true,
-          content_restrictions: profile.content_restrictions || [],
-          brand_exclusivity: profile.brand_exclusivity || [],
+          content_restrictions: normalizeStringArray(
+            profile.content_restrictions,
+          ),
+          brand_exclusivity: normalizeStringArray(profile.brand_exclusivity),
           kyc_status: profile.kyc_status,
           kyc_rejection_reason: profile.kyc_rejection_reason ?? null,
           verified_at: profile.verified_at,
@@ -5986,13 +6007,19 @@ export default function CreatorDashboard() {
             savedProfile.instagram_connected ?? prev.instagram_connected,
           tiktok_handle: savedProfile.tiktok_handle ?? prev.tiktok_handle,
           portfolio_url: savedProfile.portfolio_link ?? prev.portfolio_url,
-          content_types: savedProfile.content_types ?? prev.content_types,
-          industries: savedProfile.industries ?? prev.industries,
-          vibes: savedProfile.vibes ?? prev.vibes,
-          content_restrictions:
+          content_types: normalizeStringArray(
+            savedProfile.content_types ?? prev.content_types,
+          ),
+          industries: normalizeStringArray(
+            savedProfile.industries ?? prev.industries,
+          ),
+          vibes: normalizeStringArray(savedProfile.vibes ?? prev.vibes),
+          content_restrictions: normalizeStringArray(
             savedProfile.content_restrictions ?? prev.content_restrictions,
-          brand_exclusivity:
+          ),
+          brand_exclusivity: normalizeStringArray(
             savedProfile.brand_exclusivity ?? prev.brand_exclusivity,
+          ),
           accept_negotiations:
             savedProfile.accept_negotiations ?? prev.accept_negotiations,
           is_public_brands: resolvePublicBrandsVisibility(savedProfile),

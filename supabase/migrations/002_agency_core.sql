@@ -1018,6 +1018,7 @@ CREATE INDEX IF NOT EXISTS idx_webhook_events_provider_created_at ON public.webh
 CREATE TABLE IF NOT EXISTS public.agency_subscriptions (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
+    user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
     stripe_customer_id text,
     stripe_subscription_id text NOT NULL,
     stripe_price_id text,

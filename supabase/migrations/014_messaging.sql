@@ -17,6 +17,10 @@ CREATE TABLE IF NOT EXISTS public.conversations (
     subject_type text, -- 'campaign', 'booking', 'offer', 'licensing_request'
     subject_id uuid,
     
+    -- Direct participants (legacy/compatibility path used by messaging API)
+    agency_id uuid REFERENCES public.agencies(id) ON DELETE CASCADE,
+    creator_id uuid REFERENCES public.creators(id) ON DELETE CASCADE,
+
     -- Metadata
     title text,
     metadata jsonb DEFAULT '{}'::jsonb,
@@ -29,6 +33,7 @@ CREATE TABLE IF NOT EXISTS public.conversations (
 
 CREATE INDEX IF NOT EXISTS idx_conversations_type ON public.conversations(conversation_type);
 CREATE INDEX IF NOT EXISTS idx_conversations_subject ON public.conversations(subject_type, subject_id);
+CREATE INDEX IF NOT EXISTS idx_conversations_agency_creator ON public.conversations(agency_id, creator_id);
 CREATE INDEX IF NOT EXISTS idx_conversations_last_message ON public.conversations(last_message_at DESC);
 CREATE INDEX IF NOT EXISTS idx_conversations_created ON public.conversations(created_at DESC);
 

@@ -19,7 +19,12 @@ ALTER TABLE public.agency_invoices
 
 -- brand_license_requests.submission_id -> license_submissions (004 -> 006)
 ALTER TABLE public.brand_license_requests
-    ADD CONSTRAINT fk_brand_license_requests_submission_id
+    ADD CONSTRAINT brand_license_requests_submission_id_fkey
+    FOREIGN KEY (submission_id) REFERENCES public.license_submissions(id) ON DELETE SET NULL;
+
+-- licensing_requests.submission_id -> license_submissions (006 self-reference after both tables exist)
+ALTER TABLE public.licensing_requests
+    ADD CONSTRAINT licensing_requests_submission_id_fkey
     FOREIGN KEY (submission_id) REFERENCES public.license_submissions(id) ON DELETE SET NULL;
 
 -- ============================================================================

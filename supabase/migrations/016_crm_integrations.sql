@@ -278,8 +278,13 @@ CREATE TABLE IF NOT EXISTS public.agency_catalogs (
     agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
     
     -- Catalog Info
-    name text NOT NULL,
+    name text,
+    title text,
     description text,
+    licensing_request_id uuid REFERENCES public.licensing_requests(id) ON DELETE SET NULL,
+    client_name text,
+    client_email text,
+    notes text,
     
     -- Settings
     is_public boolean DEFAULT false,
@@ -288,6 +293,9 @@ CREATE TABLE IF NOT EXISTS public.agency_catalogs (
     -- Access Control
     access_code text,
     require_access_code boolean DEFAULT false,
+    access_token text DEFAULT gen_random_uuid()::text,
+    sent_at timestamptz,
+    expires_at timestamptz,
     
     -- Metadata
     view_count integer DEFAULT 0,
@@ -300,6 +308,8 @@ CREATE TABLE IF NOT EXISTS public.agency_catalogs (
 CREATE INDEX IF NOT EXISTS idx_agency_catalogs_agency ON public.agency_catalogs(agency_id);
 CREATE INDEX IF NOT EXISTS idx_agency_catalogs_active ON public.agency_catalogs(agency_id, is_active);
 CREATE INDEX IF NOT EXISTS idx_agency_catalogs_public ON public.agency_catalogs(is_public, is_active) WHERE is_public = true;
+CREATE INDEX IF NOT EXISTS idx_agency_catalogs_licensing_request ON public.agency_catalogs(licensing_request_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_agency_catalogs_access_token ON public.agency_catalogs(access_token);
 
 ALTER TABLE public.agency_catalogs ENABLE ROW LEVEL SECURITY;
 

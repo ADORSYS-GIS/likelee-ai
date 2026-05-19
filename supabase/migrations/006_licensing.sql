@@ -38,20 +38,33 @@ CREATE TABLE IF NOT EXISTS public.licensing_requests (
     
     -- Request Details
     subject text,
+    campaign_title text,
+    client_name text,
     category text,
     territory text,
     usage_scope text,
+    regions text,
+    deadline date,
+    license_start_date date,
+    license_end_date date,
+    effective_end_date date,
     duration_days integer,
     exclusivity text,
     modifications_allowed text,
     
     -- Rates
     base_rate_weekly_cents bigint,
+    base_rate_monthly_cents bigint,
     offered_rate_weekly_cents bigint,
+    offered_rate_monthly_cents bigint,
+    rate_currency text DEFAULT 'USD',
+    rate_source_type text,
+    rate_source_id uuid,
     license_fee numeric,
     
     -- Brand Request Reference
     brand_request_id uuid,
+    submission_id uuid,
     
     -- Status
     status text NOT NULL CHECK (status IN ('pending', 'approved', 'rejected', 'archived')) DEFAULT 'pending',
@@ -59,6 +72,7 @@ CREATE TABLE IF NOT EXISTS public.licensing_requests (
     
     -- Review
     notes text,
+    negotiation_reason text,
     decided_at timestamptz,
     
     created_at timestamptz NOT NULL DEFAULT now(),
@@ -78,7 +92,11 @@ CREATE INDEX IF NOT EXISTS idx_licensing_requests_agency ON public.licensing_req
 CREATE INDEX IF NOT EXISTS idx_licensing_requests_brand ON public.licensing_requests(brand_id);
 CREATE INDEX IF NOT EXISTS idx_licensing_requests_talent ON public.licensing_requests(talent_id);
 CREATE INDEX IF NOT EXISTS idx_licensing_requests_creator ON public.licensing_requests(creator_id);
+CREATE INDEX IF NOT EXISTS idx_licensing_requests_submission ON public.licensing_requests(submission_id);
 CREATE INDEX IF NOT EXISTS idx_licensing_requests_status ON public.licensing_requests(status);
+CREATE INDEX IF NOT EXISTS idx_licensing_requests_deadline ON public.licensing_requests(deadline);
+CREATE INDEX IF NOT EXISTS idx_licensing_requests_license_end_date ON public.licensing_requests(license_end_date);
+CREATE INDEX IF NOT EXISTS idx_licensing_requests_effective_end_date ON public.licensing_requests(effective_end_date);
 CREATE INDEX IF NOT EXISTS idx_licensing_requests_context_type ON public.licensing_requests(context_type);
 CREATE INDEX IF NOT EXISTS idx_licensing_requests_campaign_offer ON public.licensing_requests(campaign_offer_id);
 CREATE INDEX IF NOT EXISTS idx_licensing_requests_created_at ON public.licensing_requests(created_at);
@@ -110,11 +128,14 @@ CREATE TABLE IF NOT EXISTS public.license_templates (
     agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
     
     -- Template Info
-    name text NOT NULL,
+    name text,
+    template_name text,
+    category text,
     description text,
     
     -- Usage Type
-    usage_type text NOT NULL, -- 'social', 'digital', 'print', 'broadcast', etc.
+    usage_type text, -- 'social', 'digital', 'print', 'broadcast', etc.
+    usage_scope text,
     
     -- Pricing (flat fee, not range)
     license_fee integer NOT NULL DEFAULT 0,
@@ -123,8 +144,15 @@ CREATE TABLE IF NOT EXISTS public.license_templates (
     duration_days integer,
     exclusivity text,
     territory text,
+    modifications_allowed text,
     custom_terms text,
     usage_count integer, -- how many times can be used
+    docuseal_template_id integer,
+    client_name text,
+    talent_name text,
+    start_date date,
+    contract_body text,
+    contract_body_format text DEFAULT 'markdown',
     
     -- Template Status
     is_active boolean DEFAULT true,
@@ -388,81 +416,5 @@ CREATE TRIGGER trigger_license_submissions_updated_at
     BEFORE UPDATE ON public.license_submissions
     FOR EACH ROW
     EXECUTE FUNCTION public.update_license_submissions_updated_at();
-
--- ============================================================================
--- 9. AGENCY-CREATOR MARKETPLACE CONTRACTS (from 2026-03-27)
--- ============================================================================
-CREATE TABLE IF NOT EXISTS public.agency_creator_marketplace_contracts (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
-    creator_id uuid NOT NULL REFERENCES public.creators(id) ON DELETE CASCADE,
-    invite_id uuid REFERENCES public.creator_agency_invites(id) ON DELETE SET NULL,
-    template_id uuid REFERENCES public.license_templates(id) ON DELETE SET NULL,
-    template_name text,
-    contract_body text NOT NULL DEFAULT '',
-    contract_body_format text NOT NULL DEFAULT 'markdown'
-        CHECK (contract_body_format IN ('markdown', 'html')),
-    rendered_contract_body text,
-    commission_rate numeric(10, 2) NOT NULL
-        CHECK (commission_rate >= 0 AND commission_rate <= 100),
-    valid_from date NOT NULL,
-    valid_until date NOT NULL,
-    placeholder_values jsonb NOT NULL DEFAULT '{}'::jsonb,
-    status text NOT NULL DEFAULT 'draft'
-        CHECK (status IN ('draft', 'pending_signature', 'active', 'expired', 'declined', 'voided')),
-    docuseal_submission_id integer,
-    docuseal_template_id integer,
-    docuseal_status text NOT NULL DEFAULT 'draft',
-    agency_submitter_id bigint,
-    agency_submitter_slug text,
-    agency_embed_src text,
-    creator_submitter_id bigint,
-    creator_submitter_slug text,
-    signed_document_url text,
-    sent_at timestamptz,
-    signed_at timestamptz,
-    last_synced_at timestamptz,
-    created_at timestamptz NOT NULL DEFAULT now(),
-    updated_at timestamptz NOT NULL DEFAULT now(),
-    CONSTRAINT agency_creator_marketplace_contracts_valid_window_check
-        CHECK (valid_until >= valid_from)
-);
-
-CREATE INDEX IF NOT EXISTS idx_agency_creator_marketplace_contracts_agency_creator
-    ON public.agency_creator_marketplace_contracts (agency_id, creator_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_agency_creator_marketplace_contracts_creator_status
-    ON public.agency_creator_marketplace_contracts (creator_id, status, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_agency_creator_marketplace_contracts_invite
-    ON public.agency_creator_marketplace_contracts (invite_id);
-CREATE INDEX IF NOT EXISTS idx_agency_creator_marketplace_contracts_docuseal_submission
-    ON public.agency_creator_marketplace_contracts (docuseal_submission_id);
-
-ALTER TABLE public.agency_creator_marketplace_contracts ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Agencies can view marketplace creator contracts" ON public.agency_creator_marketplace_contracts;
-CREATE POLICY "Agencies can view marketplace creator contracts"
-    ON public.agency_creator_marketplace_contracts
-    FOR SELECT
-    USING (agency_id = auth.uid());
-
-DROP POLICY IF EXISTS "Agencies can manage marketplace creator contracts" ON public.agency_creator_marketplace_contracts;
-CREATE POLICY "Agencies can manage marketplace creator contracts"
-    ON public.agency_creator_marketplace_contracts
-    FOR ALL
-    USING (agency_id = auth.uid())
-    WITH CHECK (agency_id = auth.uid());
-
-DROP POLICY IF EXISTS "Creators can view their marketplace creator contracts" ON public.agency_creator_marketplace_contracts;
-CREATE POLICY "Creators can view their marketplace creator contracts"
-    ON public.agency_creator_marketplace_contracts
-    FOR SELECT
-    USING (creator_id = auth.uid());
-
-DROP POLICY IF EXISTS "Creators can update their marketplace creator contracts" ON public.agency_creator_marketplace_contracts;
-CREATE POLICY "Creators can update their marketplace creator contracts"
-    ON public.agency_creator_marketplace_contracts
-    FOR UPDATE
-    USING (creator_id = auth.uid())
-    WITH CHECK (creator_id = auth.uid());
 
 COMMIT;

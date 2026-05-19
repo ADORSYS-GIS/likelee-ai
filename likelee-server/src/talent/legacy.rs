@@ -30,6 +30,10 @@ use serde_json::json;
 use std::collections::HashMap;
 use tracing::warn;
 
+fn is_missing_talent_profile_error(status: StatusCode, message: &str) -> bool {
+    status == StatusCode::NOT_FOUND && message == "Talent profile not found"
+}
+
 #[derive(Debug, serde::Deserialize)]
 pub struct ListTalentNotificationsQuery {
     pub limit: Option<u32>,
@@ -46,7 +50,17 @@ pub async fn get_portal_settings(
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
-    let resolved = resolve_talent(&state, &user).await?;
+    let resolved = match resolve_talent(&state, &user).await {
+        Ok(resolved) => resolved,
+        Err((status, message)) if is_missing_talent_profile_error(status, &message) => {
+            return Ok(Json(json!({
+                "talent_id": serde_json::Value::Null,
+                "allow_training": false,
+                "public_profile_visible": true,
+            })));
+        }
+        Err(err) => return Err(err),
+    };
 
     let resp = state
         .pg
@@ -351,7 +365,12 @@ pub async fn list_irl_payments(
     Query(q): Query<ListIrlPaymentsQuery>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
-    let _resolved = resolve_talent(&state, &user).await?;
+    if let Err((status, message)) = resolve_talent(&state, &user).await {
+        if is_missing_talent_profile_error(status, &message) {
+            return Ok(Json(json!([])));
+        }
+        return Err((status, message));
+    }
     let connections = list_active_talent_connections(&state, &user).await?;
 
     let requested_aid = q.agency_id.as_ref().filter(|s| !s.trim().is_empty());
@@ -752,7 +771,13 @@ pub async fn get_latest_tax_document(
     Query(q): Query<LatestTaxDocumentQuery>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
-    let resolved = resolve_talent(&state, &user).await?;
+    let resolved = match resolve_talent(&state, &user).await {
+        Ok(resolved) => resolved,
+        Err((status, message)) if is_missing_talent_profile_error(status, &message) => {
+            return Ok(Json(json!({})));
+        }
+        Err(err) => return Err(err),
+    };
 
     let mut req = state
         .pg
@@ -1072,12 +1097,23 @@ pub async fn talent_me(
         .map(|s| s.trim())
         .filter(|s| !s.is_empty())
         .map(|s| s.to_string());
-    let resolved = if let Some(ref aid) = requested_agency_id {
-        resolve_talent_for_agency(&state, &user, aid).await?
+    let row = if let Some(ref aid) = requested_agency_id {
+        match resolve_talent_for_agency(&state, &user, aid).await {
+            Ok(resolved) => resolved.agency_user_row,
+            Err((status, message)) if is_missing_talent_profile_error(status, &message) => {
+                json!(null)
+            }
+            Err(err) => return Err(err),
+        }
     } else {
-        resolve_talent(&state, &user).await?
+        match resolve_talent(&state, &user).await {
+            Ok(resolved) => resolved.agency_user_row,
+            Err((status, message)) if is_missing_talent_profile_error(status, &message) => {
+                json!(null)
+            }
+            Err(err) => return Err(err),
+        }
     };
-    let row = resolved.agency_user_row;
     Ok(Json(TalentMeResponse {
         status: "ok".to_string(),
         agency_user: row,
@@ -1109,7 +1145,13 @@ pub async fn list_licensing_requests(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<Vec<TalentLicensingRequestItem>>, (StatusCode, String)> {
-    let _resolved = resolve_talent(&state, &user).await?;
+    if let Err((status, message)) = resolve_talent(&state, &user).await {
+        if is_missing_talent_profile_error(status, &message) {
+            return Ok(Json(vec![]));
+        }
+        return Err((status, message));
+    }
+
     let connections = list_active_talent_connections(&state, &user).await?;
 
     if connections.is_empty() {
@@ -1389,7 +1431,13 @@ pub async fn list_licenses_stub(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<Vec<serde_json::Value>>, (StatusCode, String)> {
-    let resolved = resolve_talent(&state, &user).await?;
+    let resolved = match resolve_talent(&state, &user).await {
+        Ok(resolved) => resolved,
+        Err((status, message)) if is_missing_talent_profile_error(status, &message) => {
+            return Ok(Json(vec![]));
+        }
+        Err(err) => return Err(err),
+    };
 
     let mut req = state
         .pg
@@ -1597,15 +1645,24 @@ pub async fn get_licensing_revenue(
         .get("agency_id")
         .map(|s| s.trim())
         .filter(|s| !s.is_empty());
-    let resolved = if let Some(aid) = requested_agency_id {
-        resolve_talent_for_agency(&state, &user, aid).await?
-    } else {
-        resolve_talent(&state, &user).await?
-    };
     let month = params
         .get("month")
         .cloned()
         .unwrap_or_else(|| "".to_string());
+    let resolved = match requested_agency_id {
+        Some(aid) => resolve_talent_for_agency(&state, &user, aid).await,
+        None => resolve_talent(&state, &user).await,
+    };
+    let resolved = match resolved {
+        Ok(resolved) => resolved,
+        Err((status, message)) if is_missing_talent_profile_error(status, &message) => {
+            return Ok(Json(TalentLicensingRevenueResponse {
+                month,
+                total_cents: 0,
+            }));
+        }
+        Err(err) => return Err(err),
+    };
 
     let bounds = if month.trim().is_empty() {
         None
@@ -1674,10 +1731,16 @@ pub async fn get_earnings_by_campaign(
         .get("agency_id")
         .map(|s| s.trim())
         .filter(|s| !s.is_empty());
-    let resolved = if let Some(aid) = requested_agency_id {
-        resolve_talent_for_agency(&state, &user, aid).await?
-    } else {
-        resolve_talent(&state, &user).await?
+    let resolved = match requested_agency_id {
+        Some(aid) => resolve_talent_for_agency(&state, &user, aid).await,
+        None => resolve_talent(&state, &user).await,
+    };
+    let resolved = match resolved {
+        Ok(resolved) => resolved,
+        Err((status, message)) if is_missing_talent_profile_error(status, &message) => {
+            return Ok(Json(vec![]));
+        }
+        Err(err) => return Err(err),
     };
     let month = params
         .get("month")
@@ -1850,10 +1913,16 @@ pub async fn get_earnings_by_agency(
         .get("agency_id")
         .map(|s| s.trim())
         .filter(|s| !s.is_empty());
-    let resolved = if let Some(aid) = requested_agency_id {
-        resolve_talent_for_agency(&state, &user, aid).await?
-    } else {
-        resolve_talent(&state, &user).await?
+    let resolved = match requested_agency_id {
+        Some(aid) => resolve_talent_for_agency(&state, &user, aid).await,
+        None => resolve_talent(&state, &user).await,
+    };
+    let resolved = match resolved {
+        Ok(resolved) => resolved,
+        Err((status, message)) if is_missing_talent_profile_error(status, &message) => {
+            return Ok(Json(vec![]));
+        }
+        Err(err) => return Err(err),
     };
 
     let month = params
@@ -2591,7 +2660,13 @@ pub async fn list_portfolio_items(
     user: AuthUser,
     Query(q): Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<Vec<serde_json::Value>>, (StatusCode, String)> {
-    let resolved = resolve_talent(&state, &user).await?;
+    let resolved = match resolve_talent(&state, &user).await {
+        Ok(resolved) => resolved,
+        Err((status, message)) if is_missing_talent_profile_error(status, &message) => {
+            return Ok(Json(vec![]));
+        }
+        Err(err) => return Err(err),
+    };
     let connections = list_active_talent_connections(&state, &user).await?;
     let ids = connected_agency_ids_from_connections(&connections);
     if ids.is_empty() {
@@ -2770,7 +2845,13 @@ pub async fn list_bookings(
     user: AuthUser,
     Query(q): Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let _resolved = resolve_talent(&state, &user).await?;
+    if let Err((status, message)) = resolve_talent(&state, &user).await {
+        if is_missing_talent_profile_error(status, &message) {
+            return Ok(Json(json!([])));
+        }
+        return Err((status, message));
+    }
+
     let connections = list_active_talent_connections(&state, &user).await?;
 
     let requested_aid = q
@@ -2844,7 +2925,12 @@ pub async fn list_book_outs(
     user: AuthUser,
     Query(params): Query<ListBookOutsParams>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let _resolved = resolve_talent(&state, &user).await?;
+    if let Err((status, message)) = resolve_talent(&state, &user).await {
+        if is_missing_talent_profile_error(status, &message) {
+            return Ok(Json(json!([])));
+        }
+        return Err((status, message));
+    }
     let connections = list_active_talent_connections(&state, &user).await?;
 
     let requested_aid = params.agency_id.as_ref().filter(|s| !s.trim().is_empty());

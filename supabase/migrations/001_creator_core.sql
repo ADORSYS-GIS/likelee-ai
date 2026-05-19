@@ -64,7 +64,6 @@ CREATE TABLE IF NOT EXISTS public.creators (
     stripe_customer_id text,
     stripe_subscription_id text,
     trial_started_at timestamptz,
-    trial_pro_started_at timestamptz,
     subscription_current_period_end timestamptz,
     
     -- Onboarding
@@ -76,6 +75,7 @@ CREATE TABLE IF NOT EXISTS public.creators (
     licensing_rate_monthly_cents bigint,
     accept_negotiations boolean DEFAULT true,
     rate_currency text DEFAULT 'USD',
+    currency_code text DEFAULT 'USD',
     
     -- External Integrations (from 0005)
     creatify_api_key text,
@@ -97,16 +97,29 @@ CREATE TABLE IF NOT EXISTS public.creators (
     -- Profile Fields (from 2026-05-04_add_creator_profile_fields)
     birthdate date,
     gender text,
-    ethnicity text,
+    ethnicity text[] DEFAULT '{}',
     creator_type text,
+    role text DEFAULT 'creator',
+    athlete_type text,
     platform_handle text,
+    primary_platform text,
     tiktok_handle text,
-    content_restrictions text,
-    brand_exclusivity text,
+    twitter_handle text,
+    content_restrictions text[] DEFAULT '{}',
+    brand_exclusivity text[] DEFAULT '{}',
     visibility text DEFAULT 'private',
+    status text DEFAULT 'waitlist',
     content_types text[] DEFAULT '{}',
+    content_other text,
     industries text[] DEFAULT '{}',
+    brand_categories text[] DEFAULT '{}',
+    work_types text[] DEFAULT '{}',
     vibes text[] DEFAULT '{}',
+    representation_status text,
+    headshot_url text,
+    sport text,
+    school_name text,
+    languages text,
     base_monthly_price_cents integer DEFAULT 0,
     base_weekly_price_cents integer DEFAULT 0,
     pricing_updated_at timestamptz,
@@ -140,8 +153,11 @@ CREATE INDEX IF NOT EXISTS idx_creators_email ON public.creators(email);
 CREATE INDEX IF NOT EXISTS idx_creators_platform_handle ON public.creators(platform_handle);
 CREATE INDEX IF NOT EXISTS idx_creators_tiktok_handle ON public.creators(tiktok_handle);
 CREATE INDEX IF NOT EXISTS idx_creators_visibility ON public.creators(visibility);
+CREATE INDEX IF NOT EXISTS idx_creators_role ON public.creators(role);
 CREATE INDEX IF NOT EXISTS idx_creators_content_types ON public.creators USING GIN (content_types);
 CREATE INDEX IF NOT EXISTS idx_creators_industries ON public.creators USING GIN (industries);
+CREATE INDEX IF NOT EXISTS idx_creators_brand_categories ON public.creators USING GIN (brand_categories);
+CREATE INDEX IF NOT EXISTS idx_creators_work_types ON public.creators USING GIN (work_types);
 
 -- Creators RLS
 ALTER TABLE public.creators ENABLE ROW LEVEL SECURITY;
@@ -198,7 +214,9 @@ CREATE TABLE IF NOT EXISTS public.creator_custom_rates (
     creator_id uuid NOT NULL REFERENCES public.creators(id) ON DELETE CASCADE,
     
     rate_type text NOT NULL, -- 'usage', 'duration', 'exclusivity', etc.
-    rate_cents integer NOT NULL,
+    rate_name text,
+    rate_cents integer DEFAULT 0,
+    price_per_month_cents integer,
     currency text NOT NULL DEFAULT 'USD',
     
     valid_from date,
