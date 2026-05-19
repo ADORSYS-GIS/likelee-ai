@@ -168,11 +168,12 @@ CREATE POLICY "Agencies can manage own package items" ON public.agency_talent_pa
 CREATE TABLE IF NOT EXISTS public.agency_talent_package_item_assets (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     item_id uuid NOT NULL REFERENCES public.agency_talent_package_items(id) ON DELETE CASCADE,
+    asset_id uuid REFERENCES public.storage_assets(id) ON DELETE SET NULL,
     
     -- Asset Details
     asset_type text NOT NULL, -- 'photo', 'video', 'digitals', 'voice'
-    storage_bucket text NOT NULL,
-    storage_path text NOT NULL,
+    storage_bucket text,
+    storage_path text,
     public_url text,
     
     -- Metadata
@@ -189,6 +190,7 @@ CREATE TABLE IF NOT EXISTS public.agency_talent_package_item_assets (
 );
 
 CREATE INDEX IF NOT EXISTS idx_agency_talent_package_item_assets_item ON public.agency_talent_package_item_assets(item_id);
+CREATE INDEX IF NOT EXISTS idx_agency_talent_package_item_assets_asset ON public.agency_talent_package_item_assets(asset_id);
 CREATE INDEX IF NOT EXISTS idx_agency_talent_package_item_assets_sort ON public.agency_talent_package_item_assets(item_id, sort_order);
 
 ALTER TABLE public.agency_talent_package_item_assets ENABLE ROW LEVEL SECURITY;
