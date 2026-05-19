@@ -168,7 +168,7 @@ CREATE POLICY "Agencies can manage own package items" ON public.agency_talent_pa
 CREATE TABLE IF NOT EXISTS public.agency_talent_package_item_assets (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     item_id uuid NOT NULL REFERENCES public.agency_talent_package_items(id) ON DELETE CASCADE,
-    asset_id uuid REFERENCES public.storage_assets(id) ON DELETE SET NULL,
+    asset_id uuid,
     
     -- Asset Details
     asset_type text NOT NULL, -- 'photo', 'video', 'digitals', 'voice'
