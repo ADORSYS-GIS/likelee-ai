@@ -38,16 +38,28 @@ CREATE TABLE IF NOT EXISTS public.licensing_requests (
     
     -- Request Details
     subject text,
+    campaign_title text,
+    client_name text,
     category text,
     territory text,
     usage_scope text,
+    regions text,
+    deadline date,
+    license_start_date date,
+    license_end_date date,
+    effective_end_date date,
     duration_days integer,
     exclusivity text,
     modifications_allowed text,
     
     -- Rates
     base_rate_weekly_cents bigint,
+    base_rate_monthly_cents bigint,
     offered_rate_weekly_cents bigint,
+    offered_rate_monthly_cents bigint,
+    rate_currency text DEFAULT 'USD',
+    rate_source_type text,
+    rate_source_id uuid,
     license_fee numeric,
     
     -- Brand Request Reference
@@ -60,6 +72,7 @@ CREATE TABLE IF NOT EXISTS public.licensing_requests (
     
     -- Review
     notes text,
+    negotiation_reason text,
     decided_at timestamptz,
     
     created_at timestamptz NOT NULL DEFAULT now(),
@@ -81,6 +94,9 @@ CREATE INDEX IF NOT EXISTS idx_licensing_requests_talent ON public.licensing_req
 CREATE INDEX IF NOT EXISTS idx_licensing_requests_creator ON public.licensing_requests(creator_id);
 CREATE INDEX IF NOT EXISTS idx_licensing_requests_submission ON public.licensing_requests(submission_id);
 CREATE INDEX IF NOT EXISTS idx_licensing_requests_status ON public.licensing_requests(status);
+CREATE INDEX IF NOT EXISTS idx_licensing_requests_deadline ON public.licensing_requests(deadline);
+CREATE INDEX IF NOT EXISTS idx_licensing_requests_license_end_date ON public.licensing_requests(license_end_date);
+CREATE INDEX IF NOT EXISTS idx_licensing_requests_effective_end_date ON public.licensing_requests(effective_end_date);
 CREATE INDEX IF NOT EXISTS idx_licensing_requests_context_type ON public.licensing_requests(context_type);
 CREATE INDEX IF NOT EXISTS idx_licensing_requests_campaign_offer ON public.licensing_requests(campaign_offer_id);
 CREATE INDEX IF NOT EXISTS idx_licensing_requests_created_at ON public.licensing_requests(created_at);
@@ -112,11 +128,14 @@ CREATE TABLE IF NOT EXISTS public.license_templates (
     agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
     
     -- Template Info
-    name text NOT NULL,
+    name text,
+    template_name text,
+    category text,
     description text,
     
     -- Usage Type
-    usage_type text NOT NULL, -- 'social', 'digital', 'print', 'broadcast', etc.
+    usage_type text, -- 'social', 'digital', 'print', 'broadcast', etc.
+    usage_scope text,
     
     -- Pricing (flat fee, not range)
     license_fee integer NOT NULL DEFAULT 0,
@@ -125,8 +144,15 @@ CREATE TABLE IF NOT EXISTS public.license_templates (
     duration_days integer,
     exclusivity text,
     territory text,
+    modifications_allowed text,
     custom_terms text,
     usage_count integer, -- how many times can be used
+    docuseal_template_id integer,
+    client_name text,
+    talent_name text,
+    start_date date,
+    contract_body text,
+    contract_body_format text DEFAULT 'markdown',
     
     -- Template Status
     is_active boolean DEFAULT true,

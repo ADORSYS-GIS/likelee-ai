@@ -203,6 +203,72 @@ ALTER TABLE public.creator_agency_invites
 CREATE INDEX IF NOT EXISTS idx_creator_agency_invites_contract_id
     ON public.creator_agency_invites(contract_id);
 
+ALTER TABLE public.license_templates
+    ADD COLUMN IF NOT EXISTS template_name text,
+    ADD COLUMN IF NOT EXISTS category text,
+    ADD COLUMN IF NOT EXISTS usage_scope text,
+    ADD COLUMN IF NOT EXISTS modifications_allowed text,
+    ADD COLUMN IF NOT EXISTS docuseal_template_id integer,
+    ADD COLUMN IF NOT EXISTS client_name text,
+    ADD COLUMN IF NOT EXISTS talent_name text,
+    ADD COLUMN IF NOT EXISTS start_date date,
+    ADD COLUMN IF NOT EXISTS contract_body text,
+    ADD COLUMN IF NOT EXISTS contract_body_format text DEFAULT 'markdown';
+
+ALTER TABLE public.license_templates
+    ALTER COLUMN name DROP NOT NULL,
+    ALTER COLUMN usage_type DROP NOT NULL;
+
+UPDATE public.license_templates
+SET template_name = COALESCE(NULLIF(btrim(template_name), ''), NULLIF(btrim(name), ''), 'License Template')
+WHERE template_name IS NULL OR btrim(template_name) = '';
+
+UPDATE public.license_templates
+SET category = COALESCE(NULLIF(btrim(category), ''), NULLIF(btrim(usage_type), ''), 'general')
+WHERE category IS NULL OR btrim(category) = '';
+
+UPDATE public.license_templates
+SET usage_scope = COALESCE(NULLIF(btrim(usage_scope), ''), NULLIF(btrim(usage_type), ''))
+WHERE usage_scope IS NULL OR btrim(usage_scope) = '';
+
+UPDATE public.license_templates
+SET contract_body_format = 'markdown'
+WHERE contract_body_format IS NULL OR btrim(contract_body_format) = '';
+
+ALTER TABLE public.licensing_requests
+    ADD COLUMN IF NOT EXISTS campaign_title text,
+    ADD COLUMN IF NOT EXISTS client_name text,
+    ADD COLUMN IF NOT EXISTS license_start_date date,
+    ADD COLUMN IF NOT EXISTS license_end_date date,
+    ADD COLUMN IF NOT EXISTS deadline date,
+    ADD COLUMN IF NOT EXISTS regions text,
+    ADD COLUMN IF NOT EXISTS negotiation_reason text,
+    ADD COLUMN IF NOT EXISTS effective_end_date date,
+    ADD COLUMN IF NOT EXISTS base_rate_monthly_cents bigint,
+    ADD COLUMN IF NOT EXISTS offered_rate_monthly_cents bigint,
+    ADD COLUMN IF NOT EXISTS rate_currency text DEFAULT 'USD',
+    ADD COLUMN IF NOT EXISTS rate_source_type text,
+    ADD COLUMN IF NOT EXISTS rate_source_id uuid;
+
+UPDATE public.licensing_requests
+SET campaign_title = COALESCE(NULLIF(btrim(campaign_title), ''), subject)
+WHERE campaign_title IS NULL OR btrim(campaign_title) = '';
+
+UPDATE public.licensing_requests
+SET rate_currency = 'USD'
+WHERE rate_currency IS NULL OR btrim(rate_currency) = '';
+
+UPDATE public.licensing_requests
+SET effective_end_date = COALESCE(license_end_date, deadline)
+WHERE effective_end_date IS NULL;
+
+CREATE INDEX IF NOT EXISTS idx_licensing_requests_deadline
+    ON public.licensing_requests(deadline);
+CREATE INDEX IF NOT EXISTS idx_licensing_requests_license_end_date
+    ON public.licensing_requests(license_end_date);
+CREATE INDEX IF NOT EXISTS idx_licensing_requests_effective_end_date
+    ON public.licensing_requests(effective_end_date);
+
 ALTER TABLE public.conversations
     ADD COLUMN IF NOT EXISTS agency_id uuid REFERENCES public.agencies(id) ON DELETE CASCADE,
     ADD COLUMN IF NOT EXISTS creator_id uuid REFERENCES public.creators(id) ON DELETE CASCADE;
@@ -269,6 +335,33 @@ BEGIN
             NOT VALID;
     END IF;
 END $$;
+
+ALTER TABLE public.agency_payout_requests
+    ADD COLUMN IF NOT EXISTS payout_method text DEFAULT 'instant',
+    ADD COLUMN IF NOT EXISTS stripe_transfer_id text;
+
+UPDATE public.agency_payout_requests
+SET payout_method = 'instant'
+WHERE payout_method IS NULL OR btrim(payout_method) = '';
+
+ALTER TABLE public.agency_payout_requests
+    DROP CONSTRAINT IF EXISTS agency_payout_requests_status_check,
+    ADD CONSTRAINT agency_payout_requests_status_check
+        CHECK (status IN ('pending', 'approved', 'processing', 'completed', 'failed'))
+        NOT VALID;
+
+ALTER TABLE public.creator_payout_requests
+    ADD COLUMN IF NOT EXISTS payout_method text DEFAULT 'instant';
+
+UPDATE public.creator_payout_requests
+SET payout_method = 'instant'
+WHERE payout_method IS NULL OR btrim(payout_method) = '';
+
+ALTER TABLE public.creator_payout_requests
+    DROP CONSTRAINT IF EXISTS creator_payout_requests_status_check,
+    ADD CONSTRAINT creator_payout_requests_status_check
+        CHECK (status IN ('pending', 'approved', 'processing', 'completed', 'failed'))
+        NOT VALID;
 
 ALTER TABLE public.organization_memberships
     ADD COLUMN IF NOT EXISTS status text DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'pending'));

@@ -186,13 +186,15 @@ CREATE TABLE IF NOT EXISTS public.agency_payout_requests (
     -- Amount
     amount_cents integer NOT NULL,
     currency text NOT NULL DEFAULT 'USD',
+    payout_method text DEFAULT 'instant',
     
     -- Stripe Connect
     stripe_connect_account_id text,
     stripe_payout_id text,
+    stripe_transfer_id text,
     
     -- Status
-    status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
+    status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'processing', 'completed', 'failed')),
     failure_reason text,
     
     -- Timing
@@ -250,6 +252,7 @@ CREATE TABLE IF NOT EXISTS public.creator_payout_requests (
     -- Amount
     amount_cents integer NOT NULL,
     currency text NOT NULL DEFAULT 'USD',
+    payout_method text DEFAULT 'instant',
     
     -- Stripe Connect
     stripe_connect_account_id text,
@@ -257,7 +260,7 @@ CREATE TABLE IF NOT EXISTS public.creator_payout_requests (
     stripe_transfer_id text,
     
     -- Status
-    status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
+    status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'processing', 'completed', 'failed')),
     failure_reason text,
     
     -- Timing
