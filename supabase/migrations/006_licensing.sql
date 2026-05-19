@@ -146,7 +146,7 @@ CREATE TABLE IF NOT EXISTS public.license_templates (
     territory text,
     modifications_allowed text,
     custom_terms text,
-    usage_count integer, -- how many times can be used
+    usage_count integer NOT NULL DEFAULT 0, -- how many times can be used
     docuseal_template_id integer,
     client_name text,
     talent_name text,

@@ -498,7 +498,8 @@ BEGIN
     SELECT package_id FROM public.agency_talent_package_interactions
     WHERE id = p_access_token::uuid
     LIMIT 1
-  ) OR p.meta->>'access_token' = p_access_token;
+  ) OR p.access_token = p_access_token
+    OR p.meta->>'access_token' = p_access_token;
 
   RETURN result;
 END;
