@@ -121,6 +121,37 @@ CREATE INDEX IF NOT EXISTS idx_agency_talent_package_items_creator ON public.age
 CREATE INDEX IF NOT EXISTS idx_agency_talent_package_items_relationship ON public.agency_talent_package_items(relationship_id);
 CREATE INDEX IF NOT EXISTS idx_agency_talent_package_items_sort ON public.agency_talent_package_items(package_id, sort_order);
 
+CREATE OR REPLACE FUNCTION public.set_agency_talent_package_item_agency_id()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_agency_id uuid;
+BEGIN
+    SELECT p.agency_id
+    INTO v_agency_id
+    FROM public.agency_talent_packages p
+    WHERE p.id = NEW.package_id;
+
+    IF v_agency_id IS NULL THEN
+        RAISE EXCEPTION 'Package % does not exist or has no agency_id', NEW.package_id;
+    END IF;
+
+    NEW.agency_id := v_agency_id;
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS set_agency_talent_package_item_agency_id
+    ON public.agency_talent_package_items;
+CREATE TRIGGER set_agency_talent_package_item_agency_id
+    BEFORE INSERT OR UPDATE OF package_id ON public.agency_talent_package_items
+    FOR EACH ROW
+    EXECUTE FUNCTION public.set_agency_talent_package_item_agency_id();
+
+
 ALTER TABLE public.agency_talent_package_items ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Agencies can view own package items" ON public.agency_talent_package_items;
