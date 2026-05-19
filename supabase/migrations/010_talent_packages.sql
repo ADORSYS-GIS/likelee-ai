@@ -203,10 +203,11 @@ CREATE TABLE IF NOT EXISTS public.agency_talent_package_interactions (
     package_id uuid NOT NULL REFERENCES public.agency_talent_packages(id) ON DELETE CASCADE,
     
     -- Subject (creator identity support)
+    talent_id text,
     creator_id uuid REFERENCES public.creators(id) ON DELETE CASCADE,
     
     -- Interaction Details
-    interaction_type text NOT NULL CHECK (interaction_type IN ('view', 'share', 'download', 'interest', 'asset_request', 'favorite', 'callback', 'selected', 'consent')),
+    interaction_type text NOT NULL CHECK (interaction_type IN ('view', 'share', 'download', 'interest', 'asset_request', 'favorite', 'callback', 'selected', 'consent', 'comment')),
     "type" text,
     
     -- For asset_request type
@@ -215,6 +216,7 @@ CREATE TABLE IF NOT EXISTS public.agency_talent_package_interactions (
     content text,
     client_name text,
     client_email text,
+    interaction_data jsonb DEFAULT '{}'::jsonb,
     
     -- Metadata
     ip_address inet,
@@ -228,7 +230,7 @@ CREATE TABLE IF NOT EXISTS public.agency_talent_package_interactions (
 ALTER TABLE public.agency_talent_package_interactions
     DROP CONSTRAINT IF EXISTS agency_talent_package_interactions_interaction_type_check,
     ADD CONSTRAINT agency_talent_package_interactions_interaction_type_check
-        CHECK (interaction_type IN ('view', 'share', 'download', 'interest', 'asset_request', 'favorite', 'callback', 'selected', 'consent'));
+        CHECK (interaction_type IN ('view', 'share', 'download', 'interest', 'asset_request', 'favorite', 'callback', 'selected', 'consent', 'comment'));
 
 CREATE OR REPLACE FUNCTION public.normalize_agency_talent_package_interaction()
 RETURNS trigger
@@ -241,6 +243,7 @@ BEGIN
     NEW."type" := COALESCE(NULLIF(NEW."type", ''), NEW.interaction_type);
     NEW.request_message := COALESCE(NEW.request_message, NEW.content);
     NEW.content := COALESCE(NEW.content, NEW.request_message);
+    NEW.interaction_data := COALESCE(NEW.interaction_data, '{}'::jsonb);
     RETURN NEW;
 END;
 $$;
@@ -254,6 +257,7 @@ CREATE TRIGGER normalize_agency_talent_package_interaction
 
 CREATE INDEX IF NOT EXISTS idx_agency_talent_package_interactions_package ON public.agency_talent_package_interactions(package_id);
 CREATE INDEX IF NOT EXISTS idx_agency_talent_package_interactions_creator ON public.agency_talent_package_interactions(creator_id);
+CREATE INDEX IF NOT EXISTS idx_agency_talent_package_interactions_talent ON public.agency_talent_package_interactions(talent_id);
 CREATE INDEX IF NOT EXISTS idx_agency_talent_package_interactions_type ON public.agency_talent_package_interactions(interaction_type);
 CREATE INDEX IF NOT EXISTS idx_agency_talent_package_interactions_created ON public.agency_talent_package_interactions(created_at DESC);
 
@@ -454,10 +458,11 @@ BEGIN
     v_request_message := COALESCE(interaction_data->>'request_message', interaction_data->>'content');
 
     INSERT INTO public.agency_talent_package_interactions (
-        package_id, creator_id, interaction_type, "type", item_id, request_message,
-        content, client_name, client_email, ip_address, user_agent, referrer
+        package_id, talent_id, creator_id, interaction_type, "type", item_id, request_message,
+        content, client_name, client_email, interaction_data, ip_address, user_agent, referrer
     ) VALUES (
         v_package_id,
+        NULLIF(interaction_data->>'talent_id', ''),
         v_creator_id,
         v_interaction_type,
         v_interaction_type,
@@ -466,6 +471,7 @@ BEGIN
         interaction_data->>'content',
         interaction_data->>'client_name',
         interaction_data->>'client_email',
+        interaction_data,
         NULLIF(interaction_data->>'ip_address', '')::inet,
         interaction_data->>'user_agent',
         interaction_data->>'referrer'
@@ -546,10 +552,16 @@ BEGIN
         SELECT jsonb_agg(
           jsonb_build_object(
             'id', i.id,
+            'talent_id', i.talent_id,
             'creator_id', i.creator_id,
             'interaction_type', i.interaction_type,
+            'type', COALESCE(i."type", i.interaction_type),
             'item_id', i.item_id,
             'request_message', i.request_message,
+            'content', i.content,
+            'client_name', i.client_name,
+            'client_email', i.client_email,
+            'interaction_data', i.interaction_data,
             'created_at', i.created_at
           )
         )
