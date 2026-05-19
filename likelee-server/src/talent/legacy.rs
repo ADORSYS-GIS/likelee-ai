@@ -1109,7 +1109,13 @@ pub async fn list_licensing_requests(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<Vec<TalentLicensingRequestItem>>, (StatusCode, String)> {
-    let _resolved = resolve_talent(&state, &user).await?;
+    if let Err((status, message)) = resolve_talent(&state, &user).await {
+        if status == StatusCode::NOT_FOUND && message == "Talent profile not found" {
+            return Ok(Json(vec![]));
+        }
+        return Err((status, message));
+    }
+
     let connections = list_active_talent_connections(&state, &user).await?;
 
     if connections.is_empty() {
