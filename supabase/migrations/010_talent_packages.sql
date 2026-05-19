@@ -206,11 +206,15 @@ CREATE TABLE IF NOT EXISTS public.agency_talent_package_interactions (
     creator_id uuid REFERENCES public.creators(id) ON DELETE CASCADE,
     
     -- Interaction Details
-    interaction_type text NOT NULL CHECK (interaction_type IN ('view', 'share', 'download', 'interest', 'asset_request')),
+    interaction_type text NOT NULL CHECK (interaction_type IN ('view', 'share', 'download', 'interest', 'asset_request', 'favorite', 'callback', 'selected', 'consent')),
+    "type" text,
     
     -- For asset_request type
     item_id uuid REFERENCES public.agency_talent_package_items(id) ON DELETE SET NULL,
     request_message text,
+    content text,
+    client_name text,
+    client_email text,
     
     -- Metadata
     ip_address inet,
@@ -219,6 +223,34 @@ CREATE TABLE IF NOT EXISTS public.agency_talent_package_interactions (
     
     created_at timestamptz NOT NULL DEFAULT now()
 );
+
+
+ALTER TABLE public.agency_talent_package_interactions
+    DROP CONSTRAINT IF EXISTS agency_talent_package_interactions_interaction_type_check,
+    ADD CONSTRAINT agency_talent_package_interactions_interaction_type_check
+        CHECK (interaction_type IN ('view', 'share', 'download', 'interest', 'asset_request', 'favorite', 'callback', 'selected', 'consent'));
+
+CREATE OR REPLACE FUNCTION public.normalize_agency_talent_package_interaction()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    NEW.interaction_type := COALESCE(NULLIF(NEW.interaction_type, ''), NULLIF(NEW."type", ''));
+    NEW."type" := COALESCE(NULLIF(NEW."type", ''), NEW.interaction_type);
+    NEW.request_message := COALESCE(NEW.request_message, NEW.content);
+    NEW.content := COALESCE(NEW.content, NEW.request_message);
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS normalize_agency_talent_package_interaction
+    ON public.agency_talent_package_interactions;
+CREATE TRIGGER normalize_agency_talent_package_interaction
+    BEFORE INSERT OR UPDATE ON public.agency_talent_package_interactions
+    FOR EACH ROW
+    EXECUTE FUNCTION public.normalize_agency_talent_package_interaction();
 
 CREATE INDEX IF NOT EXISTS idx_agency_talent_package_interactions_package ON public.agency_talent_package_interactions(package_id);
 CREATE INDEX IF NOT EXISTS idx_agency_talent_package_interactions_creator ON public.agency_talent_package_interactions(creator_id);
@@ -393,6 +425,85 @@ END;
 $$;
 
 
+CREATE OR REPLACE FUNCTION public.upsert_interaction(interaction_data jsonb)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_interaction_id UUID;
+    v_package_id UUID;
+    v_creator_id UUID;
+    v_item_id UUID;
+    v_interaction_type TEXT;
+    v_request_message TEXT;
+BEGIN
+    v_package_id := NULLIF(interaction_data->>'package_id', '')::uuid;
+    v_creator_id := CASE
+        WHEN COALESCE(interaction_data->>'creator_id', '') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+        THEN (interaction_data->>'creator_id')::uuid
+        ELSE NULL
+    END;
+    v_item_id := CASE
+        WHEN COALESCE(interaction_data->>'item_id', '') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+        THEN (interaction_data->>'item_id')::uuid
+        ELSE NULL
+    END;
+    v_interaction_type := COALESCE(NULLIF(interaction_data->>'interaction_type', ''), NULLIF(interaction_data->>'type', ''));
+    v_request_message := COALESCE(interaction_data->>'request_message', interaction_data->>'content');
+
+    INSERT INTO public.agency_talent_package_interactions (
+        package_id, creator_id, interaction_type, "type", item_id, request_message,
+        content, client_name, client_email, ip_address, user_agent, referrer
+    ) VALUES (
+        v_package_id,
+        v_creator_id,
+        v_interaction_type,
+        v_interaction_type,
+        v_item_id,
+        v_request_message,
+        interaction_data->>'content',
+        interaction_data->>'client_name',
+        interaction_data->>'client_email',
+        NULLIF(interaction_data->>'ip_address', '')::inet,
+        interaction_data->>'user_agent',
+        interaction_data->>'referrer'
+    )
+    RETURNING id INTO v_interaction_id;
+
+    INSERT INTO public.agency_talent_package_stats (
+        package_id, agency_id, view_count, share_count, download_count,
+        interest_count, asset_request_count, updated_at
+    )
+    SELECT
+        v_package_id, p.agency_id,
+        CASE WHEN v_interaction_type = 'view' THEN 1 ELSE 0 END,
+        CASE WHEN v_interaction_type = 'share' THEN 1 ELSE 0 END,
+        CASE WHEN v_interaction_type = 'download' THEN 1 ELSE 0 END,
+        CASE WHEN v_interaction_type IN ('interest', 'favorite', 'callback', 'selected') THEN 1 ELSE 0 END,
+        CASE WHEN v_interaction_type = 'asset_request' THEN 1 ELSE 0 END,
+        now()
+    FROM public.agency_talent_packages p
+    WHERE p.id = v_package_id
+    ON CONFLICT (package_id) DO UPDATE SET
+        view_count = public.agency_talent_package_stats.view_count +
+            CASE WHEN v_interaction_type = 'view' THEN 1 ELSE 0 END,
+        share_count = public.agency_talent_package_stats.share_count +
+            CASE WHEN v_interaction_type = 'share' THEN 1 ELSE 0 END,
+        download_count = public.agency_talent_package_stats.download_count +
+            CASE WHEN v_interaction_type = 'download' THEN 1 ELSE 0 END,
+        interest_count = public.agency_talent_package_stats.interest_count +
+            CASE WHEN v_interaction_type IN ('interest', 'favorite', 'callback', 'selected') THEN 1 ELSE 0 END,
+        asset_request_count = public.agency_talent_package_stats.asset_request_count +
+            CASE WHEN v_interaction_type = 'asset_request' THEN 1 ELSE 0 END,
+        updated_at = now();
+
+    RETURN v_interaction_id;
+END;
+$$;
+
+
 -- ============================================================================
 -- 7. GET PUBLIC PACKAGE DETAILS (latest from 2026-05-04)
 -- ============================================================================
@@ -496,7 +607,11 @@ BEGIN
   FROM public.agency_talent_packages p
   WHERE p.id = (
     SELECT package_id FROM public.agency_talent_package_interactions
-    WHERE id = p_access_token::uuid
+    WHERE id = CASE
+      WHEN p_access_token ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+      THEN p_access_token::uuid
+      ELSE NULL
+    END
     LIMIT 1
   ) OR p.access_token = p_access_token
     OR p.meta->>'access_token' = p_access_token;
