@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS public.agency_talent_relationships (
     
     -- Licensing rates
     licensing_rate_weekly_cents bigint,
+    licensing_rate_monthly_cents bigint,
     accept_negotiations boolean NOT NULL DEFAULT true,
     rate_currency text NOT NULL DEFAULT 'USD',
     
@@ -37,19 +38,14 @@ CREATE TABLE IF NOT EXISTS public.agency_talent_relationships (
     updated_at timestamptz NOT NULL DEFAULT now(),
     
     -- Unique constraints
+    CONSTRAINT agency_talent_relationships_agency_talent_unique UNIQUE (agency_id, talent_id),
+    CONSTRAINT agency_talent_relationships_agency_creator_unique UNIQUE (agency_id, creator_id),
     CONSTRAINT agency_talent_relationships_identity_check CHECK (talent_id IS NOT NULL OR creator_id IS NOT NULL),
     CONSTRAINT agency_talent_relationships_licensing_rate_non_negative CHECK (
-        licensing_rate_weekly_cents IS NULL OR licensing_rate_weekly_cents >= 0
+        (licensing_rate_weekly_cents IS NULL OR licensing_rate_weekly_cents >= 0)
+        AND (licensing_rate_monthly_cents IS NULL OR licensing_rate_monthly_cents >= 0)
     )
 );
-
-CREATE UNIQUE INDEX IF NOT EXISTS uq_agency_talent_relationships_agency_talent 
-    ON public.agency_talent_relationships(agency_id, talent_id) 
-    WHERE talent_id IS NOT NULL;
-
-CREATE UNIQUE INDEX IF NOT EXISTS uq_agency_talent_relationships_agency_creator 
-    ON public.agency_talent_relationships(agency_id, creator_id) 
-    WHERE creator_id IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS idx_agency_talent_relationships_agency ON public.agency_talent_relationships(agency_id);
 CREATE INDEX IF NOT EXISTS idx_agency_talent_relationships_talent ON public.agency_talent_relationships(talent_id);
