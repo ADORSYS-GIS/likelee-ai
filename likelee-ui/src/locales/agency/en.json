@@ -2755,7 +2755,7 @@
           "loadingRequests": "Anfragen werden geladen…",
           "failedToLoadRequests": "Anfragen konnten nicht geladen werden.",
           "noPendingRequests": "Keine ausstehenden Anfragen.",
-          "brandFallback": "Marke",
+          "brandFallback": "Brand",
           "pending": "Ausstehend",
           "requestedOn": "Angefragt am {{date}}",
           "loadingOffers": "Angebote werden geladen…",
@@ -6999,10 +6999,17 @@
         "confirmRoleChange": "Confirm Role Change"
       },
       "actions": {
+        "cancel": "Cancel",
         "editPermissions": "Edit Permissions",
         "resendInvite": "Resend Invite",
         "revokeInvite": "Revoke Invite",
-        "removeMember": "Remove Member"
+        "removeMember": "Remove Member",
+        "sendInvite": "Send invite",
+        "sendinvite": "Send invite"
+      },
+      "fields": {
+        "email": "Email",
+        "role": "Role"
       },
       "toasts": {
         "inviteSent": "Invitation sent",
@@ -7012,6 +7019,11 @@
         "roleUpdateFailed": "Role update failed",
         "memberRemoved": "Member removed",
         "removeFailed": "Remove failed"
+      }
+    },
+    "tema": {
+      "actions": {
+        "cancel": "Cancel"
       }
     },
     "commissions": {

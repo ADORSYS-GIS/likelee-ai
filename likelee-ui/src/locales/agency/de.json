@@ -6730,19 +6730,31 @@
         "confirmRoleChange": "Confirm Role Change"
       },
       "actions": {
-        "editPermissions": "Edit Permissions",
-        "resendInvite": "Resend Invite",
-        "revokeInvite": "Revoke Invite",
-        "removeMember": "Remove Member"
+        "cancel": "Abbrechen",
+        "editPermissions": "Berechtigungen bearbeiten",
+        "resendInvite": "Einladung erneut senden",
+        "revokeInvite": "Einladung widerrufen",
+        "removeMember": "Mitglied entfernen",
+        "sendInvite": "Einladung senden",
+        "sendinvite": "Einladung senden"
+      },
+      "fields": {
+        "email": "E-Mail",
+        "role": "Rolle"
       },
       "toasts": {
-        "inviteSent": "Invitation sent",
-        "inviteSentDescription": "Team invitation has been sent",
-        "inviteFailed": "Invite failed",
-        "roleUpdated": "Role updated",
-        "roleUpdateFailed": "Role update failed",
-        "memberRemoved": "Member removed",
-        "removeFailed": "Remove failed"
+        "inviteSent": "Einladung gesendet",
+        "inviteSentDescription": "Die Team-Einladung wurde gesendet",
+        "inviteFailed": "Einladung fehlgeschlagen",
+        "roleUpdated": "Rolle aktualisiert",
+        "roleUpdateFailed": "Aktualisierung der Rolle fehlgeschlagen",
+        "memberRemoved": "Mitglied entfernt",
+        "removeFailed": "Entfernen fehlgeschlagen"
+      }
+    },
+    "tema": {
+      "actions": {
+        "cancel": "Abbrechen"
       }
     },
     "commissions": {
