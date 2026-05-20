@@ -220,7 +220,7 @@ CREATE TABLE IF NOT EXISTS public.license_submissions (
     docuseal_template_id integer,
     
     -- Status
-    status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'pending', 'sent', 'opened', 'under_review', 'approved', 'rejected', 'signed', 'declined', 'archived', 'completed', 'converted')),
+    status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'pending', 'sent', 'opened', 'under_review', 'approved', 'rejected', 'signed', 'declined', 'archived', 'completed', 'converted', 'agency_pending', 'client_pending', 'expired')),
     archived_at timestamptz,
     
     -- Contract
@@ -246,6 +246,7 @@ CREATE INDEX IF NOT EXISTS idx_license_submissions_request ON public.license_sub
 CREATE INDEX IF NOT EXISTS idx_license_submissions_brand_request ON public.license_submissions(brand_request_id);
 CREATE INDEX IF NOT EXISTS idx_license_submissions_status ON public.license_submissions(status);
 CREATE INDEX IF NOT EXISTS idx_license_submissions_talent ON public.license_submissions(talent_id);
+CREATE INDEX IF NOT EXISTS idx_license_submissions_docuseal_submission ON public.license_submissions(docuseal_submission_id);
 
 ALTER TABLE public.license_submissions ENABLE ROW LEVEL SECURITY;
 
