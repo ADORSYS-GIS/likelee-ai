@@ -636,7 +636,8 @@ BEGIN
     INTO result
   FROM public.agency_talent_packages p
   WHERE p.access_token = p_access_token
-     OR p.meta->>'access_token' = p_access_token;
+     OR p.meta->>'access_token' = p_access_token
+     OR p.id::text = p_access_token;
 
   RETURN result;
 END;
