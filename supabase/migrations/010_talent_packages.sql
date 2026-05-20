@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS public.agency_talent_packages (
     -- Consent
     consent_required boolean DEFAULT false,
     consent_text text,
-    consent_items text[] DEFAULT '{}',
+    consent_items jsonb DEFAULT '[]'::jsonb,
     allow_comments boolean DEFAULT true,
     allow_favorites boolean DEFAULT true,
     allow_callbacks boolean DEFAULT true,
