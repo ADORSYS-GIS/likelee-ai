@@ -527,8 +527,19 @@ BEGIN
       'id', p.id,
       'agency_id', p.agency_id,
       'name', p.name,
+      'title', COALESCE(p.title, p.name),
       'description', p.description,
       'cover_photo_url', p.cover_photo_url,
+      'cover_image_url', COALESCE(p.cover_image_url, p.cover_photo_url),
+      'primary_color', p.primary_color,
+      'secondary_color', p.secondary_color,
+      'custom_message', p.custom_message,
+      'allow_comments', COALESCE(p.allow_comments, true),
+      'allow_favorites', COALESCE(p.allow_favorites, true),
+      'allow_callbacks', COALESCE(p.allow_callbacks, true),
+      'consent_required', p.consent_required,
+      'consent_text', p.consent_text,
+      'consent_items', COALESCE(p.consent_items, '[]'::jsonb),
       'is_template', p.is_template,
       'price_cents', p.price_cents,
       'currency', p.currency,
@@ -537,8 +548,8 @@ BEGIN
       'sports', p.sports,
       'client_name', p.client_name,
       'client_email', p.client_email,
-      'consent_required', p.consent_required,
-      'consent_text', p.consent_text,
+      'expires_at', p.expires_at,
+      'access_token', p.access_token,
       'meta', p.meta,
       'is_active', p.is_active,
       'created_at', p.created_at,
@@ -584,17 +595,24 @@ BEGIN
             'talent', COALESCE(
               (
                 SELECT jsonb_build_object(
-                  'id', u.id, 'stage_name', u.stage_name,
+                  'id', u.id,
+                  'stage_name', u.stage_name,
                   'full_legal_name', u.full_legal_name,
+                  'full_name', COALESCE(u.stage_name, u.full_legal_name),
                   'profile_photo_url', u.profile_photo_url,
-                  'bio_notes', u.bio_notes, 'city', u.city
+                  'bio_notes', u.bio_notes,
+                  'city', u.city
                 )
                 FROM public.agency_users u WHERE u.id = it.talent_id
               ),
               (
                 SELECT jsonb_build_object(
-                  'id', c.id, 'full_name', c.full_name,
-                  'profile_photo_url', c.profile_photo_url, 'city', c.city
+                  'id', c.id,
+                  'full_name', c.full_name,
+                  'stage_name', c.full_name,
+                  'full_legal_name', c.full_name,
+                  'profile_photo_url', c.profile_photo_url,
+                  'city', c.city
                 )
                 FROM public.creators c WHERE c.id = it.creator_id
               )
@@ -617,16 +635,8 @@ BEGIN
     )
     INTO result
   FROM public.agency_talent_packages p
-  WHERE p.id = (
-    SELECT package_id FROM public.agency_talent_package_interactions
-    WHERE id = CASE
-      WHEN p_access_token ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
-      THEN p_access_token::uuid
-      ELSE NULL
-    END
-    LIMIT 1
-  ) OR p.access_token = p_access_token
-    OR p.meta->>'access_token' = p_access_token;
+  WHERE p.access_token = p_access_token
+     OR p.meta->>'access_token' = p_access_token;
 
   RETURN result;
 END;
