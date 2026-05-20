@@ -3484,11 +3484,13 @@
         "interactionTypes": {
           "favoritedTalent": "Talento Favorito",
           "selectedTalent": "Talento Seleccionado",
+          "viewedPackage": "Paquete Visto",
           "updatedConsent": "Consentimiento Actualizado",
           "requestedAssets": "Activos Completos Solicitados",
           "commentedOnTalent": "Comentó sobre un Talento",
           "requestedCallback": "Devolución de Llamada Solicitada"
         },
+        "clientViewedPackage": "El cliente vio este paquete",
         "hasComment": "Tiene Comentario",
         "clientContactDetails": "Detalles de Contacto del Cliente",
         "assetRequest": "Solicitud de Activos",

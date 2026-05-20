@@ -3477,11 +3477,13 @@
         "interactionTypes": {
           "favoritedTalent": "Talent favorisiert",
           "selectedTalent": "Talent ausgewählt",
+          "viewedPackage": "Paket angesehen",
           "updatedConsent": "Einwilligung aktualisiert",
           "requestedAssets": "Vollständige Assets angefordert",
           "commentedOnTalent": "Kommentar zu Talent",
           "requestedCallback": "Rückruf angefordert"
         },
+        "clientViewedPackage": "Der Kunde hat dieses Paket angesehen",
         "hasComment": "Hat Kommentar",
         "clientContactDetails": "Kundenkontaktdetails",
         "assetRequest": "Asset-Anfrage",

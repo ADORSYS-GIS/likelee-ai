@@ -5541,11 +5541,13 @@
         "interactionTypes": {
           "favoritedTalent": "Favorited a Talent",
           "selectedTalent": "Selected a Talent",
+          "viewedPackage": "Viewed Package",
           "updatedConsent": "Updated Consent",
           "requestedAssets": "Requested Full Assets",
           "commentedOnTalent": "Commented on a Talent",
           "requestedCallback": "Requested Callback"
         },
+        "clientViewedPackage": "Client viewed this package",
         "hasComment": "Has Comment",
         "clientContactDetails": "Client Contact Details",
         "assetRequest": "Asset Request",
