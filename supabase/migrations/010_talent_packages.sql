@@ -244,6 +244,28 @@ BEGIN
     NEW.request_message := COALESCE(NEW.request_message, NEW.content);
     NEW.content := COALESCE(NEW.content, NEW.request_message);
     NEW.interaction_data := COALESCE(NEW.interaction_data, '{}'::jsonb);
+    -- Prefer the package item identity so creator-backed interactions resolve
+    -- to the same talent_id the package itself uses.
+    IF NEW.talent_id IS NULL AND NEW.creator_id IS NOT NULL AND NEW.package_id IS NOT NULL THEN
+        SELECT it.talent_id::text
+        INTO NEW.talent_id
+        FROM public.agency_talent_package_items it
+        WHERE it.package_id = NEW.package_id
+          AND it.creator_id = NEW.creator_id
+          AND it.talent_id IS NOT NULL
+        ORDER BY it.sort_order ASC, it.created_at ASC
+        LIMIT 1;
+    END IF;
+
+    IF NEW.talent_id IS NULL AND NEW.creator_id IS NOT NULL AND NEW.package_id IS NOT NULL THEN
+        SELECT au.id::text
+        INTO NEW.talent_id
+        FROM public.agency_users au
+        JOIN public.agency_talent_packages p ON p.id = NEW.package_id
+        WHERE au.creator_id = NEW.creator_id
+          AND au.agency_id = p.agency_id
+        LIMIT 1;
+    END IF;
     RETURN NEW;
 END;
 $$;
@@ -617,6 +639,17 @@ BEGIN
                 FROM public.creators c WHERE c.id = it.creator_id
               )
             ),
+            'creator', (
+              SELECT jsonb_build_object(
+                'id', c.id,
+                'full_name', c.full_name,
+                'stage_name', c.full_name,
+                'full_legal_name', c.full_name,
+                'profile_photo_url', c.profile_photo_url,
+                'city', c.city
+              )
+              FROM public.creators c WHERE c.id = it.creator_id
+            ),
             'assets', COALESCE((
               SELECT jsonb_agg(
                 jsonb_build_object(
@@ -642,5 +675,48 @@ BEGIN
   RETURN result;
 END;
 $$;
+
+CREATE OR REPLACE FUNCTION public.fill_package_item_talent_id()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    IF NEW.talent_id IS NULL AND NEW.creator_id IS NOT NULL THEN
+        SELECT au.id
+        INTO NEW.talent_id
+        FROM public.agency_users au
+        WHERE au.creator_id = NEW.creator_id
+          AND au.agency_id = NEW.agency_id
+        LIMIT 1;
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS fill_package_item_talent_id
+    ON public.agency_talent_package_items;
+CREATE TRIGGER fill_package_item_talent_id
+    BEFORE INSERT OR UPDATE ON public.agency_talent_package_items
+    FOR EACH ROW
+    EXECUTE FUNCTION public.fill_package_item_talent_id();
+
+UPDATE public.agency_talent_package_items i
+SET talent_id = au.id
+FROM public.agency_users au
+WHERE i.talent_id IS NULL
+  AND i.creator_id IS NOT NULL
+  AND au.creator_id = i.creator_id
+  AND au.agency_id = i.agency_id;
+
+UPDATE public.agency_talent_package_interactions i
+SET talent_id = it.talent_id::text
+FROM public.agency_talent_package_items it
+WHERE i.package_id = it.package_id
+  AND i.creator_id = it.creator_id
+  AND i.talent_id IS NULL
+  AND it.talent_id IS NOT NULL;
 
 COMMIT;
