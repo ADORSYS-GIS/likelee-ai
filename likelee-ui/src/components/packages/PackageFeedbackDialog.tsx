@@ -88,11 +88,23 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
         i.talent_id === interaction.talent_id ||
         i.talent?.id === interaction.talent_id,
     );
+    const talentName =
+      item?.talent?.stage_name ||
+      item?.talent?.full_legal_name ||
+      item?.talent?.full_name;
+    // If no talent_id on the interaction, it's a client-level action
+    if (!interaction.talent_id && !talentName) {
+      return {
+        name:
+          interaction.client_name ||
+          pkg?.client_name ||
+          t("agencyDashboard.packages.feedbackDialog.client"),
+        image: null,
+      };
+    }
     return {
       name:
-        item?.talent?.stage_name ||
-        item?.talent?.full_legal_name ||
-        item?.talent?.full_name ||
+        talentName ||
         t("agencyDashboard.packages.feedbackDialog.unknownTalent"),
       image: item?.talent?.profile_photo_url,
     };

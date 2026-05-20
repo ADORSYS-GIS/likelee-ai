@@ -1441,38 +1441,6 @@ export function AgencyDeliverablesView() {
                         ? t("agencyDashboard.deliverables.offerCard.hide")
                         : t("agencyDashboard.deliverables.offerCard.open")}
                     </Button>
-                    <Button
-                      size="sm"
-                      className="border-0 bg-gradient-to-r from-gray-900 to-slate-800 text-white hover:from-gray-800 hover:to-slate-700"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (offerAssignmentsLocked) {
-                          toast({
-                            title: t(
-                              "agencyDashboard.deliverables.toasts.assignmentsLocked",
-                            ),
-                            description: t(
-                              "agencyDashboard.deliverables.toasts.assignmentsLockedDescription",
-                              {
-                                defaultValue:
-                                  "You can change assigned talents before the contract is sent. This offer is already sent, so assignments cannot be changed.",
-                              },
-                            ),
-                            variant: "warning",
-                          });
-                          return;
-                        }
-                        setAssignDialog({ open: true, offerId });
-                      }}
-                      disabled={offerAssignmentsLocked}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      {assignments.length === 0
-                        ? t(
-                            "agencyDashboard.deliverables.offerCard.assignTalent",
-                          )
-                        : t("agencyDashboard.deliverables.offerCard.addTalent")}
-                    </Button>
                   </div>
                 </div>
 
