@@ -51,17 +51,29 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
   });
 
   const interactions = pkg?.interactions || [];
+  const visibleInteractions = interactions.filter((interaction: any) => {
+    const type = String(
+      interaction?.type || interaction?.interaction_type || "",
+    ).trim();
+    return type.length > 0 && type !== "view";
+  });
   // Sort interactions by created_at desc (newest first)
-  const sortedInteractions = [...interactions].sort(
+  const sortedInteractions = [...visibleInteractions].sort(
     (a: any, b: any) =>
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   );
 
-  const favorites = interactions.filter((i: any) => i.type === "favorite");
-  const callbacks = interactions.filter((i: any) => i.type === "callback");
-  const selected = interactions.filter((i: any) => i.type === "selected");
-  const comments = interactions.filter((i: any) => i.type === "comment");
-  const consents = interactions.filter((i: any) => i.type === "consent");
+  const favorites = visibleInteractions.filter(
+    (i: any) => i.type === "favorite",
+  );
+  const callbacks = visibleInteractions.filter(
+    (i: any) => i.type === "callback",
+  );
+  const selected = visibleInteractions.filter(
+    (i: any) => i.type === "selected",
+  );
+  const comments = visibleInteractions.filter((i: any) => i.type === "comment");
+  const consents = visibleInteractions.filter((i: any) => i.type === "consent");
   const latestConsent = [...consents].sort(
     (a: any, b: any) =>
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
@@ -85,15 +97,21 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
   const resolveTalent = (interaction: any) => {
     const item = pkg?.items?.find(
       (i: any) =>
-        i.talent_id === interaction.talent_id ||
-        i.talent?.id === interaction.talent_id,
+        (interaction.talent_id &&
+          (i.talent_id === interaction.talent_id ||
+            i.talent?.id === interaction.talent_id)) ||
+        (interaction.creator_id &&
+          (i.creator_id === interaction.creator_id ||
+            i.creator?.id === interaction.creator_id)),
     );
     const talentName =
       item?.talent?.stage_name ||
       item?.talent?.full_legal_name ||
-      item?.talent?.full_name;
-    // If no talent_id on the interaction, it's a client-level action
-    if (!interaction.talent_id && !talentName) {
+      item?.talent?.full_name ||
+      item?.creator?.stage_name ||
+      item?.creator?.full_legal_name ||
+      item?.creator?.full_name;
+    if (!interaction.talent_id && !interaction.creator_id && !talentName) {
       return {
         name:
           interaction.client_name ||
@@ -106,7 +124,10 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
       name:
         talentName ||
         t("agencyDashboard.packages.feedbackDialog.unknownTalent"),
-      image: item?.talent?.profile_photo_url,
+      image:
+        item?.talent?.profile_photo_url ||
+        item?.creator?.profile_photo_url ||
+        null,
     };
   };
 
@@ -322,6 +343,7 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
           <ScrollArea className="h-[500px] pr-4">
             <div className="space-y-6">
               {sortedInteractions.map((interaction: any, index: number) => {
+                const talent = resolveTalent(interaction);
                 const isFavorite = interaction.type === "favorite";
                 const isCallback = interaction.type === "callback";
                 const isSelected = interaction.type === "selected";
@@ -346,19 +368,8 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                     );
                   }
                 }
-                // Find talent name from pkg.items
-                // (Logic: interaction has talent_id, pkg.items has talent embedded)
-                const item = pkg?.items?.find(
-                  (i: any) =>
-                    i.talent_id === interaction.talent_id ||
-                    i.talent?.id === interaction.talent_id,
-                );
-                const talentName =
-                  item?.talent?.stage_name ||
-                  item?.talent?.full_legal_name ||
-                  item?.talent?.full_name ||
-                  t("agencyDashboard.packages.feedbackDialog.unknownTalent");
-                const talentImage = item?.talent?.profile_photo_url;
+                const talentName = talent.name;
+                const talentImage = talent.image;
 
                 return (
                   <div
