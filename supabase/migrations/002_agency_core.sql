@@ -202,7 +202,7 @@ CREATE TABLE IF NOT EXISTS public.agency_users (
     license_expiry date,
     is_verified_talent boolean DEFAULT false,
     last_reminder_sent timestamptz,
-    ai_usage boolean,
+    ai_usage text[],
     
     -- Licensing Rates (from 2026-03-04_weekly_licensing_rates_rollout)
     licensing_rate_weekly_cents bigint,
@@ -212,6 +212,7 @@ CREATE TABLE IF NOT EXISTS public.agency_users (
     
     -- Organization/Employment
     organization text,
+    sports text,
     
     -- Performance Tier (cached)
     performance_tier_name text,
@@ -1085,6 +1086,22 @@ $$;
 
 REVOKE ALL ON FUNCTION public.ensure_storage(text, text, text) FROM public;
 GRANT EXECUTE ON FUNCTION public.ensure_storage(text, text, text) TO anon, authenticated, service_role;
+
+DROP POLICY IF EXISTS "Authenticated users can upload public storage objects" ON storage.objects;
+CREATE POLICY "Authenticated users can upload public storage objects" ON storage.objects
+    FOR INSERT TO authenticated
+    WITH CHECK (bucket_id = 'likelee-public');
+
+DROP POLICY IF EXISTS "Authenticated users can update public storage objects" ON storage.objects;
+CREATE POLICY "Authenticated users can update public storage objects" ON storage.objects
+    FOR UPDATE TO authenticated
+    USING (bucket_id = 'likelee-public')
+    WITH CHECK (bucket_id = 'likelee-public');
+
+DROP POLICY IF EXISTS "Authenticated users can delete public storage objects" ON storage.objects;
+CREATE POLICY "Authenticated users can delete public storage objects" ON storage.objects
+    FOR DELETE TO authenticated
+    USING (bucket_id = 'likelee-public');
 
 -- ============================================================================
 -- ACTIVITY EVENTS TABLE (from 0003)
