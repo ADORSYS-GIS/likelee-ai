@@ -434,6 +434,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
         // 1. Create/Update draft in Likelee DB to persist client info early
         const draft = await createLicenseSubmissionDraft({
           template_id: currentTemplate.id,
+          client_id: selectedBrandId || brandRequestBrandId || undefined,
           client_name: currentData.client_name,
           client_email: currentData.client_email,
           talent_ids:
@@ -446,7 +447,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
           custom_terms: currentData.custom_terms,
           docuseal_template_id: currentTemplate.docuseal_template_id,
           requires_agency_signature: requiresAgencySignature,
-          licensing_request_id: brandRequestContext?.licensing_request_id,
+          brand_request_id: brandRequestContext?.licensing_request_id,
         });
 
         if (draft?.id) {
@@ -590,6 +591,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
       if (!submissionId) {
         const draft = await createLicenseSubmissionDraft({
           template_id: currentTemplate.id,
+          client_id: selectedBrandId || brandRequestBrandId || undefined,
           client_name: currentData.client_name,
           client_email: currentData.client_email,
           talent_ids:
@@ -602,7 +604,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
           custom_terms: currentData.custom_terms,
           docuseal_template_id: currentTemplate.docuseal_template_id,
           requires_agency_signature: requiresAgencySignature,
-          licensing_request_id: brandRequestContext?.licensing_request_id,
+          brand_request_id: brandRequestContext?.licensing_request_id,
         });
         submissionId = draft?.id;
         if (!submissionId) {
@@ -621,7 +623,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
         talent_id: selectedTalentIds[0] || undefined,
         talent_names: currentData.talent_name,
         requires_agency_signature: requiresAgencySignature,
-        licensing_request_id: brandRequestContext?.licensing_request_id,
+        brand_request_id: brandRequestContext?.licensing_request_id,
         old_license_id: oldLicenseId, // Pass the old license ID for renewal tracking
       });
 
