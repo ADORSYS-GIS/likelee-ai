@@ -950,7 +950,22 @@ pub async fn create_catalog(
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+        let item_status = item_resp.status();
         let item_text = item_resp.text().await.unwrap_or_else(|_| "[]".into());
+
+        if !item_status.is_success() {
+            tracing::error!(
+                catalog_id = %catalog_id,
+                talent_id = %item.talent_id,
+                response = %item_text,
+                "Failed to insert catalog item"
+            );
+            return Err(crate::errors::sanitize_db_error(
+                item_status.as_u16(),
+                item_text,
+            ));
+        }
+
         let item_rows: Vec<serde_json::Value> =
             serde_json::from_str(&item_text).unwrap_or_default();
         let item_id = item_rows
@@ -968,18 +983,72 @@ pub async fn create_catalog(
             if asset.asset_id.trim().is_empty() {
                 continue;
             }
+
+            // Fetch asset details to get storage bucket and path
+            let mut storage_bucket = String::new();
+            let mut storage_path = String::new();
+            let mut public_url = None;
+
+            // Try agency_files first
+            if let Ok(resp) = state.pg.from("agency_files").select("storage_bucket,storage_path,public_url").eq("id", &asset.asset_id).limit(1).execute().await {
+                if let Ok(text) = resp.text().await {
+                    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+                    if let Some(row) = rows.first() {
+                        storage_bucket = row.get("storage_bucket").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                        storage_path = row.get("storage_path").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                        public_url = row.get("public_url").and_then(|v| v.as_str()).map(|s| s.to_string());
+                    }
+                }
+            }
+
+            // If not found in agency_files, try reference_images (standard for creators)
+            if storage_path.is_empty() {
+                if let Ok(resp) = state.pg.from("reference_images").select("storage_bucket,storage_path,public_url").eq("id", &asset.asset_id).limit(1).execute().await {
+                   if let Ok(text) = resp.text().await {
+                        let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+                        if let Some(row) = rows.first() {
+                            storage_bucket = row.get("storage_bucket").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                            storage_path = row.get("storage_path").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                            public_url = row.get("public_url").and_then(|v| v.as_str()).map(|s| s.to_string());
+                        }
+                    }
+                }
+            }
+
+            if storage_bucket.is_empty() || storage_path.is_empty() {
+                tracing::warn!(asset_id = %asset.asset_id, "Could not find storage details for catalog asset, skipping");
+                continue;
+            }
+
+            let normalized_type = if asset.asset_type == "image" {
+                "photo"
+            } else {
+                &asset.asset_type
+            };
+
             let asset_insert = json!({
                 "catalog_item_id": item_id,
-                "asset_id": asset.asset_id,
-                "asset_type": asset.asset_type,
+                "asset_type": normalized_type,
+                "storage_bucket": storage_bucket,
+                "storage_path": storage_path,
+                "public_url": public_url,
                 "sort_order": ai,
             });
-            let _ = state
+
+            let asset_resp = state
                 .pg
                 .from("agency_catalog_assets")
                 .insert(asset_insert.to_string())
                 .execute()
-                .await;
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+            if !asset_resp.status().is_success() {
+                let status = asset_resp.status().as_u16();
+                let err_text = asset_resp.text().await.unwrap_or_default();
+                tracing::error!(catalog_id = %catalog_id, asset_id = %asset.asset_id, response = %err_text, "Failed to insert catalog asset");
+                return Err(crate::errors::sanitize_db_error(status, err_text));
+            }
         }
 
         // Insert voice recordings
@@ -987,18 +1056,54 @@ pub async fn create_catalog(
             if rec.recording_id.trim().is_empty() {
                 continue;
             }
+
+            // Fetch recording details
+            let mut storage_bucket = String::new();
+            let mut storage_path = String::new();
+            let mut public_url = None;
+            let mut duration_sec = None;
+
+            if let Ok(resp) = state.pg.from("voice_recordings").select("storage_bucket,storage_path,public_url,duration_sec").eq("id", &rec.recording_id).limit(1).execute().await {
+                if let Ok(text) = resp.text().await {
+                    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+                    if let Some(row) = rows.first() {
+                        storage_bucket = row.get("storage_bucket").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                        storage_path = row.get("storage_path").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                        public_url = row.get("public_url").and_then(|v| v.as_str()).map(|s| s.to_string());
+                        duration_sec = row.get("duration_sec").and_then(|v| v.as_i64());
+                    }
+                }
+            }
+
+            if storage_bucket.is_empty() || storage_path.is_empty() {
+                tracing::warn!(recording_id = %rec.recording_id, "Could not find storage details for catalog recording, skipping");
+                continue;
+            }
+
             let rec_insert = json!({
                 "catalog_item_id": item_id,
-                "recording_id": rec.recording_id,
-                "emotion_tag": rec.emotion_tag,
+                "recording_type": "voice_sample", // default type
+                "storage_bucket": storage_bucket,
+                "storage_path": storage_path,
+                "public_url": public_url,
+                "duration_sec": duration_sec,
                 "sort_order": ri,
             });
-            let _ = state
+
+            let rec_resp = state
                 .pg
                 .from("agency_catalog_recordings")
                 .insert(rec_insert.to_string())
                 .execute()
-                .await;
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+            if !rec_resp.status().is_success() {
+                let status = rec_resp.status().as_u16();
+                let err_text = rec_resp.text().await.unwrap_or_default();
+                tracing::error!(catalog_id = %catalog_id, recording_id = %rec.recording_id, response = %err_text, "Failed to insert catalog recording");
+                return Err(crate::errors::sanitize_db_error(status, err_text));
+            }
         }
     }
 
@@ -1100,10 +1205,11 @@ pub async fn get_public_catalog(
     State(state): State<AppState>,
     Path(token): Path<String>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    // 1. Fetch the catalog by access_token (no auth required)
+    // 1. Fetch the catalog by access_token (service key bypasses RLS for token-based catalogs where is_public=false)
     let cat_resp = state
         .pg
         .from("agency_catalogs")
+        .auth(state.supabase_service_key.clone())
         .select("id,agency_id,licensing_request_id,title,client_name,client_email,created_at,notes,expires_at")
         .eq("access_token", &token)
         .limit(1)
@@ -1214,10 +1320,11 @@ pub async fn get_public_catalog(
         }
     }
 
-    // 2. Fetch all items for this catalog
+    // 2. Fetch all items for this catalog (service key to bypass RLS for token-based catalogs)
     let items_resp = state
         .pg
         .from("agency_catalog_items")
+        .auth(state.supabase_service_key.clone())
         .select("id,talent_id,sort_order")
         .eq("catalog_id", &catalog_id)
         .order("sort_order.asc")
@@ -1288,11 +1395,12 @@ pub async fn get_public_catalog(
         let item_id = item.get("id").and_then(|v| v.as_str()).unwrap_or("");
         let talent_id = item.get("talent_id").and_then(|v| v.as_str()).unwrap_or("");
 
-        // Fetch digital assets
+        // Fetch digital assets (service key to bypass RLS)
         let assets_resp = state
             .pg
             .from("agency_catalog_assets")
-            .select("asset_id,asset_type,sort_order")
+            .auth(state.supabase_service_key.clone())
+            .select("id,asset_type,storage_bucket,storage_path,public_url,sort_order")
             .eq("catalog_item_id", item_id)
             .order("sort_order.asc")
             .execute()
@@ -1308,119 +1416,39 @@ pub async fn get_public_catalog(
             Vec::new()
         };
 
-        // Enrich each asset_id with its public_url (reference_images or agency_files)
         let mut assets: Vec<serde_json::Value> = Vec::new();
         for mut asset in assets_raw {
-            let asset_id = asset
-                .get("asset_id")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-            if !asset_id.is_empty() {
-                // Try reference_images first
-                let ri_rows: Vec<serde_json::Value> = if let Ok(r) = state
-                    .pg
-                    .from("reference_images")
-                    .auth(state.supabase_service_key.clone())
-                    .select("public_url,storage_bucket,storage_path")
-                    .eq("id", &asset_id)
-                    .limit(1)
-                    .execute()
-                    .await
-                {
-                    r.text()
-                        .await
-                        .ok()
-                        .and_then(|t| serde_json::from_str(&t).ok())
-                        .unwrap_or_default()
-                } else {
-                    vec![]
-                };
+            let pb_url = asset.get("public_url").and_then(|v| v.as_str()).unwrap_or("");
+            let bucket = asset.get("storage_bucket").and_then(|v| v.as_str()).unwrap_or("");
+            let path = asset.get("storage_path").and_then(|v| v.as_str()).unwrap_or("");
 
-                if let Some(ri) = ri_rows.into_iter().next() {
-                    let pu = ri.get("public_url").and_then(|v| v.as_str()).unwrap_or("");
-                    if !pu.is_empty() {
-                        if let Some(obj) = asset.as_object_mut() {
-                            obj.insert("url".into(), json!(pu));
-                        }
-                    } else {
-                        let bucket = ri
-                            .get("storage_bucket")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("");
-                        let path = ri
-                            .get("storage_path")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("");
-                        if !bucket.is_empty() && !downloads_locked {
-                            if let Some(su) = generate_signed_url(&state, bucket, path).await {
-                                if let Some(obj) = asset.as_object_mut() {
-                                    obj.insert("url".into(), json!(su));
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    // Try agency_files
-                    let af_rows: Vec<serde_json::Value> = if let Ok(r) = state
-                        .pg
-                        .from("agency_files")
-                        .auth(state.supabase_service_key.clone())
-                        .select("public_url,storage_bucket,storage_path")
-                        .eq("id", &asset_id)
-                        .limit(1)
-                        .execute()
-                        .await
-                    {
-                        r.text()
-                            .await
-                            .ok()
-                            .and_then(|t| serde_json::from_str(&t).ok())
-                            .unwrap_or_default()
-                    } else {
-                        vec![]
-                    };
-
-                    if let Some(af) = af_rows.into_iter().next() {
-                        let pu = af.get("public_url").and_then(|v| v.as_str()).unwrap_or("");
-                        if !pu.is_empty() {
-                            if let Some(obj) = asset.as_object_mut() {
-                                obj.insert("url".into(), json!(pu));
-                            }
-                        } else {
-                            let bucket = af
-                                .get("storage_bucket")
-                                .and_then(|v| v.as_str())
-                                .unwrap_or("");
-                            let path = af
-                                .get("storage_path")
-                                .and_then(|v| v.as_str())
-                                .unwrap_or("");
-                            if !bucket.is_empty() && !downloads_locked {
-                                if let Some(su) = generate_signed_url(&state, bucket, path).await {
-                                    if let Some(obj) = asset.as_object_mut() {
-                                        obj.insert("url".into(), json!(su));
-                                    }
-                                }
-                            }
-                        }
-                    }
+            let mut final_url = String::new();
+            if !pb_url.is_empty() {
+                final_url = pb_url.to_string();
+            } else if !bucket.is_empty() && !path.is_empty() && !downloads_locked {
+                if let Some(su) = generate_signed_url(&state, bucket, path).await {
+                    final_url = su;
                 }
             }
-            assets.push(asset);
+
+            if let Some(obj) = asset.as_object_mut() {
+                obj.insert("url".into(), json!(final_url));
+                assets.push(json!(obj));
+            }
         }
 
-        // Fetch voice recordings
+        // Fetch recordings (service key to bypass RLS)
         let recs_resp = state
             .pg
             .from("agency_catalog_recordings")
-            .select("recording_id,emotion_tag,sort_order")
+            .auth(state.supabase_service_key.clone())
+            .select("id,recording_type,storage_bucket,storage_path,public_url,duration_sec,sort_order")
             .eq("catalog_item_id", item_id)
             .order("sort_order.asc")
             .execute()
             .await;
 
-        let recordings_raw: Vec<serde_json::Value> = if let Ok(resp) = recs_resp {
+        let recs_raw: Vec<serde_json::Value> = if let Ok(resp) = recs_resp {
             if let Ok(text) = resp.text().await {
                 serde_json::from_str(&text).unwrap_or_default()
             } else {
@@ -1430,69 +1458,24 @@ pub async fn get_public_catalog(
             Vec::new()
         };
 
-        // Enrich recordings with their storage paths so the client can request signed URLs
         let mut recordings: Vec<serde_json::Value> = Vec::new();
-        for rec in &recordings_raw {
-            let rec_id = rec
-                .get("recording_id")
-                .and_then(|v| v.as_str())
-                .unwrap_or("");
-            if rec_id.is_empty() {
-                continue;
+        for mut rec in recs_raw {
+            let pb_url = rec.get("public_url").and_then(|v| v.as_str()).unwrap_or("");
+            let bucket = rec.get("storage_bucket").and_then(|v| v.as_str()).unwrap_or("");
+            let path = rec.get("storage_path").and_then(|v| v.as_str()).unwrap_or("");
+
+            let mut final_url = String::new();
+            if !pb_url.is_empty() {
+                final_url = pb_url.to_string();
+            } else if !bucket.is_empty() && !path.is_empty() && !downloads_locked {
+                if let Some(su) = generate_signed_url(&state, bucket, path).await {
+                    final_url = su;
+                }
             }
 
-            let vr_resp = state
-                .pg
-                .from("voice_recordings")
-                .auth(state.supabase_service_key.clone())
-                .select("id,storage_bucket,storage_path,mime_type,emotion_tag,accessible")
-                .eq("id", rec_id)
-                .limit(1)
-                .execute()
-                .await;
-
-            let vr_rows: Vec<serde_json::Value> = if let Ok(resp) = vr_resp {
-                if let Ok(text) = resp.text().await {
-                    serde_json::from_str(&text).unwrap_or_default()
-                } else {
-                    Vec::new()
-                }
-            } else {
-                Vec::new()
-            };
-
-            if let Some(vr) = vr_rows.into_iter().next() {
-                let accessible = vr
-                    .get("accessible")
-                    .and_then(|v| v.as_bool())
-                    .unwrap_or(true);
-                if !accessible {
-                    continue;
-                }
-                let mut merged = rec.clone();
-                let bucket = vr
-                    .get("storage_bucket")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("")
-                    .to_string();
-                let path = vr
-                    .get("storage_path")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("")
-                    .to_string();
-                if let Some(obj) = merged.as_object_mut() {
-                    obj.insert("storage_bucket".into(), vr["storage_bucket"].clone());
-                    obj.insert("storage_path".into(), vr["storage_path"].clone());
-                    obj.insert("mime_type".into(), vr["mime_type"].clone());
-                    obj.entry("emotion_tag")
-                        .or_insert_with(|| vr["emotion_tag"].clone());
-                    if !bucket.is_empty() && !path.is_empty() && !downloads_locked {
-                        if let Some(su) = generate_signed_url(&state, &bucket, &path).await {
-                            obj.insert("signed_url".into(), json!(su));
-                        }
-                    }
-                }
-                recordings.push(merged);
+            if let Some(obj) = rec.as_object_mut() {
+                obj.insert("url".into(), json!(final_url));
+                recordings.push(json!(obj));
             }
         }
 
