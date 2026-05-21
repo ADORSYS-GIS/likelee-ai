@@ -217,7 +217,7 @@ CREATE TABLE IF NOT EXISTS public.agency_talent_invites (
     status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined', 'expired')),
     
     -- Expiration
-    expires_at timestamptz NOT NULL,
+    expires_at timestamptz NOT NULL DEFAULT (now() + interval '7 days'),
     
     -- Response
     accepted_at timestamptz,
