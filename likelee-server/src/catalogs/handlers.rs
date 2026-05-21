@@ -990,26 +990,66 @@ pub async fn create_catalog(
             let mut public_url = None;
 
             // Try agency_files first
-            if let Ok(resp) = state.pg.from("agency_files").select("storage_bucket,storage_path,public_url").eq("id", &asset.asset_id).limit(1).execute().await {
+            if let Ok(resp) = state
+                .pg
+                .from("agency_files")
+                .select("storage_bucket,storage_path,public_url")
+                .eq("id", &asset.asset_id)
+                .limit(1)
+                .execute()
+                .await
+            {
                 if let Ok(text) = resp.text().await {
-                    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+                    let rows: Vec<serde_json::Value> =
+                        serde_json::from_str(&text).unwrap_or_default();
                     if let Some(row) = rows.first() {
-                        storage_bucket = row.get("storage_bucket").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                        storage_path = row.get("storage_path").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                        public_url = row.get("public_url").and_then(|v| v.as_str()).map(|s| s.to_string());
+                        storage_bucket = row
+                            .get("storage_bucket")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .to_string();
+                        storage_path = row
+                            .get("storage_path")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .to_string();
+                        public_url = row
+                            .get("public_url")
+                            .and_then(|v| v.as_str())
+                            .map(|s| s.to_string());
                     }
                 }
             }
 
             // If not found in agency_files, try reference_images (standard for creators)
             if storage_path.is_empty() {
-                if let Ok(resp) = state.pg.from("reference_images").select("storage_bucket,storage_path,public_url").eq("id", &asset.asset_id).limit(1).execute().await {
-                   if let Ok(text) = resp.text().await {
-                        let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+                if let Ok(resp) = state
+                    .pg
+                    .from("reference_images")
+                    .select("storage_bucket,storage_path,public_url")
+                    .eq("id", &asset.asset_id)
+                    .limit(1)
+                    .execute()
+                    .await
+                {
+                    if let Ok(text) = resp.text().await {
+                        let rows: Vec<serde_json::Value> =
+                            serde_json::from_str(&text).unwrap_or_default();
                         if let Some(row) = rows.first() {
-                            storage_bucket = row.get("storage_bucket").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                            storage_path = row.get("storage_path").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                            public_url = row.get("public_url").and_then(|v| v.as_str()).map(|s| s.to_string());
+                            storage_bucket = row
+                                .get("storage_bucket")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("")
+                                .to_string();
+                            storage_path = row
+                                .get("storage_path")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("")
+                                .to_string();
+                            public_url = row
+                                .get("public_url")
+                                .and_then(|v| v.as_str())
+                                .map(|s| s.to_string());
                         }
                     }
                 }
@@ -1063,13 +1103,33 @@ pub async fn create_catalog(
             let mut public_url = None;
             let mut duration_sec = None;
 
-            if let Ok(resp) = state.pg.from("voice_recordings").select("storage_bucket,storage_path,public_url,duration_sec").eq("id", &rec.recording_id).limit(1).execute().await {
+            if let Ok(resp) = state
+                .pg
+                .from("voice_recordings")
+                .select("storage_bucket,storage_path,public_url,duration_sec")
+                .eq("id", &rec.recording_id)
+                .limit(1)
+                .execute()
+                .await
+            {
                 if let Ok(text) = resp.text().await {
-                    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+                    let rows: Vec<serde_json::Value> =
+                        serde_json::from_str(&text).unwrap_or_default();
                     if let Some(row) = rows.first() {
-                        storage_bucket = row.get("storage_bucket").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                        storage_path = row.get("storage_path").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                        public_url = row.get("public_url").and_then(|v| v.as_str()).map(|s| s.to_string());
+                        storage_bucket = row
+                            .get("storage_bucket")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .to_string();
+                        storage_path = row
+                            .get("storage_path")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .to_string();
+                        public_url = row
+                            .get("public_url")
+                            .and_then(|v| v.as_str())
+                            .map(|s| s.to_string());
                         duration_sec = row.get("duration_sec").and_then(|v| v.as_i64());
                     }
                 }
@@ -1418,9 +1478,18 @@ pub async fn get_public_catalog(
 
         let mut assets: Vec<serde_json::Value> = Vec::new();
         for mut asset in assets_raw {
-            let pb_url = asset.get("public_url").and_then(|v| v.as_str()).unwrap_or("");
-            let bucket = asset.get("storage_bucket").and_then(|v| v.as_str()).unwrap_or("");
-            let path = asset.get("storage_path").and_then(|v| v.as_str()).unwrap_or("");
+            let pb_url = asset
+                .get("public_url")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            let bucket = asset
+                .get("storage_bucket")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            let path = asset
+                .get("storage_path")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
 
             let mut final_url = String::new();
             if !pb_url.is_empty() {
@@ -1442,7 +1511,9 @@ pub async fn get_public_catalog(
             .pg
             .from("agency_catalog_recordings")
             .auth(state.supabase_service_key.clone())
-            .select("id,recording_type,storage_bucket,storage_path,public_url,duration_sec,sort_order")
+            .select(
+                "id,recording_type,storage_bucket,storage_path,public_url,duration_sec,sort_order",
+            )
             .eq("catalog_item_id", item_id)
             .order("sort_order.asc")
             .execute()
@@ -1461,8 +1532,14 @@ pub async fn get_public_catalog(
         let mut recordings: Vec<serde_json::Value> = Vec::new();
         for mut rec in recs_raw {
             let pb_url = rec.get("public_url").and_then(|v| v.as_str()).unwrap_or("");
-            let bucket = rec.get("storage_bucket").and_then(|v| v.as_str()).unwrap_or("");
-            let path = rec.get("storage_path").and_then(|v| v.as_str()).unwrap_or("");
+            let bucket = rec
+                .get("storage_bucket")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            let path = rec
+                .get("storage_path")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
 
             let mut final_url = String::new();
             if !pb_url.is_empty() {
