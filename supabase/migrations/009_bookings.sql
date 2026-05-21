@@ -332,30 +332,54 @@ CREATE POLICY "booking_notifications_rls" ON public.booking_notifications
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS public.bookings_campaigns (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    booking_id uuid NOT NULL REFERENCES public.bookings(id) ON DELETE CASCADE,
-    campaign_id uuid NOT NULL REFERENCES public.campaigns(id) ON DELETE CASCADE,
-    
-    -- Override rate for this campaign-booking link
-    override_rate_cents integer,
-    
+    agency_id uuid NOT NULL DEFAULT auth.uid() REFERENCES public.agencies(id) ON DELETE CASCADE,
+    name text NOT NULL,
+    status text NOT NULL DEFAULT 'created',
+    duration_days integer,
+    start_date date,
     created_at timestamptz NOT NULL DEFAULT now(),
-    
-    UNIQUE (booking_id, campaign_id)
+    updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS idx_bookings_campaigns_booking ON public.bookings_campaigns(booking_id);
-CREATE INDEX IF NOT EXISTS idx_bookings_campaigns_campaign ON public.bookings_campaigns(campaign_id);
+ALTER TABLE public.bookings
+    ADD COLUMN IF NOT EXISTS campaign_id uuid REFERENCES public.bookings_campaigns(id) ON DELETE CASCADE;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.table_constraints
+        WHERE table_schema = 'public'
+          AND table_name = 'bookings'
+          AND constraint_name = 'bookings_campaign_id_fkey'
+    ) THEN
+        ALTER TABLE public.bookings
+            ADD CONSTRAINT bookings_campaign_id_fkey
+            FOREIGN KEY (campaign_id) REFERENCES public.bookings_campaigns(id) ON DELETE CASCADE;
+    END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_bookings_campaign_id ON public.bookings(campaign_id);
+CREATE INDEX IF NOT EXISTS idx_bookings_campaigns_agency_id ON public.bookings_campaigns(agency_id);
 
 ALTER TABLE public.bookings_campaigns ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Agencies can view own bookings-campaigns" ON public.bookings_campaigns;
 CREATE POLICY "Agencies can view own bookings-campaigns" ON public.bookings_campaigns
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM public.bookings b
-            WHERE b.id = booking_id AND b.agency_user_id = auth.uid()
-        )
-    );
+    FOR SELECT USING (agency_id = auth.uid());
+
+DROP POLICY IF EXISTS "Agencies can insert own bookings-campaigns" ON public.bookings_campaigns;
+CREATE POLICY "Agencies can insert own bookings-campaigns" ON public.bookings_campaigns
+    FOR INSERT WITH CHECK (agency_id = auth.uid());
+
+DROP POLICY IF EXISTS "Agencies can update own bookings-campaigns" ON public.bookings_campaigns;
+CREATE POLICY "Agencies can update own bookings-campaigns" ON public.bookings_campaigns
+    FOR UPDATE USING (agency_id = auth.uid())
+    WITH CHECK (agency_id = auth.uid());
+
+DROP POLICY IF EXISTS "Agencies can delete own bookings-campaigns" ON public.bookings_campaigns;
+CREATE POLICY "Agencies can delete own bookings-campaigns" ON public.bookings_campaigns
+    FOR DELETE USING (agency_id = auth.uid());
 
 -- ============================================================================
 -- 8. ROTATION TRIGGER (auto-cleanup old notifications)
