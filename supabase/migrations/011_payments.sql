@@ -92,8 +92,32 @@ CREATE TABLE IF NOT EXISTS public.agency_payment_links (
     -- Stripe
     stripe_price_id text,
     stripe_product_id text,
+    stripe_payment_link_id text,
+    stripe_payment_link_url text,
+    
+    -- Licensing Request
+    licensing_request_id uuid REFERENCES public.licensing_requests(id) ON DELETE SET NULL,
+    
+    -- Campaign
+    campaign_id uuid REFERENCES public.campaigns(id) ON DELETE SET NULL,
+    
+    -- Amount breakdown
+    total_amount_cents bigint,
+    net_amount_cents bigint,
+    agency_amount_cents bigint,
+    talent_amount_cents bigint,
+    agency_percent numeric(5,2),
+    talent_percent numeric(5,2),
+    
+    -- Talent splits
+    talent_splits jsonb DEFAULT '[]'::jsonb,
+    
+    -- Client info
+    client_email text,
+    client_name text,
     
     -- Status
+    status text DEFAULT 'active',
     is_active boolean DEFAULT true,
     usage_limit integer,
     usage_count integer DEFAULT 0,
@@ -108,6 +132,11 @@ CREATE TABLE IF NOT EXISTS public.agency_payment_links (
 CREATE INDEX IF NOT EXISTS idx_agency_payment_links_agency ON public.agency_payment_links(agency_id);
 CREATE INDEX IF NOT EXISTS idx_agency_payment_links_active ON public.agency_payment_links(agency_id, is_active);
 CREATE INDEX IF NOT EXISTS idx_agency_payment_links_stripe ON public.agency_payment_links(stripe_price_id);
+CREATE INDEX IF NOT EXISTS idx_agency_payment_links_licensing_request ON public.agency_payment_links(licensing_request_id);
+CREATE INDEX IF NOT EXISTS idx_agency_payment_links_campaign ON public.agency_payment_links(campaign_id);
+CREATE INDEX IF NOT EXISTS idx_agency_payment_links_stripe_payment_link_id ON public.agency_payment_links(stripe_payment_link_id);
+CREATE INDEX IF NOT EXISTS idx_agency_payment_links_status ON public.agency_payment_links(status);
+CREATE INDEX IF NOT EXISTS idx_agency_payment_links_client_email ON public.agency_payment_links(client_email);
 
 ALTER TABLE public.agency_payment_links ENABLE ROW LEVEL SECURITY;
 

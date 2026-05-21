@@ -272,6 +272,7 @@ CREATE TABLE IF NOT EXISTS public.licensing_payouts (
     -- Source
     submission_id uuid REFERENCES public.license_submissions(id) ON DELETE SET NULL,
     payment_link_id uuid,
+    licensing_request_id uuid REFERENCES public.licensing_requests(id) ON DELETE SET NULL,
     
     -- Amounts
     amount_cents bigint NOT NULL,
@@ -295,6 +296,7 @@ CREATE INDEX IF NOT EXISTS idx_licensing_payouts_submission ON public.licensing_
 CREATE INDEX IF NOT EXISTS idx_licensing_payouts_status ON public.licensing_payouts(status);
 CREATE INDEX IF NOT EXISTS idx_licensing_payouts_paid_at ON public.licensing_payouts(paid_at);
 CREATE INDEX IF NOT EXISTS idx_licensing_payouts_agency_talent_paid ON public.licensing_payouts(agency_id, paid_at);
+CREATE INDEX IF NOT EXISTS idx_licensing_payouts_licensing_request ON public.licensing_payouts(licensing_request_id);
 
 ALTER TABLE public.licensing_payouts ENABLE ROW LEVEL SECURITY;
 

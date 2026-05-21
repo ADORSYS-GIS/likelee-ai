@@ -275,6 +275,14 @@ CREATE TABLE IF NOT EXISTS public.storage_assets (
     )),
     context_id uuid,
 
+    -- Source tracking (original table and record)
+    source_table text,
+    source_id text,
+    created_by text,
+
+    -- Quota tracking
+    counts_toward_quota boolean DEFAULT true,
+
     -- Status
     is_active boolean DEFAULT true,
     deleted_at timestamptz,
@@ -293,6 +301,9 @@ CREATE INDEX IF NOT EXISTS idx_storage_assets_bucket_path ON public.storage_asse
 CREATE INDEX IF NOT EXISTS idx_storage_assets_context ON public.storage_assets(context_type, context_id);
 CREATE INDEX IF NOT EXISTS idx_storage_assets_moderation ON public.storage_assets(moderation_status);
 CREATE INDEX IF NOT EXISTS idx_storage_assets_active ON public.storage_assets(owner_type, owner_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_storage_assets_counts_toward_quota ON public.storage_assets(counts_toward_quota);
+CREATE INDEX IF NOT EXISTS idx_storage_assets_source ON public.storage_assets(source_table, source_id);
+CREATE INDEX IF NOT EXISTS idx_storage_assets_created_by ON public.storage_assets(created_by);
 
 ALTER TABLE public.storage_assets ENABLE ROW LEVEL SECURITY;
 
