@@ -477,7 +477,7 @@ export const getTalentPayoutAccountStatus = () =>
   base44Client.get(`/api/talent/payouts/account-status`);
 
 export const getTalentPayoutOnboardingLink = () =>
-  base44Client.get(`/api/talent/payouts/onboarding-link`);
+  base44Client.post(`/api/talent/payouts/onboarding-link`, {});
 export const getTalentPortalSettings = () =>
   base44Client.get(`/api/talent/settings`);
 

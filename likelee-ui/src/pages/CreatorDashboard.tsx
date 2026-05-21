@@ -39,6 +39,9 @@ import {
   getCreatorTransferStatus,
   exchangeStripeOAuthCode,
   getStripeOAuthUrl,
+  getTalentPayoutAccountStatus,
+  getTalentPayoutBalance,
+  getTalentPayoutOnboardingLink,
   requestTalentPayout,
 } from "@/api/functions";
 import { getCacheItem, setCacheItem } from "@/lib/localStorageCache";
@@ -3381,11 +3384,17 @@ export default function CreatorDashboard() {
   const fetchPayoutStatus = async () => {
     if (!initialized || !authenticated || !user?.id) return;
     try {
+      const isTalentPortalUser = user.role === "talent";
+
       // Statically imported payout functions
       const [statusRes, balanceRes, historyRes, transfersRes] =
         await Promise.all([
-          getPayoutsAccountStatus(user.id),
-          getPayoutBalance(user.id),
+          isTalentPortalUser
+            ? getTalentPayoutAccountStatus()
+            : getPayoutsAccountStatus(user.id),
+          isTalentPortalUser
+            ? getTalentPayoutBalance()
+            : getPayoutBalance(user.id),
           getHistory({ profile_id: user.id, limit: 5 }),
           getCreatorTransferStatus().catch(() => ({ transfers: [] })),
         ]);
@@ -14651,7 +14660,10 @@ export default function CreatorDashboard() {
                     try {
                       setIsLoadingPayout(true);
                       if (!user?.id) throw new Error("Not authenticated");
-                      const res = await getStripeOAuthUrl(user.id);
+                      const res =
+                        user.role === "talent"
+                          ? await getTalentPayoutOnboardingLink()
+                          : await getStripeOAuthUrl(user.id);
 
                       // Handle both possible response formats
                       const url = res?.data?.url || res?.url;
@@ -14684,7 +14696,10 @@ export default function CreatorDashboard() {
                       const profileId = user?.id;
                       if (!profileId) throw new Error("Not authenticated");
 
-                      const res = await getStripeOAuthUrl(profileId);
+                      const res =
+                        user.role === "talent"
+                          ? await getTalentPayoutOnboardingLink()
+                          : await getStripeOAuthUrl(profileId);
 
                       const url = res?.data?.url || res?.url;
                       if (url) {
