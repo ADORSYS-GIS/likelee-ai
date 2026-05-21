@@ -195,11 +195,13 @@ async fn resolve_creator_ids_for_talent_refs(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if !creator_status.is_success() {
         return Err((
-            StatusCode::from_u16(creator_status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+            StatusCode::from_u16(creator_status.as_u16())
+                .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
             creator_text,
         ));
     }
-    let creator_rows: Vec<serde_json::Value> = serde_json::from_str(&creator_text).unwrap_or_default();
+    let creator_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&creator_text).unwrap_or_default();
     for row in creator_rows {
         if let Some(creator_id) = row.get("id").and_then(|v| v.as_str()) {
             let creator_id = creator_id.trim();
@@ -241,7 +243,8 @@ async fn resolve_creator_ids_for_talent_refs(
                     rel_text,
                 ));
             }
-            let rel_rows: Vec<serde_json::Value> = serde_json::from_str(&rel_text).unwrap_or_default();
+            let rel_rows: Vec<serde_json::Value> =
+                serde_json::from_str(&rel_text).unwrap_or_default();
             for row in rel_rows {
                 if let Some(creator_id) = row.get("creator_id").and_then(|v| v.as_str()) {
                     let creator_id = creator_id.trim();
