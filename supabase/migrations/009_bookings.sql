@@ -341,6 +341,20 @@ CREATE TABLE IF NOT EXISTS public.bookings_campaigns (
     updated_at timestamptz NOT NULL DEFAULT now()
 );
 
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'bookings_campaigns'
+          AND column_name = 'booking_id'
+    ) THEN
+        ALTER TABLE public.bookings_campaigns
+            ALTER COLUMN booking_id DROP NOT NULL;
+    END IF;
+END $$;
+
 ALTER TABLE public.bookings
     ADD COLUMN IF NOT EXISTS campaign_id uuid REFERENCES public.bookings_campaigns(id) ON DELETE CASCADE;
 
@@ -366,20 +380,35 @@ ALTER TABLE public.bookings_campaigns ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Agencies can view own bookings-campaigns" ON public.bookings_campaigns;
 CREATE POLICY "Agencies can view own bookings-campaigns" ON public.bookings_campaigns
-    FOR SELECT USING (agency_id = auth.uid());
+    FOR SELECT USING (
+        agency_id = auth.uid()
+        OR public.is_agency_team_member(agency_id)
+    );
 
 DROP POLICY IF EXISTS "Agencies can insert own bookings-campaigns" ON public.bookings_campaigns;
 CREATE POLICY "Agencies can insert own bookings-campaigns" ON public.bookings_campaigns
-    FOR INSERT WITH CHECK (agency_id = auth.uid());
+    FOR INSERT WITH CHECK (
+        agency_id = auth.uid()
+        OR public.is_agency_team_member(agency_id)
+    );
 
 DROP POLICY IF EXISTS "Agencies can update own bookings-campaigns" ON public.bookings_campaigns;
 CREATE POLICY "Agencies can update own bookings-campaigns" ON public.bookings_campaigns
-    FOR UPDATE USING (agency_id = auth.uid())
-    WITH CHECK (agency_id = auth.uid());
+    FOR UPDATE USING (
+        agency_id = auth.uid()
+        OR public.is_agency_team_member(agency_id)
+    )
+    WITH CHECK (
+        agency_id = auth.uid()
+        OR public.is_agency_team_member(agency_id)
+    );
 
 DROP POLICY IF EXISTS "Agencies can delete own bookings-campaigns" ON public.bookings_campaigns;
 CREATE POLICY "Agencies can delete own bookings-campaigns" ON public.bookings_campaigns
-    FOR DELETE USING (agency_id = auth.uid());
+    FOR DELETE USING (
+        agency_id = auth.uid()
+        OR public.is_agency_team_member(agency_id)
+    );
 
 -- ============================================================================
 -- 8. ROTATION TRIGGER (auto-cleanup old notifications)

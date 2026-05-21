@@ -62,7 +62,7 @@ pub async fn list_catalogs(
             .pg
             .from("agency_payment_links")
             .select("licensing_request_id,status,paid_at,created_at")
-            .eq("agency_id", &user.id)
+            .eq("agency_id", agency_id)
             .in_("licensing_request_id", lr_refs)
             .order("created_at.desc")
             .execute()
@@ -799,9 +799,8 @@ pub async fn create_catalog(
     user: AuthUser,
     Json(payload): Json<CreateCatalogRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let access = require_agency_permission(&state, &user, Permission::ManageLicenses).await?;
+    let agency_id = &access.organization_id;
 
     if payload.title.trim().is_empty() {
         return Err((StatusCode::BAD_REQUEST, "title is required".to_string()));
@@ -813,7 +812,7 @@ pub async fn create_catalog(
                 .pg
                 .from("licensing_requests")
                 .select("id,license_submissions!licensing_requests_submission_id_fkey(status)")
-                .eq("agency_id", &user.id)
+                .eq("agency_id", agency_id)
                 .eq("id", lrid.trim())
                 .limit(1)
                 .execute()
@@ -859,7 +858,7 @@ pub async fn create_catalog(
 
     // 1. Insert the catalog root record
     let mut catalog_insert = json!({
-        "agency_id": user.id,
+        "agency_id": agency_id,
         "title": payload.title.trim(),
     });
 
@@ -1047,7 +1046,7 @@ pub async fn create_catalog(
     }
 
     info!(
-        agency_id = %user.id,
+        agency_id = %agency_id,
         catalog_id = %catalog_id,
         item_count = payload.items.len(),
         email_sent = email_sent,

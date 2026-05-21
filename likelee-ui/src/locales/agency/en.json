@@ -5132,7 +5132,7 @@
         "contractPhase": "Contract Phase",
         "declined": "Declined"
       },
-      "archiveNotice": "Licensing requests past their end date are automatically moved to the Archive tab. After the client signs the license request, a payment link is generated for you to send.",
+      "archiveNotice": "Licensing requests past their end date are automatically moved to the Archive tab. After the client signs the license request, a payment link is generated for you to send, and paid requests stay here until their license end date.",
       "noActive": "No active licensing requests",
       "noArchived": "No archived licensing requests",
       "statusLabels": {

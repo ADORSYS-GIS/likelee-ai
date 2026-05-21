@@ -94,6 +94,7 @@ CREATE TABLE IF NOT EXISTS public.agency_payment_links (
     stripe_product_id text,
     stripe_payment_link_id text,
     stripe_payment_link_url text,
+    stripe_payment_intent_id text,
     
     -- Licensing Request
     licensing_request_id uuid REFERENCES public.licensing_requests(id) ON DELETE SET NULL,
@@ -124,6 +125,7 @@ CREATE TABLE IF NOT EXISTS public.agency_payment_links (
     
     -- Expiration
     expires_at timestamptz,
+    paid_at timestamptz,
     
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now()
@@ -135,7 +137,9 @@ CREATE INDEX IF NOT EXISTS idx_agency_payment_links_stripe ON public.agency_paym
 CREATE INDEX IF NOT EXISTS idx_agency_payment_links_licensing_request ON public.agency_payment_links(licensing_request_id);
 CREATE INDEX IF NOT EXISTS idx_agency_payment_links_campaign ON public.agency_payment_links(campaign_id);
 CREATE INDEX IF NOT EXISTS idx_agency_payment_links_stripe_payment_link_id ON public.agency_payment_links(stripe_payment_link_id);
+CREATE INDEX IF NOT EXISTS idx_agency_payment_links_stripe_payment_intent_id ON public.agency_payment_links(stripe_payment_intent_id);
 CREATE INDEX IF NOT EXISTS idx_agency_payment_links_status ON public.agency_payment_links(status);
+CREATE INDEX IF NOT EXISTS idx_agency_payment_links_paid_at ON public.agency_payment_links(paid_at);
 CREATE INDEX IF NOT EXISTS idx_agency_payment_links_client_email ON public.agency_payment_links(client_email);
 
 ALTER TABLE public.agency_payment_links ENABLE ROW LEVEL SECURITY;
@@ -155,9 +159,11 @@ CREATE TABLE IF NOT EXISTS public.agency_payment_link_transfers (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
     payment_link_id uuid REFERENCES public.agency_payment_links(id) ON DELETE SET NULL,
+    recipient_type text NOT NULL CHECK (recipient_type IN ('agency', 'creator')),
+    recipient_id uuid NOT NULL,
     
     -- Transfer Details
-    stripe_transfer_id text NOT NULL UNIQUE,
+    stripe_transfer_id text UNIQUE,
     amount_cents integer NOT NULL,
     currency text NOT NULL DEFAULT 'USD',
     
@@ -598,9 +604,6 @@ DECLARE
     i integer;
     v_payout_id uuid;
     v_updated_payments bigint := 0;
-    v_archived_submissions bigint := 0;
-    v_archived_requests bigint := 0;
-    v_submission_id uuid;
     v_current_row_count bigint;
 BEGIN
     v_lr_ids := string_to_array(p_licensing_request_ids, ',');
@@ -619,11 +622,13 @@ BEGIN
         RAISE EXCEPTION 'Payment link % not found or not in active status', p_payment_link_id;
     END IF;
     INSERT INTO public.licensing_payouts (
-        agency_id, amount_cents, platform_fee_cents, currency,
-        payment_link_id, status, paid_at
+        agency_id, amount_cents, platform_fee_cents, net_amount_cents,
+        talent_earnings_cents, currency, talent_splits, payment_link_id,
+        licensing_request_id, stripe_payment_intent_id, status, paid_at
     ) VALUES (
-        p_agency_id, p_agency_amount_cents, p_platform_fee_cents, p_currency,
-        p_payment_link_id, 'paid', now()
+        p_agency_id, p_agency_amount_cents, p_platform_fee_cents, p_net_amount_cents,
+        p_talent_amount_cents, p_currency, COALESCE(p_talent_splits, '[]'::jsonb),
+        p_payment_link_id, v_first_lr_id::uuid, p_payment_intent_id, 'paid', now()
     ) RETURNING id INTO v_payout_id;
     FOREACH v_lr_id IN ARRAY v_lr_ids LOOP
         UPDATE public.payments
@@ -632,19 +637,10 @@ BEGIN
         GET DIAGNOSTICS v_current_row_count = ROW_COUNT;
         v_updated_payments := v_updated_payments + v_current_row_count;
     END LOOP;
-    FOREACH v_lr_id IN ARRAY v_lr_ids LOOP
-        SELECT licensing_request_id INTO v_submission_id FROM public.license_submissions WHERE licensing_request_id = v_lr_id::uuid LIMIT 1;
-        IF v_submission_id IS NOT NULL THEN
-            UPDATE public.license_submissions SET status = 'archived', archived_at = now() WHERE id = v_submission_id AND status IS DISTINCT FROM 'archived';
-            IF FOUND THEN v_archived_submissions := v_archived_submissions + 1; END IF;
-        END IF;
-        UPDATE public.licensing_requests SET status = 'archived', archived_at = now() WHERE id = v_lr_id::uuid AND status IS DISTINCT FROM 'archived';
-        IF FOUND THEN v_archived_requests := v_archived_requests + 1; END IF;
-    END LOOP;
     RETURN jsonb_build_object(
         'payment_link_id', p_payment_link_id, 'payout_id', v_payout_id,
-        'updated_payments', v_updated_payments, 'archived_submissions', v_archived_submissions,
-        'archived_requests', v_archived_requests, 'success', true
+        'updated_payments', v_updated_payments, 'archived_submissions', 0,
+        'archived_requests', 0, 'success', true
     );
 END;
 $$;

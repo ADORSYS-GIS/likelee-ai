@@ -976,7 +976,7 @@ pub async fn generate_payment_link(
     // Log warning if client_email is missing
     if client_email.is_none() {
         warn!(
-            agency_id = %user.id,
+            agency_id = %agency_id,
             licensing_request_id = %payload.licensing_request_ids.first().unwrap_or(&String::new()),
             "No client email found for payment link - email sending will fail"
         );
@@ -1045,7 +1045,7 @@ pub async fn generate_payment_link(
 
     // Add metadata
     let mut metadata = HashMap::new();
-    metadata.insert("agency_id".to_string(), user.id.clone());
+    metadata.insert("agency_id".to_string(), agency_id.clone());
     metadata.insert(
         "licensing_request_ids".to_string(),
         payload.licensing_request_ids.join(","),
@@ -1098,7 +1098,7 @@ pub async fn generate_payment_link(
 
     // Store in database
     let db_record = json!({
-        "agency_id": user.id,
+        "agency_id": agency_id,
         "licensing_request_id": payload.licensing_request_ids.first().cloned().unwrap_or_default(),
         "campaign_id": campaign_id,
         "stripe_payment_link_id": stripe_payment_link_id,
@@ -1144,7 +1144,7 @@ pub async fn generate_payment_link(
         .to_string();
 
     info!(
-        agency_id = %user.id,
+        agency_id = %agency_id,
         payment_link_id = %our_payment_link_id,
         stripe_link_id = %stripe_payment_link_id,
         "Payment link generated"
@@ -1451,7 +1451,7 @@ pub async fn cancel_payment_link(
 
     info!(
         payment_link_id = %id,
-        agency_id = %user.id,
+        agency_id = %agency_id,
         "Payment link cancelled"
     );
 

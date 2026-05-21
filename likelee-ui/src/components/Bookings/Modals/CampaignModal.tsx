@@ -17,9 +17,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/use-toast";
 import { useTranslation } from "react-i18next";
+import {
+  createBookingsCampaign,
+  updateBookingsCampaign,
+} from "@/api/functions";
 
 export const CampaignModal = ({
   open,
@@ -63,23 +66,9 @@ export const CampaignModal = ({
   const mutation = useMutation({
     mutationFn: async (data: any) => {
       if (initialData?.id) {
-        const { data: updated, error } = await supabase
-          .from("bookings_campaigns")
-          .update(data)
-          .eq("id", initialData.id)
-          .select()
-          .single();
-        if (error) throw error;
-        return updated;
-      } else {
-        const { data: created, error } = await supabase
-          .from("bookings_campaigns")
-          .insert([data])
-          .select()
-          .single();
-        if (error) throw error;
-        return created;
+        return updateBookingsCampaign(initialData.id, data);
       }
+      return createBookingsCampaign(data);
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["bookings-campaigns"] });

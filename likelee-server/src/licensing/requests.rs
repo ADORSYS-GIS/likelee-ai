@@ -527,10 +527,7 @@ pub async fn list_for_agency(
                 .all(|t| t.total_agreed_amount.is_some());
     }
 
-    let mut out: Vec<LicensingRequestGroup> = groups
-        .into_values()
-        .filter(|g| g.payment_link_status.as_deref().unwrap_or("") != "paid")
-        .collect();
+    let mut out: Vec<LicensingRequestGroup> = groups.into_values().collect();
     out.sort_by(|a, b| b.created_at.cmp(&a.created_at));
     Ok(Json(out))
 }
@@ -2909,7 +2906,7 @@ pub async fn send_payment_link(
     let expires_at = Utc::now() + Duration::hours(expires_in_hours);
 
     let mut metadata = std::collections::HashMap::new();
-    metadata.insert("agency_id".to_string(), user.id.clone());
+    metadata.insert("agency_id".to_string(), agency_id.clone());
     metadata.insert("licensing_request_ids".to_string(), id.clone());
     metadata.insert(
         "campaign_id".to_string(),
@@ -2957,7 +2954,7 @@ pub async fn send_payment_link(
 
     // 10. Store in agency_payment_links
     let db_record = json!({
-        "agency_id": user.id,
+        "agency_id": agency_id,
         "licensing_request_id": id,
         "campaign_id": campaign_id,
         "stripe_payment_link_id": stripe_payment_link_id,
@@ -2996,7 +2993,7 @@ pub async fn send_payment_link(
         .to_string();
 
     info!(
-        agency_id = %user.id,
+        agency_id = %agency_id,
         licensing_request_id = %id,
         payment_link_id = %our_payment_link_id,
         "Payment link generated via send_payment_link"
