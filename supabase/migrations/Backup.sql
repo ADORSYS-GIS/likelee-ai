@@ -2226,6 +2226,26 @@ create policy "Agencies can delete own bookings-campaigns" on public.bookings_ca
     or public.is_agency_team_member(agency_id)
   );
 
+-- Fix: Drop the legacy NOT NULL constraint on bookings_campaigns.campaign_id
+-- This column is a relic from an older schema; the backend never populates it,
+-- causing a 23502 violation on every campaign creation.
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'bookings_campaigns'
+      and column_name = 'campaign_id'
+      and is_nullable = 'NO'
+  ) then
+    alter table public.bookings_campaigns alter column campaign_id drop not null;
+  end if;
+end $$;
+
+alter table public.bookings_campaigns
+  drop constraint if exists bookings_campaigns_campaign_id_fkey;
+
 create or replace function public.complete_payment_link_checkout(
     p_payment_link_id uuid,
     p_payment_intent_id text,

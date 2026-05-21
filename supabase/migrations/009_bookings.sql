@@ -427,4 +427,24 @@ CREATE TRIGGER booking_notifications_rotation
     AFTER INSERT ON public.booking_notifications
     FOR EACH STATEMENT EXECUTE FUNCTION public.rotate_booking_notifications();
 
+-- Fix: Drop the legacy NOT NULL constraint on bookings_campaigns.campaign_id
+-- This column is a relic from an older schema; the backend never populates it,
+-- causing a 23502 violation on every campaign creation.
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'bookings_campaigns'
+          AND column_name = 'campaign_id'
+          AND is_nullable = 'NO'
+    ) THEN
+        ALTER TABLE public.bookings_campaigns ALTER COLUMN campaign_id DROP NOT NULL;
+    END IF;
+END $$;
+
+ALTER TABLE public.bookings_campaigns
+    DROP CONSTRAINT IF EXISTS bookings_campaigns_campaign_id_fkey;
+
 COMMIT;
