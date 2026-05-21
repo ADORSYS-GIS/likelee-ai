@@ -48,11 +48,18 @@ async fn resolve_talent_creator_id(
     user: &AuthUser,
 ) -> Result<String, (StatusCode, String)> {
     RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
+    if user.role == "creator" {
+        return Ok(user.id.clone());
+    }
     let resp = state
         .pg
         .from("agency_users")
-        .select("creator_id,user_id")
-        .or(format!("creator_id.eq.{},user_id.eq.{}", user.id, user.id))
+        .select("id,creator_id,user_id")
+        .or(format!(
+            "id.eq.{},creator_id.eq.{},user_id.eq.{}",
+            user.id, user.id, user.id
+        ))
+        .order("updated_at.desc")
         .limit(1)
         .execute()
         .await
@@ -73,16 +80,10 @@ async fn resolve_talent_creator_id(
     let cid = first
         .get("creator_id")
         .and_then(|v| v.as_str())
-        .or_else(|| first.get("user_id").and_then(|v| v.as_str()))
+        .or_else(|| first.get("id").and_then(|v| v.as_str()))
         .unwrap_or("")
         .to_string();
-    if cid.is_empty() {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "talent_creator_id_not_found".to_string(),
-        ));
-    }
-    Ok(cid)
+    Ok(if cid.is_empty() { user.id.clone() } else { cid })
 }
 
 pub async fn get_my_account_status(
@@ -410,6 +411,18 @@ pub async fn get_account_status(
                             }
                         }
                         bank_last4 = extract_bank_last4(&acct);
+                        let _ = state
+                            .pg
+                            .from("creators")
+                            .eq("id", &q.profile_id)
+                            .update(
+                                json!({
+                                    "payouts_enabled": payouts_enabled
+                                })
+                                .to_string(),
+                            )
+                            .execute()
+                            .await;
                     }
                     Err(e) => warn!(error=%e, "stripe retrieve account failed"),
                 }
@@ -785,13 +798,11 @@ pub async fn get_my_balance(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> (StatusCode, Json<serde_json::Value>) {
-    get_balance(
-        State(state),
-        Query(BalanceQuery {
-            profile_id: user.id,
-        }),
-    )
-    .await
+    let profile_id = match resolve_talent_creator_id(&state, &user).await {
+        Ok(v) => v,
+        Err((code, msg)) => return (code, Json(json!({"status":"error","error":msg}))),
+    };
+    get_balance(State(state), Query(BalanceQuery { profile_id })).await
 }
 
 pub async fn get_balance(
@@ -979,10 +990,14 @@ pub async fn request_my_payout(
     user: AuthUser,
     Json(payload): Json<MyPayoutRequestPayload>,
 ) -> (StatusCode, Json<serde_json::Value>) {
+    let profile_id = match resolve_talent_creator_id(&state, &user).await {
+        Ok(v) => v,
+        Err((code, msg)) => return (code, Json(json!({"status":"error","error":msg}))),
+    };
     request_payout(
         State(state),
         Json(PayoutRequestPayload {
-            profile_id: user.id,
+            profile_id,
             amount_cents: payload.amount_cents,
             currency: payload.currency,
             payout_method: payload.payout_method,
