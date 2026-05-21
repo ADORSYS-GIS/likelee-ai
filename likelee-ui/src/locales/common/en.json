@@ -2543,6 +2543,7 @@
     }
   },
   "error": "Error",
+  "warningLabel": "Warning",
   "bookings": {
     "campaignModal": {
       "titleCreate": "Create New Campaign",

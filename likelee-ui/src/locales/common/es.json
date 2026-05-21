@@ -2633,6 +2633,7 @@
     }
   },
   "error": "Error",
+  "warningLabel": "Advertencia",
   "bookings": {
     "campaignModal": {
       "titleCreate": "Crear nueva campana",

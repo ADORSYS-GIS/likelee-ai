@@ -2621,6 +2621,7 @@
     }
   },
   "error": "Fehler",
+  "warningLabel": "Warnung",
   "bookings": {
     "campaignModal": {
       "titleCreate": "Neue Kampagne erstellen",
