@@ -78,11 +78,11 @@ CREATE TABLE IF NOT EXISTS public.agency_payment_links (
     agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
     
     -- Link Details
-    name text NOT NULL,
+    name text,
     description text,
     
     -- Amount
-    amount_cents integer NOT NULL,
+    amount_cents integer DEFAULT 0,
     currency text NOT NULL DEFAULT 'USD',
     
     -- Platform fee

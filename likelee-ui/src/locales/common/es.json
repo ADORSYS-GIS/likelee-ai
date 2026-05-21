@@ -2632,5 +2632,38 @@
       }
     }
   },
-  "error": "Error"
+  "error": "Error",
+  "bookings": {
+    "campaignModal": {
+      "titleCreate": "Crear nueva campana",
+      "titleEdit": "Editar campana",
+      "fields": {
+        "name": "Nombre de campana",
+        "status": "Estado",
+        "duration": "Duracion",
+        "startDate": "Fecha de inicio"
+      },
+      "placeholders": {
+        "name": "Ingresa el nombre de la campana"
+      },
+      "statuses": {
+        "created": "Creada",
+        "ongoing": "En curso",
+        "completed": "Completada"
+      },
+      "actions": {
+        "cancel": "Cancelar",
+        "save": "Guardar campana",
+        "saving": "Guardando..."
+      },
+      "toasts": {
+        "created": "Campana creada",
+        "updated": "Campana actualizada",
+        "error": "Error de campana"
+      },
+      "errors": {
+        "missingName": "El nombre de la campana es obligatorio"
+      }
+    }
+  }
 }

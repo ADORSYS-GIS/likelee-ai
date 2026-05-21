@@ -2975,5 +2975,38 @@
   "faces.cta.steps.2": "→ Set your minimum rate — You decide your floor price ($350+/month)",
   "faces.cta.steps.3": "→ Brands find you — They request licenses, you approve or decline",
   "faces.cta.steps.4": "→ Start earning — Monthly payments as long as licenses are active",
-  "faces.cta.reserveProfileButton": "Reserve Your Profile"
+  "faces.cta.reserveProfileButton": "Reserve Your Profile",
+  "bookings": {
+    "campaignModal": {
+      "titleCreate": "Creer une nouvelle campagne",
+      "titleEdit": "Modifier la campagne",
+      "fields": {
+        "name": "Nom de la campagne",
+        "status": "Statut",
+        "duration": "Duree",
+        "startDate": "Date de debut"
+      },
+      "placeholders": {
+        "name": "Saisir le nom de la campagne"
+      },
+      "statuses": {
+        "created": "Creee",
+        "ongoing": "En cours",
+        "completed": "Terminee"
+      },
+      "actions": {
+        "cancel": "Annuler",
+        "save": "Enregistrer la campagne",
+        "saving": "Enregistrement..."
+      },
+      "toasts": {
+        "created": "Campagne creee",
+        "updated": "Campagne mise a jour",
+        "error": "Erreur de campagne"
+      },
+      "errors": {
+        "missingName": "Le nom de la campagne est obligatoire"
+      }
+    }
+  }
 }

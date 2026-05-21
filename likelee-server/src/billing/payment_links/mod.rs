@@ -84,7 +84,7 @@ pub async fn generate_payment_link(
     let lr_resp = state
         .pg
         .from("licensing_requests")
-        .select("id,agency_id,brand_id,talent_id,status,campaign_title,client_name,talent_name,brands(email,company_name),license_submissions!licensing_requests_submission_id_fkey(client_email,client_name),campaigns(id,payment_amount,agency_earnings_cents,talent_earnings_cents)")
+        .select("id,agency_id,brand_id,talent_id,talent_ids,status,campaign_title,client_name,talent_name,brands(email,company_name),license_submissions!licensing_requests_submission_id_fkey(client_email,client_name),campaigns(id,payment_amount,agency_earnings_cents,talent_earnings_cents)")
         .eq("agency_id", agency_id)
         .in_("id", ids.clone())
         .execute()
@@ -333,19 +333,71 @@ pub async fn generate_payment_link(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let c_rows: Vec<serde_json::Value> = serde_json::from_str(&c_text).unwrap_or_default();
 
-    // Build talent list from campaigns rows
+    // Build talent list from licensing_requests first. If talent_ids exists, it is
+    // authoritative and avoids stale legacy talent_id values.
     let mut talent_ids: Vec<String> = vec![];
 
-    if !c_rows.is_empty() {
+    for r in &lr_rows {
+        let mut row_talent_ids: Vec<String> = r
+            .get("talent_ids")
+            .and_then(|v| v.as_array())
+            .map(|ids| {
+                ids.iter()
+                    .filter_map(|v| v.as_str())
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty())
+                    .collect()
+            })
+            .unwrap_or_default();
+
+        if row_talent_ids.is_empty() {
+            if let Some(tid) = r.get("talent_id").and_then(|v| v.as_str()) {
+                let tid = tid.trim();
+                if !tid.is_empty() {
+                    row_talent_ids.push(tid.to_string());
+                }
+            }
+        }
+
+        talent_ids.extend(row_talent_ids);
+    }
+
+    if talent_ids.is_empty() && !c_rows.is_empty() {
         for r in &c_rows {
             if let Some(tid) = r.get("talent_id").and_then(|v| v.as_str()) {
-                talent_ids.push(tid.to_string());
+                let tid = tid.trim();
+                if !tid.is_empty() {
+                    talent_ids.push(tid.to_string());
+                }
             }
         }
     }
 
     talent_ids.sort();
     talent_ids.dedup();
+
+    if talent_ids.is_empty() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "No talent is attached to these licensing requests, so a payment link cannot be generated.".to_string(),
+        ));
+    }
+
+    let invalid_talent_ids: Vec<String> = talent_ids
+        .iter()
+        .filter(|id| !is_valid_uuid(id))
+        .cloned()
+        .collect();
+
+    if !invalid_talent_ids.is_empty() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!(
+                "These licensing requests contain non-UUID talent IDs: {}. Check licensing_requests.talent_id/talent_ids.",
+                invalid_talent_ids.join(", ")
+            ),
+        ));
+    }
 
     // Calculate payout amounts from tier-weighted gross shares and commission rates.
     let mut agency_amount_cents: i64 = 0;
@@ -364,7 +416,7 @@ pub async fn generate_payment_link(
         let au_resp = state
             .pg
             .from("agency_users")
-            .select("id,creator_id,full_legal_name,stage_name,performance_tier_name")
+            .select("id,creator_id,full_legal_name,stage_name,email,performance_tier_name")
             .in_("id", t_refs.clone())
             .execute()
             .await;
@@ -372,6 +424,7 @@ pub async fn generate_payment_link(
         let mut talent_name_map: HashMap<String, String> = HashMap::new();
         let mut talent_creator_map: HashMap<String, String> = HashMap::new();
         let mut talent_tier_name_map: HashMap<String, String> = HashMap::new();
+        let mut talent_email_map: HashMap<String, String> = HashMap::new();
 
         if let Ok(au_resp) = au_resp {
             if au_resp.status().is_success() {
@@ -394,6 +447,13 @@ pub async fn generate_payment_link(
 
                     talent_name_map.insert(id.to_string(), name);
 
+                    if let Some(email) = r.get("email").and_then(|v| v.as_str()) {
+                        let email = email.trim().to_lowercase();
+                        if !email.is_empty() {
+                            talent_email_map.insert(id.to_string(), email);
+                        }
+                    }
+
                     if let Some(cid) = r.get("creator_id").and_then(|v| v.as_str()) {
                         talent_creator_map.insert(id.to_string(), cid.to_string());
                     }
@@ -405,15 +465,161 @@ pub async fn generate_payment_link(
             }
         }
 
-        // Fetch creator Stripe Connect account IDs
+        let missing_email_creator_links: Vec<String> = talent_ids
+            .iter()
+            .filter(|tid| !talent_creator_map.contains_key(*tid))
+            .filter_map(|tid| talent_email_map.get(tid).cloned())
+            .collect();
+        if !missing_email_creator_links.is_empty() {
+            let email_refs: Vec<&str> = missing_email_creator_links
+                .iter()
+                .map(|s| s.as_str())
+                .collect();
+            let cr_resp = state
+                .pg
+                .from("creators")
+                .select("id,email")
+                .in_("email", email_refs)
+                .execute()
+                .await;
+            if let Ok(cr_resp) = cr_resp {
+                if cr_resp.status().is_success() {
+                    let cr_text = cr_resp.text().await.unwrap_or_else(|_| "[]".into());
+                    let cr_rows: Vec<serde_json::Value> =
+                        serde_json::from_str(&cr_text).unwrap_or_default();
+                    let mut creator_by_email: HashMap<String, String> = HashMap::new();
+                    for r in &cr_rows {
+                        let cid = r.get("id").and_then(|v| v.as_str()).unwrap_or("");
+                        let email = r
+                            .get("email")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .trim()
+                            .to_lowercase();
+                        if !cid.is_empty() && !email.is_empty() {
+                            creator_by_email.insert(email, cid.to_string());
+                        }
+                    }
+                    for (tid, email) in &talent_email_map {
+                        if talent_creator_map.contains_key(tid) {
+                            continue;
+                        }
+                        if let Some(cid) = creator_by_email.get(email) {
+                            talent_creator_map.insert(tid.clone(), cid.clone());
+                        }
+                    }
+                }
+            }
+        }
+
+        // Some licensing flows store agency_talent_relationships.id instead of agency_users.id.
+        let missing_creator_links: Vec<String> = talent_ids
+            .iter()
+            .filter(|tid| !talent_creator_map.contains_key(*tid))
+            .cloned()
+            .collect();
+        if !missing_creator_links.is_empty() {
+            let rel_refs: Vec<&str> = missing_creator_links.iter().map(|s| s.as_str()).collect();
+            for (col, selector) in [
+                ("talent_id", "talent_id,creator_id"),
+                ("id", "id,talent_id,creator_id"),
+            ] {
+                let rel_resp = state
+                    .pg
+                    .from("agency_talent_relationships")
+                    .select(selector)
+                    .eq("agency_id", agency_id)
+                    .in_(col, rel_refs.clone())
+                    .execute()
+                    .await;
+                if let Ok(rel_resp) = rel_resp {
+                    if rel_resp.status().is_success() {
+                        let rel_text = rel_resp.text().await.unwrap_or_else(|_| "[]".into());
+                        let rel_rows: Vec<serde_json::Value> =
+                            serde_json::from_str(&rel_text).unwrap_or_default();
+                        for r in &rel_rows {
+                            let rel_id = r
+                                .get("id")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("")
+                                .to_string();
+                            let tid = r
+                                .get("talent_id")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("")
+                                .to_string();
+                            let cid = r
+                                .get("creator_id")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("")
+                                .to_string();
+                            if cid.is_empty() {
+                                continue;
+                            }
+                            if !tid.is_empty() {
+                                talent_creator_map.entry(tid).or_insert(cid.clone());
+                            }
+                            if !rel_id.is_empty() {
+                                talent_creator_map.entry(rel_id).or_insert(cid);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // If remaining talent ids are already creator ids, accept them directly.
+        let still_missing_creator_links: Vec<String> = talent_ids
+            .iter()
+            .filter(|tid| !talent_creator_map.contains_key(*tid))
+            .cloned()
+            .collect();
+        if !still_missing_creator_links.is_empty() {
+            let cr_refs: Vec<&str> = still_missing_creator_links
+                .iter()
+                .map(|s| s.as_str())
+                .collect();
+            let cr_resp = state
+                .pg
+                .from("creators")
+                .select("id,full_name")
+                .in_("id", cr_refs)
+                .execute()
+                .await;
+            if let Ok(cr_resp) = cr_resp {
+                if cr_resp.status().is_success() {
+                    let cr_text = cr_resp.text().await.unwrap_or_else(|_| "[]".into());
+                    let cr_rows: Vec<serde_json::Value> =
+                        serde_json::from_str(&cr_text).unwrap_or_default();
+                    for r in &cr_rows {
+                        let cid = r.get("id").and_then(|v| v.as_str()).unwrap_or("");
+                        if cid.is_empty() {
+                            continue;
+                        }
+                        let name = r
+                            .get("full_name")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("Unknown")
+                            .to_string();
+                        talent_creator_map
+                            .entry(cid.to_string())
+                            .or_insert(cid.to_string());
+                        talent_name_map.entry(cid.to_string()).or_insert(name);
+                    }
+                }
+            }
+        }
+
+        // Fetch creator Stripe Connect account IDs and payout readiness.
         let creator_ids: Vec<&str> = talent_creator_map.values().map(|s| s.as_str()).collect();
         let mut stripe_account_map: HashMap<String, String> = HashMap::new();
+        let mut payouts_enabled_map: HashMap<String, bool> = HashMap::new();
 
         if !creator_ids.is_empty() {
             let cr_resp = state
                 .pg
                 .from("creators")
-                .select("id,stripe_connect_account_id")
+                .select("id,stripe_connect_account_id,payouts_enabled")
                 .in_("id", creator_ids)
                 .execute()
                 .await;
@@ -430,8 +636,16 @@ pub async fn generate_payment_link(
                             .get("stripe_connect_account_id")
                             .and_then(|v| v.as_str())
                             .unwrap_or("");
-                        if !cid.is_empty() && !acct.is_empty() {
-                            stripe_account_map.insert(cid.to_string(), acct.to_string());
+                        let payouts_enabled = r
+                            .get("payouts_enabled")
+                            .and_then(|v| v.as_bool())
+                            .unwrap_or(false);
+
+                        if !cid.is_empty() {
+                            if !acct.is_empty() {
+                                stripe_account_map.insert(cid.to_string(), acct.to_string());
+                            }
+                            payouts_enabled_map.insert(cid.to_string(), payouts_enabled);
                         }
                     }
                 }
@@ -538,26 +752,40 @@ pub async fn generate_payment_link(
             }
         }
 
-        // Check that all talents have Stripe Connect accounts
+        // Check that all talents have payout-ready Stripe accounts.
         let mut missing_stripe: Vec<String> = vec![];
+        let mut payouts_disabled: Vec<String> = vec![];
         for (talent_id, creator_id) in &talent_creator_map {
+            let name = talent_name_map
+                .get(talent_id)
+                .cloned()
+                .unwrap_or_else(|| "Unknown".to_string());
             if !stripe_account_map.contains_key(creator_id) {
-                let name = talent_name_map
-                    .get(talent_id)
-                    .cloned()
-                    .unwrap_or_else(|| "Unknown".to_string());
-                missing_stripe.push(format!("{} ({})", name, talent_id));
+                missing_stripe.push(name.clone());
+            } else if !payouts_enabled_map
+                .get(creator_id)
+                .copied()
+                .unwrap_or(false)
+            {
+                payouts_disabled.push(name);
             }
         }
 
-        if !missing_stripe.is_empty() {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                format!(
-                    "The following talents must connect their Stripe account before generating a payment link: {}",
+        if !missing_stripe.is_empty() || !payouts_disabled.is_empty() {
+            let mut error_parts = vec![];
+            if !missing_stripe.is_empty() {
+                error_parts.push(format!(
+                    "The following talent(s) need to connect their Stripe account: {}",
                     missing_stripe.join(", ")
-                ),
-            ));
+                ));
+            }
+            if !payouts_disabled.is_empty() {
+                error_parts.push(format!(
+                    "The following talent(s) have connected Stripe but payouts are not enabled yet: {}",
+                    payouts_disabled.join(", ")
+                ));
+            }
+            return Err((StatusCode::BAD_REQUEST, error_parts.join(". ")));
         }
 
         // Build talent splits:
@@ -1233,6 +1461,10 @@ pub async fn cancel_payment_link(
 // ============================================================================
 // 5. Get Single Payment Link
 // ============================================================================
+
+fn is_valid_uuid(value: &str) -> bool {
+    uuid::Uuid::parse_str(value.trim()).is_ok()
+}
 
 pub async fn get_payment_link(
     State(state): State<AppState>,

@@ -434,7 +434,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
         // 1. Create/Update draft in Likelee DB to persist client info early
         const draft = await createLicenseSubmissionDraft({
           template_id: currentTemplate.id,
-          client_id: selectedBrandId || brandRequestBrandId || undefined,
+          client_id: undefined,
           client_name: currentData.client_name,
           client_email: currentData.client_email,
           talent_ids:
@@ -591,7 +591,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
       if (!submissionId) {
         const draft = await createLicenseSubmissionDraft({
           template_id: currentTemplate.id,
-          client_id: selectedBrandId || brandRequestBrandId || undefined,
+          client_id: undefined,
           client_name: currentData.client_name,
           client_email: currentData.client_email,
           talent_ids:

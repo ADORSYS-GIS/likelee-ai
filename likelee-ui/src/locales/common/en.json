@@ -2542,5 +2542,38 @@
       }
     }
   },
-  "error": "Error"
+  "error": "Error",
+  "bookings": {
+    "campaignModal": {
+      "titleCreate": "Create New Campaign",
+      "titleEdit": "Edit Campaign",
+      "fields": {
+        "name": "Campaign Name",
+        "status": "Status",
+        "duration": "Duration",
+        "startDate": "Start Date"
+      },
+      "placeholders": {
+        "name": "Enter campaign name"
+      },
+      "statuses": {
+        "created": "Created",
+        "ongoing": "Ongoing",
+        "completed": "Completed"
+      },
+      "actions": {
+        "cancel": "Cancel",
+        "save": "Save Campaign",
+        "saving": "Saving..."
+      },
+      "toasts": {
+        "created": "Campaign created",
+        "updated": "Campaign updated",
+        "error": "Campaign error"
+      },
+      "errors": {
+        "missingName": "Campaign name is required"
+      }
+    }
+  }
 }

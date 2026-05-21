@@ -134,6 +134,130 @@ fn is_completed_status(s: &str) -> bool {
     v == "completed" || v == "signed"
 }
 
+async fn resolve_creator_ids_for_talent_refs(
+    state: &AppState,
+    agency_id: &str,
+    refs: Vec<String>,
+) -> Result<Vec<String>, (StatusCode, String)> {
+    let mut normalized_refs = normalize_uuid_vec(&refs);
+    normalized_refs.sort();
+    normalized_refs.dedup();
+
+    if normalized_refs.is_empty() {
+        return Ok(vec![]);
+    }
+
+    let ref_values: Vec<&str> = normalized_refs.iter().map(|s| s.as_str()).collect();
+    let mut creator_ids: Vec<String> = vec![];
+
+    let au_resp = state
+        .pg
+        .from("agency_users")
+        .select("id,creator_id")
+        .eq("agency_id", agency_id)
+        .in_("id", ref_values.clone())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let au_status = au_resp.status();
+    let au_text = au_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !au_status.is_success() {
+        return Err((
+            StatusCode::from_u16(au_status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+            au_text,
+        ));
+    }
+    let au_rows: Vec<serde_json::Value> = serde_json::from_str(&au_text).unwrap_or_default();
+    for row in au_rows {
+        if let Some(creator_id) = row.get("creator_id").and_then(|v| v.as_str()) {
+            let creator_id = creator_id.trim();
+            if !creator_id.is_empty() {
+                creator_ids.push(creator_id.to_string());
+            }
+        }
+    }
+
+    let creator_resp = state
+        .pg
+        .from("creators")
+        .select("id")
+        .in_("id", ref_values.clone())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let creator_status = creator_resp.status();
+    let creator_text = creator_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !creator_status.is_success() {
+        return Err((
+            StatusCode::from_u16(creator_status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+            creator_text,
+        ));
+    }
+    let creator_rows: Vec<serde_json::Value> = serde_json::from_str(&creator_text).unwrap_or_default();
+    for row in creator_rows {
+        if let Some(creator_id) = row.get("id").and_then(|v| v.as_str()) {
+            let creator_id = creator_id.trim();
+            if !creator_id.is_empty() {
+                creator_ids.push(creator_id.to_string());
+            }
+        }
+    }
+
+    let unresolved_refs: Vec<String> = normalized_refs
+        .iter()
+        .filter(|id| !creator_ids.iter().any(|creator_id| creator_id == *id))
+        .cloned()
+        .collect();
+    if !unresolved_refs.is_empty() {
+        let rel_values: Vec<&str> = unresolved_refs.iter().map(|s| s.as_str()).collect();
+        for (col, selector) in [
+            ("id", "id,creator_id"),
+            ("talent_id", "talent_id,creator_id"),
+        ] {
+            let rel_resp = state
+                .pg
+                .from("agency_talent_relationships")
+                .select(selector)
+                .eq("agency_id", agency_id)
+                .in_(col, rel_values.clone())
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let rel_status = rel_resp.status();
+            let rel_text = rel_resp
+                .text()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            if !rel_status.is_success() {
+                return Err((
+                    StatusCode::from_u16(rel_status.as_u16())
+                        .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+                    rel_text,
+                ));
+            }
+            let rel_rows: Vec<serde_json::Value> = serde_json::from_str(&rel_text).unwrap_or_default();
+            for row in rel_rows {
+                if let Some(creator_id) = row.get("creator_id").and_then(|v| v.as_str()) {
+                    let creator_id = creator_id.trim();
+                    if !creator_id.is_empty() {
+                        creator_ids.push(creator_id.to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    creator_ids.sort();
+    creator_ids.dedup();
+    Ok(creator_ids)
+}
+
 /// POST /api/license-submissions/draft - Create a draft template for a deal
 pub async fn create_draft(
     State(state): State<AppState>,
@@ -1150,13 +1274,12 @@ pub async fn finalize(
         }
     };
 
-    let mut full_talent_ids: Vec<String> = resolved_talent_ids
+    let full_talent_refs: Vec<String> = resolved_talent_ids
         .iter()
         .filter_map(|v| v.clone())
         .collect();
-    full_talent_ids = normalize_uuid_vec(&full_talent_ids);
-    full_talent_ids.sort();
-    full_talent_ids.dedup();
+    let full_talent_ids =
+        resolve_creator_ids_for_talent_refs(&state, &agency_id, full_talent_refs).await?;
     let submission_client_id = normalize_uuid_string(submission.client_id.as_deref());
 
     tracing::info!(
