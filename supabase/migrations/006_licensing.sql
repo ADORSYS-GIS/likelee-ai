@@ -277,10 +277,16 @@ CREATE TABLE IF NOT EXISTS public.licensing_payouts (
     -- Amounts
     amount_cents bigint NOT NULL,
     platform_fee_cents integer NOT NULL DEFAULT 0,
+    net_amount_cents bigint,
+    talent_earnings_cents bigint,
     currency text NOT NULL DEFAULT 'USD',
     
     -- Talent splits (JSONB array of {creator_id, talent_id, amount_cents})
     talent_splits jsonb NOT NULL DEFAULT '[]'::jsonb,
+    
+    -- Stripe references
+    stripe_checkout_session_id text,
+    stripe_payment_intent_id text,
     
     -- Status
     status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'paid', 'failed')),
@@ -297,6 +303,8 @@ CREATE INDEX IF NOT EXISTS idx_licensing_payouts_status ON public.licensing_payo
 CREATE INDEX IF NOT EXISTS idx_licensing_payouts_paid_at ON public.licensing_payouts(paid_at);
 CREATE INDEX IF NOT EXISTS idx_licensing_payouts_agency_talent_paid ON public.licensing_payouts(agency_id, paid_at);
 CREATE INDEX IF NOT EXISTS idx_licensing_payouts_licensing_request ON public.licensing_payouts(licensing_request_id);
+CREATE INDEX IF NOT EXISTS idx_licensing_payouts_stripe_checkout_session ON public.licensing_payouts(stripe_checkout_session_id);
+CREATE INDEX IF NOT EXISTS idx_licensing_payouts_stripe_payment_intent ON public.licensing_payouts(stripe_payment_intent_id);
 
 ALTER TABLE public.licensing_payouts ENABLE ROW LEVEL SECURITY;
 

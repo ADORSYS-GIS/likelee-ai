@@ -69,10 +69,14 @@ CREATE POLICY "Owners can view own wallet" ON public.studio_wallets
 CREATE TABLE IF NOT EXISTS public.studio_generations (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     wallet_id uuid NOT NULL REFERENCES public.studio_wallets(id) ON DELETE CASCADE,
+    user_id uuid NOT NULL,
     
     -- Generation Details
     prompt text NOT NULL,
     negative_prompt text,
+    
+    -- Campaign reference
+    campaign_id uuid,
     
     -- Settings
     width integer DEFAULT 1024,
@@ -107,6 +111,9 @@ CREATE INDEX IF NOT EXISTS idx_studio_generations_wallet ON public.studio_genera
 CREATE INDEX IF NOT EXISTS idx_studio_generations_status ON public.studio_generations(status);
 CREATE INDEX IF NOT EXISTS idx_studio_generations_created ON public.studio_generations(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_studio_generations_model ON public.studio_generations(model);
+CREATE INDEX IF NOT EXISTS idx_studio_generations_user ON public.studio_generations(user_id);
+CREATE INDEX IF NOT EXISTS idx_studio_generations_campaign ON public.studio_generations(campaign_id);
+CREATE INDEX IF NOT EXISTS idx_studio_generations_user_campaign ON public.studio_generations(user_id, campaign_id);
 
 ALTER TABLE public.studio_generations ENABLE ROW LEVEL SECURITY;
 
