@@ -100,6 +100,58 @@ CREATE INDEX IF NOT EXISTS idx_licensing_requests_effective_end_date ON public.l
 CREATE INDEX IF NOT EXISTS idx_licensing_requests_context_type ON public.licensing_requests(context_type);
 CREATE INDEX IF NOT EXISTS idx_licensing_requests_campaign_offer ON public.licensing_requests(campaign_offer_id);
 CREATE INDEX IF NOT EXISTS idx_licensing_requests_created_at ON public.licensing_requests(created_at);
+CREATE INDEX IF NOT EXISTS idx_licensing_requests_talent_ids ON public.licensing_requests USING GIN(talent_ids);
+
+COMMENT ON COLUMN public.licensing_requests.talent_ids IS 'Array of creator IDs (creators.id) associated with this licensing request.';
+
+CREATE OR REPLACE FUNCTION public.normalize_licensing_request_talent_ids()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    normalized_ids uuid[];
+BEGIN
+    normalized_ids := ARRAY(
+        SELECT DISTINCT creator_id
+        FROM (
+            SELECT COALESCE(au.creator_id, c.id) AS creator_id
+            FROM unnest(COALESCE(NEW.talent_ids, ARRAY[]::uuid[])) AS src_id
+            LEFT JOIN public.agency_users au
+              ON au.agency_id = NEW.agency_id
+             AND au.id = src_id
+            LEFT JOIN public.creators c
+              ON c.id = src_id
+
+            UNION ALL
+
+            SELECT au.creator_id
+            FROM public.agency_users au
+            WHERE au.agency_id = NEW.agency_id
+              AND au.id = NEW.talent_id
+
+            UNION ALL
+
+            SELECT NEW.creator_id
+        ) normalized
+        WHERE creator_id IS NOT NULL
+        ORDER BY creator_id
+    );
+
+    NEW.talent_ids := CASE
+        WHEN normalized_ids IS NULL OR cardinality(normalized_ids) = 0 THEN NULL
+        ELSE normalized_ids
+    END;
+
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_normalize_licensing_request_talent_ids ON public.licensing_requests;
+CREATE TRIGGER trg_normalize_licensing_request_talent_ids
+    BEFORE INSERT OR UPDATE OF agency_id, talent_id, creator_id, talent_ids
+    ON public.licensing_requests
+    FOR EACH ROW
+    EXECUTE FUNCTION public.normalize_licensing_request_talent_ids();
 
 ALTER TABLE public.licensing_requests ENABLE ROW LEVEL SECURITY;
 

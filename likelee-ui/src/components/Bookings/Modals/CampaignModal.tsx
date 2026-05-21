@@ -32,7 +32,7 @@ export const CampaignModal = ({
   initialData?: any;
   onSaveSuccess?: (campaign: any) => void;
 }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("agency");
   const [formData, setFormData] = useState({
     name: "",
     status: "created",
