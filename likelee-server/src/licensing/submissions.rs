@@ -65,6 +65,7 @@ pub struct CreateSubmissionRequest {
     pub custom_terms: Option<String>,
     pub requires_agency_signature: Option<bool>,
     pub licensing_request_id: Option<String>,
+    pub brand_request_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -101,9 +102,163 @@ async fn resolve_agency_signer_email(
         .filter(|s| !s.is_empty())
 }
 
+fn normalize_uuid_string(raw: Option<&str>) -> Option<String> {
+    let value = raw?.trim();
+    if value.is_empty() {
+        return None;
+    }
+    uuid::Uuid::parse_str(value).ok().map(|_| value.to_string())
+}
+
+fn request_brand_request_id(
+    brand_request_id: Option<&String>,
+    licensing_request_id: Option<&String>,
+) -> Option<String> {
+    normalize_uuid_string(brand_request_id.map(|value| value.as_str()))
+        .or_else(|| normalize_uuid_string(licensing_request_id.map(|value| value.as_str())))
+}
+
+fn submission_brand_request_id(submission_data: &serde_json::Value) -> Option<String> {
+    normalize_uuid_string(submission_data["brand_request_id"].as_str())
+}
+
+fn normalize_uuid_vec(values: &[String]) -> Vec<String> {
+    values
+        .iter()
+        .filter_map(|value| normalize_uuid_string(Some(value.as_str())))
+        .collect()
+}
+
 fn is_completed_status(s: &str) -> bool {
     let v = s.to_lowercase();
     v == "completed" || v == "signed"
+}
+
+async fn resolve_creator_ids_for_talent_refs(
+    state: &AppState,
+    agency_id: &str,
+    refs: Vec<String>,
+) -> Result<Vec<String>, (StatusCode, String)> {
+    let mut normalized_refs = normalize_uuid_vec(&refs);
+    normalized_refs.sort();
+    normalized_refs.dedup();
+
+    if normalized_refs.is_empty() {
+        return Ok(vec![]);
+    }
+
+    let ref_values: Vec<&str> = normalized_refs.iter().map(|s| s.as_str()).collect();
+    let mut creator_ids: Vec<String> = vec![];
+
+    let au_resp = state
+        .pg
+        .from("agency_users")
+        .select("id,creator_id")
+        .eq("agency_id", agency_id)
+        .in_("id", ref_values.clone())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let au_status = au_resp.status();
+    let au_text = au_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !au_status.is_success() {
+        return Err((
+            StatusCode::from_u16(au_status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+            au_text,
+        ));
+    }
+    let au_rows: Vec<serde_json::Value> = serde_json::from_str(&au_text).unwrap_or_default();
+    for row in au_rows {
+        if let Some(creator_id) = row.get("creator_id").and_then(|v| v.as_str()) {
+            let creator_id = creator_id.trim();
+            if !creator_id.is_empty() {
+                creator_ids.push(creator_id.to_string());
+            }
+        }
+    }
+
+    let creator_resp = state
+        .pg
+        .from("creators")
+        .select("id")
+        .in_("id", ref_values.clone())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let creator_status = creator_resp.status();
+    let creator_text = creator_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !creator_status.is_success() {
+        return Err((
+            StatusCode::from_u16(creator_status.as_u16())
+                .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+            creator_text,
+        ));
+    }
+    let creator_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&creator_text).unwrap_or_default();
+    for row in creator_rows {
+        if let Some(creator_id) = row.get("id").and_then(|v| v.as_str()) {
+            let creator_id = creator_id.trim();
+            if !creator_id.is_empty() {
+                creator_ids.push(creator_id.to_string());
+            }
+        }
+    }
+
+    let unresolved_refs: Vec<String> = normalized_refs
+        .iter()
+        .filter(|id| !creator_ids.iter().any(|creator_id| creator_id == *id))
+        .cloned()
+        .collect();
+    if !unresolved_refs.is_empty() {
+        let rel_values: Vec<&str> = unresolved_refs.iter().map(|s| s.as_str()).collect();
+        for (col, selector) in [
+            ("id", "id,creator_id"),
+            ("talent_id", "talent_id,creator_id"),
+        ] {
+            let rel_resp = state
+                .pg
+                .from("agency_talent_relationships")
+                .select(selector)
+                .eq("agency_id", agency_id)
+                .in_(col, rel_values.clone())
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let rel_status = rel_resp.status();
+            let rel_text = rel_resp
+                .text()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            if !rel_status.is_success() {
+                return Err((
+                    StatusCode::from_u16(rel_status.as_u16())
+                        .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+                    rel_text,
+                ));
+            }
+            let rel_rows: Vec<serde_json::Value> =
+                serde_json::from_str(&rel_text).unwrap_or_default();
+            for row in rel_rows {
+                if let Some(creator_id) = row.get("creator_id").and_then(|v| v.as_str()) {
+                    let creator_id = creator_id.trim();
+                    if !creator_id.is_empty() {
+                        creator_ids.push(creator_id.to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    creator_ids.sort();
+    creator_ids.dedup();
+    Ok(creator_ids)
 }
 
 /// POST /api/license-submissions/draft - Create a draft template for a deal
@@ -161,6 +316,11 @@ pub async fn create_draft(
         .start_date
         .clone()
         .or(license_template.start_date.clone());
+    let client_id = normalize_uuid_string(req.client_id.as_deref());
+    let brand_request_id = request_brand_request_id(
+        req.brand_request_id.as_ref(),
+        req.licensing_request_id.as_ref(),
+    );
 
     let mut incoming_talent_ids: Vec<String> = vec![];
     if let Some(id) = req.talent_id.clone().filter(|s| !s.is_empty()) {
@@ -263,7 +423,7 @@ pub async fn create_draft(
 
     let draft_data = json!({
         "agency_id": agency_id,
-        "client_id": req.client_id,
+        "client_id": client_id,
         "template_id": req.template_id,
         "docuseal_template_id": docuseal_template_id,
         "status": "draft",
@@ -277,7 +437,7 @@ pub async fn create_draft(
         "duration_days": req.duration_days,
         "start_date": start_date,
         "custom_terms": req.custom_terms,
-        "brand_request_id": req.licensing_request_id,
+        "brand_request_id": brand_request_id,
     });
 
     let resp = state
@@ -584,6 +744,7 @@ pub struct FinalizeSubmissionRequest {
     pub talent_names: Option<String>,
     pub requires_agency_signature: Option<bool>,
     pub licensing_request_id: Option<String>,
+    pub brand_request_id: Option<String>,
     pub old_license_id: Option<String>, // ID of expired license being renewed
 }
 
@@ -809,6 +970,10 @@ pub async fn finalize(
     } else {
         requires_agency_signature
     };
+    let request_brand_request_id = request_brand_request_id(
+        req.brand_request_id.as_ref(),
+        req.licensing_request_id.as_ref(),
+    );
 
     // If client info was provided in this request, update the record first
     if req.client_name.is_some() || req.client_email.is_some() || req.talent_names.is_some() {
@@ -826,7 +991,7 @@ pub async fn finalize(
             "requires_agency_signature".to_string(),
             json!(final_requires_agency_signature),
         );
-        if let Some(br_id) = &req.licensing_request_id {
+        if let Some(br_id) = &request_brand_request_id {
             update_json.insert("brand_request_id".to_string(), json!(br_id));
         }
 
@@ -1112,12 +1277,13 @@ pub async fn finalize(
         }
     };
 
-    let mut full_talent_ids: Vec<String> = resolved_talent_ids
+    let full_talent_refs: Vec<String> = resolved_talent_ids
         .iter()
         .filter_map(|v| v.clone())
         .collect();
-    full_talent_ids.sort();
-    full_talent_ids.dedup();
+    let full_talent_ids =
+        resolve_creator_ids_for_talent_refs(&state, &agency_id, full_talent_refs).await?;
+    let submission_client_id = normalize_uuid_string(submission.client_id.as_deref());
 
     tracing::info!(
         "Creating 1 licensing_request for submission {}: agency_id={}, client_name={}, talent_count={}, talent_name={:?}",
@@ -1130,7 +1296,7 @@ pub async fn finalize(
 
     let lr_data = json!({
         "agency_id": agency_id,
-        "brand_id": submission.client_id,
+        "brand_id": submission_client_id,
         "client_name": client_name_str,
         "talent_id": serde_json::Value::Null,
         "talent_ids": full_talent_ids,
@@ -1155,17 +1321,23 @@ pub async fn finalize(
     match lr_resp {
         Ok(resp) => {
             let status = resp.status();
+            let body = resp.text().await.unwrap_or_default();
+            if !status.is_success() {
+                tracing::error!(
+                    "licensing_requests insert failed: status={} body={}",
+                    status,
+                    body
+                );
+            }
             if status.is_success() {
                 tracing::info!(agency_id = %agency_id, "Created licensing_request for submission");
 
                 // If this is a renewal, mark the old license as "renewed"
                 if let Some(old_license_id) = &req.old_license_id {
                     // Get the brand_request_id from the current submission record (passed via licensing_request_id)
-                    let brand_request_id_opt = req.licensing_request_id.clone().or_else(|| {
-                        submission_data["brand_request_id"]
-                            .as_str()
-                            .map(|s| s.to_string())
-                    });
+                    let brand_request_id_opt = request_brand_request_id
+                        .clone()
+                        .or_else(|| submission_brand_request_id(&submission_data));
 
                     let update_old_license = json!({
                         "status": "renewed",
@@ -1239,7 +1411,7 @@ pub async fn finalize(
                     } else {
                         // No existing brand_request_id found - create a new brand_license_requests entry
                         // This handles cases where the original license didn't have a brand_request_id
-                        let brand_id_to_use = submission.client_id.clone();
+                        let brand_id_to_use = submission_client_id.clone();
 
                         // If no brand_id in submission, try to find it by client_name
                         let final_brand_id = if brand_id_to_use.is_none() {
@@ -1366,15 +1538,15 @@ pub async fn finalize(
                         if let Some(brand_id) = final_brand_id {
                             // For brand_license_requests, we need to find the actual creator_id from the creators table
                             // The submission talent_id might be an agency_user ID, so we need to resolve it
-                            let submission_talent_id = submission_data["talent_id"]
-                                .as_str()
-                                .or_else(|| {
+                            let submission_talent_id = normalize_uuid_string(
+                                submission_data["talent_id"].as_str().or_else(|| {
                                     submission_data["talent_ids"]
                                         .as_array()
                                         .and_then(|arr| arr.first())
                                         .and_then(|v| v.as_str())
-                                })
-                                .unwrap_or("");
+                                }),
+                            )
+                            .unwrap_or_default();
 
                             // Try to resolve the creator_id by looking up the agency_user and getting their creator_id
                             let creator_id = if !submission_talent_id.is_empty() {
@@ -1383,7 +1555,7 @@ pub async fn finalize(
                                     .pg
                                     .from("agency_users")
                                     .select("creator_id")
-                                    .eq("id", submission_talent_id)
+                                    .eq("id", submission_talent_id.as_str())
                                     .eq("agency_id", &agency_id)
                                     .single()
                                     .execute()
@@ -1409,7 +1581,10 @@ pub async fn finalize(
                                                                 .pg
                                                                 .from("creators")
                                                                 .select("id")
-                                                                .eq("id", submission_talent_id)
+                                                                .eq(
+                                                                    "id",
+                                                                    submission_talent_id.as_str(),
+                                                                )
                                                                 .single()
                                                                 .execute()
                                                                 .await
@@ -1439,7 +1614,7 @@ pub async fn finalize(
                                             .pg
                                             .from("creators")
                                             .select("id")
-                                            .eq("id", submission_talent_id)
+                                            .eq("id", submission_talent_id.as_str())
                                             .single()
                                             .execute()
                                             .await
@@ -1449,12 +1624,12 @@ pub async fn finalize(
                                             {
                                                 submission_talent_id.to_string()
                                             }
-                                            _ => submission_talent_id.to_string(),
+                                            _ => String::new(),
                                         }
                                     }
                                 }
                             } else {
-                                submission_talent_id.to_string()
+                                String::new()
                             };
 
                             // Calculate proper start and end dates for the renewal
@@ -1610,7 +1785,6 @@ pub async fn finalize(
                     // Not a renewal
                 }
             } else {
-                let body = resp.text().await.unwrap_or_default();
                 tracing::error!(
                     "Failed to create licensing_request (HTTP {}): {}",
                     status,
@@ -1624,11 +1798,9 @@ pub async fn finalize(
     }
 
     // Update brand_license_requests with submission_id if this is linked to a brand request
-    let brand_request_id_opt = req.licensing_request_id.clone().or_else(|| {
-        submission_data["brand_request_id"]
-            .as_str()
-            .map(|s| s.to_string())
-    });
+    let brand_request_id_opt = request_brand_request_id
+        .clone()
+        .or_else(|| submission_brand_request_id(&submission_data));
 
     if let Some(brand_request_id) = brand_request_id_opt {
         let update_brand_req = json!({
@@ -1881,6 +2053,9 @@ pub async fn resend(
             licensing_request_id: existing_data["brand_request_id"]
                 .as_str()
                 .map(|s| s.to_string()),
+            brand_request_id: existing_data["brand_request_id"]
+                .as_str()
+                .map(|s| s.to_string()),
         }
     };
 
@@ -1958,6 +2133,7 @@ pub async fn resend(
         talent_names: req.talent_names,
         requires_agency_signature: req.requires_agency_signature,
         licensing_request_id: req.licensing_request_id,
+        brand_request_id: req.brand_request_id,
         old_license_id: None, // Not a renewal in this flow
     };
 

@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS public.organization_memberships (
     user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     
     -- Role
-    role text NOT NULL DEFAULT 'member' CHECK (role IN ('owner', 'admin', 'member', 'viewer')),
+    role text NOT NULL DEFAULT 'reviewer' CHECK (role IN ('owner', 'admin', 'project_manager', 'reviewer')),
     
     -- Permissions (overrides for specific features)
     permissions jsonb DEFAULT '{}'::jsonb,
@@ -101,11 +101,11 @@ CREATE TABLE IF NOT EXISTS public.organization_invites (
     invited_by uuid NOT NULL REFERENCES auth.users(id),
     
     -- Role being invited
-    role text NOT NULL DEFAULT 'member' CHECK (role IN ('admin', 'member', 'viewer')),
+    role text NOT NULL DEFAULT 'reviewer' CHECK (role IN ('admin', 'project_manager', 'reviewer')),
     permissions jsonb DEFAULT '{}'::jsonb,
     
     -- Token
-    token text NOT NULL UNIQUE,
+    token_hash text NOT NULL UNIQUE,
     
     -- Status
     status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined', 'expired', 'revoked')),
@@ -129,7 +129,7 @@ CREATE TABLE IF NOT EXISTS public.organization_invites (
 
 CREATE INDEX IF NOT EXISTS idx_organization_invites_org ON public.organization_invites(organization_type, organization_id);
 CREATE INDEX IF NOT EXISTS idx_organization_invites_email ON public.organization_invites(email);
-CREATE INDEX IF NOT EXISTS idx_organization_invites_token ON public.organization_invites(token);
+CREATE INDEX IF NOT EXISTS idx_organization_invites_token_hash ON public.organization_invites(token_hash);
 CREATE INDEX IF NOT EXISTS idx_organization_invites_status ON public.organization_invites(status);
 CREATE INDEX IF NOT EXISTS idx_organization_invites_expires ON public.organization_invites(expires_at);
 
@@ -149,15 +149,17 @@ CREATE TABLE IF NOT EXISTS public.organization_audit_logs (
     action text NOT NULL, -- 'member_invited', 'member_joined', 'role_changed', 'member_removed', etc.
     
     -- Actor
-    actor_type text NOT NULL CHECK (actor_type IN ('user', 'system')),
-    actor_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+    actor_type text NOT NULL DEFAULT 'user' CHECK (actor_type IN ('user', 'system')),
+    actor_user_id text NOT NULL,
     
     -- Target (who was affected)
     target_user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
     target_email text,
     
     -- Details
-    details jsonb DEFAULT '{}'::jsonb,
+    old_role text,
+    new_role text,
+    metadata jsonb DEFAULT '{}'::jsonb,
     ip_address inet,
     user_agent text,
     
@@ -166,7 +168,7 @@ CREATE TABLE IF NOT EXISTS public.organization_audit_logs (
 
 CREATE INDEX IF NOT EXISTS idx_organization_audit_logs_org ON public.organization_audit_logs(organization_type, organization_id);
 CREATE INDEX IF NOT EXISTS idx_organization_audit_logs_action ON public.organization_audit_logs(action);
-CREATE INDEX IF NOT EXISTS idx_organization_audit_logs_actor ON public.organization_audit_logs(actor_id);
+CREATE INDEX IF NOT EXISTS idx_organization_audit_logs_actor ON public.organization_audit_logs(actor_user_id);
 CREATE INDEX IF NOT EXISTS idx_organization_audit_logs_target ON public.organization_audit_logs(target_user_id);
 CREATE INDEX IF NOT EXISTS idx_organization_audit_logs_created ON public.organization_audit_logs(created_at DESC);
 
@@ -227,9 +229,9 @@ AS $$
             AND user_id = p_user_id
             AND is_active = true
             AND (
-                -- Role hierarchy: owner > admin > member > viewer
-                (p_min_role = 'viewer' AND role IN ('owner', 'admin', 'member', 'viewer')) OR
-                (p_min_role = 'member' AND role IN ('owner', 'admin', 'member')) OR
+                -- Role hierarchy: owner > admin > project_manager > reviewer
+                (p_min_role = 'reviewer' AND role IN ('owner', 'admin', 'project_manager', 'reviewer')) OR
+                (p_min_role = 'project_manager' AND role IN ('owner', 'admin', 'project_manager')) OR
                 (p_min_role = 'admin' AND role IN ('owner', 'admin')) OR
                 (p_min_role = 'owner' AND role = 'owner')
             )
@@ -370,7 +372,7 @@ CREATE POLICY "Brand team can update campaigns" ON public.brand_campaigns
         brand_id = auth.uid()
         OR (
             public.is_brand_team_member(brand_id)
-            AND public.has_organization_role('brand', brand_id, auth.uid(), 'member')
+            AND public.has_organization_role('brand', brand_id, auth.uid(), 'project_manager')
         )
     );
 
@@ -380,6 +382,94 @@ CREATE POLICY "Agency team can view clients" ON public.agency_clients
     FOR SELECT USING (
         auth.uid() = agency_id
         OR public.is_agency_team_member(agency_id)
+    );
+
+DROP POLICY IF EXISTS "Users can view their own agency profile" ON public.agencies;
+CREATE POLICY "Users can view their own agency profile" ON public.agencies
+    FOR SELECT USING (
+        auth.uid() = id
+        OR public.is_agency_team_member(id)
+    );
+
+DROP POLICY IF EXISTS "Users can update their own agency profile" ON public.agencies;
+CREATE POLICY "Users can update their own agency profile" ON public.agencies
+    FOR UPDATE USING (
+        auth.uid() = id
+        OR (
+            public.is_agency_team_member(id)
+            AND public.has_organization_role('agency', id, auth.uid(), 'project_manager')
+        )
+    )
+    WITH CHECK (
+        auth.uid() = id
+        OR (
+            public.is_agency_team_member(id)
+            AND public.has_organization_role('agency', id, auth.uid(), 'project_manager')
+        )
+    );
+
+DROP POLICY IF EXISTS "Agencies can view their own members" ON public.agency_users;
+CREATE POLICY "Agencies can view their own members" ON public.agency_users
+    FOR SELECT USING (
+        agency_id = auth.uid()
+        OR (
+            public.is_agency_team_member(agency_id)
+            AND public.has_organization_role('agency', agency_id, auth.uid(), 'reviewer')
+        )
+    );
+
+DROP POLICY IF EXISTS "Agencies can manage their own members" ON public.agency_users;
+CREATE POLICY "Agencies can manage their own members" ON public.agency_users
+    FOR ALL USING (
+        agency_id = auth.uid()
+        OR (
+            public.is_agency_team_member(agency_id)
+            AND public.has_organization_role('agency', agency_id, auth.uid(), 'project_manager')
+        )
+    )
+    WITH CHECK (
+        agency_id = auth.uid()
+        OR (
+            public.is_agency_team_member(agency_id)
+            AND public.has_organization_role('agency', agency_id, auth.uid(), 'project_manager')
+        )
+    );
+
+DROP POLICY IF EXISTS "Agencies can view their agency talent connections" ON public.agency_talent_relationships;
+CREATE POLICY "Agencies can view their agency talent connections" ON public.agency_talent_relationships
+    FOR SELECT USING (
+        agency_id = auth.uid()
+        OR (
+            public.is_agency_team_member(agency_id)
+            AND public.has_organization_role('agency', agency_id, auth.uid(), 'reviewer')
+        )
+    );
+
+DROP POLICY IF EXISTS "Agencies can create their agency talent connections" ON public.agency_talent_relationships;
+CREATE POLICY "Agencies can create their agency talent connections" ON public.agency_talent_relationships
+    FOR INSERT WITH CHECK (
+        agency_id = auth.uid()
+        OR (
+            public.is_agency_team_member(agency_id)
+            AND public.has_organization_role('agency', agency_id, auth.uid(), 'project_manager')
+        )
+    );
+
+DROP POLICY IF EXISTS "Agencies can update their agency talent connections" ON public.agency_talent_relationships;
+CREATE POLICY "Agencies can update their agency talent connections" ON public.agency_talent_relationships
+    FOR UPDATE USING (
+        agency_id = auth.uid()
+        OR (
+            public.is_agency_team_member(agency_id)
+            AND public.has_organization_role('agency', agency_id, auth.uid(), 'project_manager')
+        )
+    )
+    WITH CHECK (
+        agency_id = auth.uid()
+        OR (
+            public.is_agency_team_member(agency_id)
+            AND public.has_organization_role('agency', agency_id, auth.uid(), 'project_manager')
+        )
     );
 
 -- Example: Campaign offer deliverables - team member subscriptions (fix from 2026-04-06_02)

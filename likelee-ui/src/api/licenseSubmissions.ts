@@ -41,6 +41,7 @@ export interface CreateSubmissionRequest {
   client_email: string;
   client_name: string;
   licensing_request_id?: string;
+  brand_request_id?: string;
   docuseal_template_id?: number;
   talent_id?: string;
   talent_ids?: string[];
@@ -68,6 +69,7 @@ export const createAndSendLicenseSubmission = async (data: {
   client_name: string;
   client_email: string;
   licensing_request_id?: string;
+  brand_request_id?: string;
   talent_id?: string;
   talent_ids?: string[];
   talent_names?: string;
@@ -90,6 +92,7 @@ export const finalizeLicenseSubmission = async (
     client_name?: string;
     client_email?: string;
     licensing_request_id?: string;
+    brand_request_id?: string;
     talent_id?: string;
     talent_ids?: string[];
     talent_names?: string;

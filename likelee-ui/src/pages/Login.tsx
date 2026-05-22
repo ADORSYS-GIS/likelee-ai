@@ -336,7 +336,9 @@ export default function Login() {
         lower.includes("rate limit exceeded");
       setError(msg);
       toast({
-        title: isUserFixableAuthError ? t("common.warning") : t("common.error"),
+        title: isUserFixableAuthError
+          ? t("warningLabel", { ns: "common", defaultValue: "Warning" })
+          : t("common.error"),
         description: msg,
         variant: isUserFixableAuthError ? "warning" : "destructive",
       });

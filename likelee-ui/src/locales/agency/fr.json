@@ -3475,11 +3475,13 @@
         "interactionTypes": {
           "favoritedTalent": "Talent Favori",
           "selectedTalent": "Talent Sélectionné",
+          "viewedPackage": "Package Consulté",
           "updatedConsent": "Consentement Mis à Jour",
           "requestedAssets": "Actifs Complets Demandés",
           "commentedOnTalent": "Commenté sur un Talent",
           "requestedCallback": "Rappel Demandé"
         },
+        "clientViewedPackage": "Le client a consulté ce package",
         "hasComment": "A un Commentaire",
         "clientContactDetails": "Coordonnées du Client",
         "assetRequest": "Demande d'Actifs",
@@ -6723,19 +6725,31 @@
         "confirmRoleChange": "Confirm Role Change"
       },
       "actions": {
-        "editPermissions": "Edit Permissions",
-        "resendInvite": "Resend Invite",
-        "revokeInvite": "Revoke Invite",
-        "removeMember": "Remove Member"
+        "cancel": "Annuler",
+        "editPermissions": "Modifier les permissions",
+        "resendInvite": "Renvoyer l'invitation",
+        "revokeInvite": "Révoquer l'invitation",
+        "removeMember": "Retirer le membre",
+        "sendInvite": "Envoyer l'invitation",
+        "sendinvite": "Envoyer l'invitation"
+      },
+      "fields": {
+        "email": "E-mail",
+        "role": "Rôle"
       },
       "toasts": {
-        "inviteSent": "Invitation sent",
-        "inviteSentDescription": "Team invitation has been sent",
-        "inviteFailed": "Invite failed",
-        "roleUpdated": "Role updated",
-        "roleUpdateFailed": "Role update failed",
-        "memberRemoved": "Member removed",
-        "removeFailed": "Remove failed"
+        "inviteSent": "Invitation envoyée",
+        "inviteSentDescription": "L'invitation de l'équipe a été envoyée",
+        "inviteFailed": "Échec de l'invitation",
+        "roleUpdated": "Rôle mis à jour",
+        "roleUpdateFailed": "Échec de la mise à jour du rôle",
+        "memberRemoved": "Membre retiré",
+        "removeFailed": "Échec de la suppression"
+      }
+    },
+    "tema": {
+      "actions": {
+        "cancel": "Annuler"
       }
     },
     "commissions": {

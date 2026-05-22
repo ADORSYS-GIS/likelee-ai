@@ -921,7 +921,7 @@ pub async fn get_package(
     let resp = state
         .pg
         .from("agency_talent_packages")
-        .select("*, items:agency_talent_package_items(*, talent:agency_users(*), assets:agency_talent_package_item_assets(*)), stats:agency_talent_package_stats(*), interactions:agency_talent_package_interactions(*)")
+        .select("*, items:agency_talent_package_items(*, talent:agency_users(*), creator:creators(*), assets:agency_talent_package_item_assets(*)), stats:agency_talent_package_stats(*), interactions:agency_talent_package_interactions(*)")
         .eq("agency_id", agency_id)
         .eq("id", &id)
         .single()

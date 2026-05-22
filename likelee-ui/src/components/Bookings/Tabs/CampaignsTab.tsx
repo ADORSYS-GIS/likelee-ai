@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Plus, Edit2, Trash2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -25,6 +24,7 @@ import {
 import { CampaignModal } from "../Modals/CampaignModal";
 import { toast } from "@/components/ui/use-toast";
 import { useTranslation } from "react-i18next";
+import { deleteBookingsCampaign, getBookingsCampaigns } from "@/api/functions";
 
 export const CampaignsTab = () => {
   const { t } = useTranslation("agency");
@@ -38,25 +38,11 @@ export const CampaignsTab = () => {
 
   const { data: campaigns, isLoading } = useQuery({
     queryKey: ["bookings-campaigns"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("bookings_campaigns")
-        .select("*, bookings:bookings(id, talent_name, client_name)")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      return data;
-    },
+    queryFn: async () => getBookingsCampaigns(),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("bookings_campaigns")
-        .delete()
-        .eq("id", id);
-      if (error) throw error;
-    },
+    mutationFn: async (id: string) => deleteBookingsCampaign(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bookings-campaigns"] });
       toast({
@@ -82,16 +68,10 @@ export const CampaignsTab = () => {
   const checkHasActiveBookings = async (
     campaignId: string,
   ): Promise<boolean> => {
-    const { data, error } = await supabase
-      .from("bookings")
-      .select("id,created_at,usage_duration")
-      .eq("campaign_id", campaignId);
-
-    if (error) {
-      return true;
-    }
-
-    const rows = Array.isArray(data) ? data : [];
+    const campaign = Array.isArray(campaigns)
+      ? campaigns.find((row: any) => row?.id === campaignId)
+      : null;
+    const rows = Array.isArray(campaign?.bookings) ? campaign.bookings : [];
     const nowMs = Date.now();
     for (const b of rows) {
       const createdAt = b?.created_at;

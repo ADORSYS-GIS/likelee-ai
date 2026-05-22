@@ -63,6 +63,9 @@ CREATE TABLE IF NOT EXISTS public.creators (
     plan_updated_at timestamptz,
     stripe_customer_id text,
     stripe_subscription_id text,
+    stripe_connect_account_id text,
+    payouts_enabled boolean DEFAULT false,
+    last_payout_error text,
     trial_started_at timestamptz,
     subscription_current_period_end timestamptz,
     

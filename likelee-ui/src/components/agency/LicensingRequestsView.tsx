@@ -847,7 +847,7 @@ const LicensingRequestsView = ({
                   <p className="text-sm text-blue-800 font-medium leading-relaxed">
                     {t("agencyDashboard.licensingRequests.info.paidRequests", {
                       defaultValue:
-                        "Fully paid licensing requests are systematically moved to the Archive tab. They will remain available to be linked to new Catalogs in the Catalog Builder until their license expiration date.",
+                        "Fully paid licensing requests remain in the Active tab until their license expiration date. They stay available to be linked to new Catalogs in the Catalog Builder during that period.",
                     })}
                   </p>
                 </div>
@@ -1007,7 +1007,17 @@ const LicensingRequestsView = ({
                           )}
                         </p>
                       </div>
-                      {group.payment_link_id || group.payment_link_url ? (
+                      {String(
+                        group?.payment_link_status || "",
+                      ).toLowerCase() === "paid" ? (
+                        <div className="flex items-center justify-center h-11 bg-emerald-50 rounded-md border border-emerald-200">
+                          <p className="text-xs font-black text-emerald-700 uppercase tracking-widest">
+                            {t("agencyDashboard.catalogs.status.paid", {
+                              defaultValue: "Paid",
+                            })}
+                          </p>
+                        </div>
+                      ) : group.payment_link_id || group.payment_link_url ? (
                         <Button
                           onClick={() => sendPaymentLinkForGroup(group)}
                           className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"

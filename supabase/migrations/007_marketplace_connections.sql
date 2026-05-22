@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS public.agency_talent_relationships (
     
     -- Licensing rates
     licensing_rate_weekly_cents bigint,
+    licensing_rate_monthly_cents bigint,
     accept_negotiations boolean NOT NULL DEFAULT true,
     rate_currency text NOT NULL DEFAULT 'USD',
     
@@ -37,19 +38,14 @@ CREATE TABLE IF NOT EXISTS public.agency_talent_relationships (
     updated_at timestamptz NOT NULL DEFAULT now(),
     
     -- Unique constraints
+    CONSTRAINT agency_talent_relationships_agency_talent_unique UNIQUE (agency_id, talent_id),
+    CONSTRAINT agency_talent_relationships_agency_creator_unique UNIQUE (agency_id, creator_id),
     CONSTRAINT agency_talent_relationships_identity_check CHECK (talent_id IS NOT NULL OR creator_id IS NOT NULL),
     CONSTRAINT agency_talent_relationships_licensing_rate_non_negative CHECK (
-        licensing_rate_weekly_cents IS NULL OR licensing_rate_weekly_cents >= 0
+        (licensing_rate_weekly_cents IS NULL OR licensing_rate_weekly_cents >= 0)
+        AND (licensing_rate_monthly_cents IS NULL OR licensing_rate_monthly_cents >= 0)
     )
 );
-
-CREATE UNIQUE INDEX IF NOT EXISTS uq_agency_talent_relationships_agency_talent 
-    ON public.agency_talent_relationships(agency_id, talent_id) 
-    WHERE talent_id IS NOT NULL;
-
-CREATE UNIQUE INDEX IF NOT EXISTS uq_agency_talent_relationships_agency_creator 
-    ON public.agency_talent_relationships(agency_id, creator_id) 
-    WHERE creator_id IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS idx_agency_talent_relationships_agency ON public.agency_talent_relationships(agency_id);
 CREATE INDEX IF NOT EXISTS idx_agency_talent_relationships_talent ON public.agency_talent_relationships(talent_id);
@@ -116,6 +112,78 @@ CREATE TABLE IF NOT EXISTS public.agency_creator_marketplace_contracts (
     UNIQUE (agency_id, creator_id)
 );
 
+
+ALTER TABLE public.agency_creator_marketplace_contracts
+    ADD COLUMN IF NOT EXISTS invite_id uuid,
+    ADD COLUMN IF NOT EXISTS template_id uuid REFERENCES public.license_templates(id) ON DELETE SET NULL,
+    ADD COLUMN IF NOT EXISTS template_name text,
+    ADD COLUMN IF NOT EXISTS contract_body text DEFAULT '',
+    ADD COLUMN IF NOT EXISTS contract_body_format text DEFAULT 'markdown',
+    ADD COLUMN IF NOT EXISTS rendered_contract_body text,
+    ADD COLUMN IF NOT EXISTS valid_from date,
+    ADD COLUMN IF NOT EXISTS valid_until date,
+    ADD COLUMN IF NOT EXISTS placeholder_values jsonb DEFAULT '{}'::jsonb,
+    ADD COLUMN IF NOT EXISTS docuseal_submission_id integer,
+    ADD COLUMN IF NOT EXISTS docuseal_template_id integer,
+    ADD COLUMN IF NOT EXISTS docuseal_status text DEFAULT 'draft',
+    ADD COLUMN IF NOT EXISTS agency_submitter_id bigint,
+    ADD COLUMN IF NOT EXISTS agency_submitter_slug text,
+    ADD COLUMN IF NOT EXISTS agency_embed_src text,
+    ADD COLUMN IF NOT EXISTS creator_submitter_id bigint,
+    ADD COLUMN IF NOT EXISTS creator_submitter_slug text,
+    ADD COLUMN IF NOT EXISTS signed_document_url text,
+    ADD COLUMN IF NOT EXISTS sent_at timestamptz,
+    ADD COLUMN IF NOT EXISTS last_synced_at timestamptz;
+
+ALTER TABLE public.agency_creator_marketplace_contracts
+    ALTER COLUMN contract_body SET DEFAULT '',
+    ALTER COLUMN contract_body_format SET DEFAULT 'markdown',
+    ALTER COLUMN placeholder_values SET DEFAULT '{}'::jsonb,
+    ALTER COLUMN docuseal_status SET DEFAULT 'draft';
+
+UPDATE public.agency_creator_marketplace_contracts
+SET contract_body = ''
+WHERE contract_body IS NULL;
+
+UPDATE public.agency_creator_marketplace_contracts
+SET contract_body_format = 'markdown'
+WHERE contract_body_format IS NULL OR btrim(contract_body_format) = '';
+
+UPDATE public.agency_creator_marketplace_contracts
+SET placeholder_values = '{}'::jsonb
+WHERE placeholder_values IS NULL;
+
+UPDATE public.agency_creator_marketplace_contracts
+SET docuseal_status = 'draft'
+WHERE docuseal_status IS NULL OR btrim(docuseal_status) = '';
+
+ALTER TABLE public.agency_creator_marketplace_contracts
+    DROP CONSTRAINT IF EXISTS agency_creator_marketplace_contracts_status_check,
+    ADD CONSTRAINT agency_creator_marketplace_contracts_status_check
+        CHECK (status IN ('pending', 'active', 'paused', 'terminated', 'disconnected', 'draft', 'pending_signature', 'expired', 'declined', 'voided'))
+        NOT VALID;
+
+ALTER TABLE public.agency_creator_marketplace_contracts
+    DROP CONSTRAINT IF EXISTS agency_creator_marketplace_contracts_contract_body_format_check,
+    ADD CONSTRAINT agency_creator_marketplace_contracts_contract_body_format_check
+        CHECK (contract_body_format IN ('markdown', 'html'))
+        NOT VALID;
+
+ALTER TABLE public.agency_creator_marketplace_contracts
+    DROP CONSTRAINT IF EXISTS agency_creator_marketplace_contracts_valid_window_check,
+    ADD CONSTRAINT agency_creator_marketplace_contracts_valid_window_check
+        CHECK (valid_from IS NULL OR valid_until IS NULL OR valid_until >= valid_from)
+        NOT VALID;
+
+CREATE INDEX IF NOT EXISTS idx_agency_creator_marketplace_contracts_agency_creator
+    ON public.agency_creator_marketplace_contracts (agency_id, creator_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_agency_creator_marketplace_contracts_creator_status
+    ON public.agency_creator_marketplace_contracts (creator_id, status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_agency_creator_marketplace_contracts_invite
+    ON public.agency_creator_marketplace_contracts (invite_id);
+CREATE INDEX IF NOT EXISTS idx_agency_creator_marketplace_contracts_docuseal_submission
+    ON public.agency_creator_marketplace_contracts (docuseal_submission_id);
+
 CREATE INDEX IF NOT EXISTS idx_agency_creator_marketplace_contracts_agency ON public.agency_creator_marketplace_contracts(agency_id);
 CREATE INDEX IF NOT EXISTS idx_agency_creator_marketplace_contracts_creator ON public.agency_creator_marketplace_contracts(creator_id);
 CREATE INDEX IF NOT EXISTS idx_agency_creator_marketplace_contracts_status ON public.agency_creator_marketplace_contracts(status);
@@ -149,7 +217,7 @@ CREATE TABLE IF NOT EXISTS public.agency_talent_invites (
     status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined', 'expired')),
     
     -- Expiration
-    expires_at timestamptz NOT NULL,
+    expires_at timestamptz NOT NULL DEFAULT (now() + interval '7 days'),
     
     -- Response
     accepted_at timestamptz,

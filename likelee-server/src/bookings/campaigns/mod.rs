@@ -30,7 +30,7 @@ pub async fn list(
     let resp = state
         .pg
         .from("bookings_campaigns")
-        .select("*, bookings(id, talent_id, talent_name, client_name, agency_users!talent_id(profile_photo_url))")
+        .select("*, bookings(id, talent_id, talent_name, client_name, created_at, usage_duration, agency_users!talent_id(profile_photo_url))")
         .eq("agency_id", agency_id)
         .execute()
         .await

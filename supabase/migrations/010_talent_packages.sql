@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS public.agency_talent_packages (
     -- Consent
     consent_required boolean DEFAULT false,
     consent_text text,
-    consent_items text[] DEFAULT '{}',
+    consent_items jsonb DEFAULT '[]'::jsonb,
     allow_comments boolean DEFAULT true,
     allow_favorites boolean DEFAULT true,
     allow_callbacks boolean DEFAULT true,
@@ -121,6 +121,37 @@ CREATE INDEX IF NOT EXISTS idx_agency_talent_package_items_creator ON public.age
 CREATE INDEX IF NOT EXISTS idx_agency_talent_package_items_relationship ON public.agency_talent_package_items(relationship_id);
 CREATE INDEX IF NOT EXISTS idx_agency_talent_package_items_sort ON public.agency_talent_package_items(package_id, sort_order);
 
+CREATE OR REPLACE FUNCTION public.set_agency_talent_package_item_agency_id()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_agency_id uuid;
+BEGIN
+    SELECT p.agency_id
+    INTO v_agency_id
+    FROM public.agency_talent_packages p
+    WHERE p.id = NEW.package_id;
+
+    IF v_agency_id IS NULL THEN
+        RAISE EXCEPTION 'Package % does not exist or has no agency_id', NEW.package_id;
+    END IF;
+
+    NEW.agency_id := v_agency_id;
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS set_agency_talent_package_item_agency_id
+    ON public.agency_talent_package_items;
+CREATE TRIGGER set_agency_talent_package_item_agency_id
+    BEFORE INSERT OR UPDATE OF package_id ON public.agency_talent_package_items
+    FOR EACH ROW
+    EXECUTE FUNCTION public.set_agency_talent_package_item_agency_id();
+
+
 ALTER TABLE public.agency_talent_package_items ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Agencies can view own package items" ON public.agency_talent_package_items;
@@ -137,11 +168,12 @@ CREATE POLICY "Agencies can manage own package items" ON public.agency_talent_pa
 CREATE TABLE IF NOT EXISTS public.agency_talent_package_item_assets (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     item_id uuid NOT NULL REFERENCES public.agency_talent_package_items(id) ON DELETE CASCADE,
+    asset_id uuid,
     
     -- Asset Details
     asset_type text NOT NULL, -- 'photo', 'video', 'digitals', 'voice'
-    storage_bucket text NOT NULL,
-    storage_path text NOT NULL,
+    storage_bucket text,
+    storage_path text,
     public_url text,
     
     -- Metadata
@@ -158,6 +190,7 @@ CREATE TABLE IF NOT EXISTS public.agency_talent_package_item_assets (
 );
 
 CREATE INDEX IF NOT EXISTS idx_agency_talent_package_item_assets_item ON public.agency_talent_package_item_assets(item_id);
+CREATE INDEX IF NOT EXISTS idx_agency_talent_package_item_assets_asset ON public.agency_talent_package_item_assets(asset_id);
 CREATE INDEX IF NOT EXISTS idx_agency_talent_package_item_assets_sort ON public.agency_talent_package_item_assets(item_id, sort_order);
 
 ALTER TABLE public.agency_talent_package_item_assets ENABLE ROW LEVEL SECURITY;
@@ -170,14 +203,20 @@ CREATE TABLE IF NOT EXISTS public.agency_talent_package_interactions (
     package_id uuid NOT NULL REFERENCES public.agency_talent_packages(id) ON DELETE CASCADE,
     
     -- Subject (creator identity support)
+    talent_id text,
     creator_id uuid REFERENCES public.creators(id) ON DELETE CASCADE,
     
     -- Interaction Details
-    interaction_type text NOT NULL CHECK (interaction_type IN ('view', 'share', 'download', 'interest', 'asset_request')),
+    interaction_type text NOT NULL CHECK (interaction_type IN ('view', 'share', 'download', 'interest', 'asset_request', 'favorite', 'callback', 'selected', 'consent', 'comment')),
+    "type" text,
     
     -- For asset_request type
     item_id uuid REFERENCES public.agency_talent_package_items(id) ON DELETE SET NULL,
     request_message text,
+    content text,
+    client_name text,
+    client_email text,
+    interaction_data jsonb DEFAULT '{}'::jsonb,
     
     -- Metadata
     ip_address inet,
@@ -187,8 +226,60 @@ CREATE TABLE IF NOT EXISTS public.agency_talent_package_interactions (
     created_at timestamptz NOT NULL DEFAULT now()
 );
 
+
+ALTER TABLE public.agency_talent_package_interactions
+    DROP CONSTRAINT IF EXISTS agency_talent_package_interactions_interaction_type_check,
+    ADD CONSTRAINT agency_talent_package_interactions_interaction_type_check
+        CHECK (interaction_type IN ('view', 'share', 'download', 'interest', 'asset_request', 'favorite', 'callback', 'selected', 'consent', 'comment'));
+
+CREATE OR REPLACE FUNCTION public.normalize_agency_talent_package_interaction()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    NEW.interaction_type := COALESCE(NULLIF(NEW.interaction_type, ''), NULLIF(NEW."type", ''));
+    NEW."type" := COALESCE(NULLIF(NEW."type", ''), NEW.interaction_type);
+    NEW.request_message := COALESCE(NEW.request_message, NEW.content);
+    NEW.content := COALESCE(NEW.content, NEW.request_message);
+    NEW.interaction_data := COALESCE(NEW.interaction_data, '{}'::jsonb);
+    -- Prefer the package item identity so creator-backed interactions resolve
+    -- to the same talent_id the package itself uses.
+    IF NEW.talent_id IS NULL AND NEW.creator_id IS NOT NULL AND NEW.package_id IS NOT NULL THEN
+        SELECT it.talent_id::text
+        INTO NEW.talent_id
+        FROM public.agency_talent_package_items it
+        WHERE it.package_id = NEW.package_id
+          AND it.creator_id = NEW.creator_id
+          AND it.talent_id IS NOT NULL
+        ORDER BY it.sort_order ASC, it.created_at ASC
+        LIMIT 1;
+    END IF;
+
+    IF NEW.talent_id IS NULL AND NEW.creator_id IS NOT NULL AND NEW.package_id IS NOT NULL THEN
+        SELECT au.id::text
+        INTO NEW.talent_id
+        FROM public.agency_users au
+        JOIN public.agency_talent_packages p ON p.id = NEW.package_id
+        WHERE au.creator_id = NEW.creator_id
+          AND au.agency_id = p.agency_id
+        LIMIT 1;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS normalize_agency_talent_package_interaction
+    ON public.agency_talent_package_interactions;
+CREATE TRIGGER normalize_agency_talent_package_interaction
+    BEFORE INSERT OR UPDATE ON public.agency_talent_package_interactions
+    FOR EACH ROW
+    EXECUTE FUNCTION public.normalize_agency_talent_package_interaction();
+
 CREATE INDEX IF NOT EXISTS idx_agency_talent_package_interactions_package ON public.agency_talent_package_interactions(package_id);
 CREATE INDEX IF NOT EXISTS idx_agency_talent_package_interactions_creator ON public.agency_talent_package_interactions(creator_id);
+CREATE INDEX IF NOT EXISTS idx_agency_talent_package_interactions_talent ON public.agency_talent_package_interactions(talent_id);
 CREATE INDEX IF NOT EXISTS idx_agency_talent_package_interactions_type ON public.agency_talent_package_interactions(interaction_type);
 CREATE INDEX IF NOT EXISTS idx_agency_talent_package_interactions_created ON public.agency_talent_package_interactions(created_at DESC);
 
@@ -360,6 +451,87 @@ END;
 $$;
 
 
+CREATE OR REPLACE FUNCTION public.upsert_interaction(interaction_data jsonb)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_interaction_id UUID;
+    v_package_id UUID;
+    v_creator_id UUID;
+    v_item_id UUID;
+    v_interaction_type TEXT;
+    v_request_message TEXT;
+BEGIN
+    v_package_id := NULLIF(interaction_data->>'package_id', '')::uuid;
+    v_creator_id := CASE
+        WHEN COALESCE(interaction_data->>'creator_id', '') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+        THEN (interaction_data->>'creator_id')::uuid
+        ELSE NULL
+    END;
+    v_item_id := CASE
+        WHEN COALESCE(interaction_data->>'item_id', '') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+        THEN (interaction_data->>'item_id')::uuid
+        ELSE NULL
+    END;
+    v_interaction_type := COALESCE(NULLIF(interaction_data->>'interaction_type', ''), NULLIF(interaction_data->>'type', ''));
+    v_request_message := COALESCE(interaction_data->>'request_message', interaction_data->>'content');
+
+    INSERT INTO public.agency_talent_package_interactions (
+        package_id, talent_id, creator_id, interaction_type, "type", item_id, request_message,
+        content, client_name, client_email, interaction_data, ip_address, user_agent, referrer
+    ) VALUES (
+        v_package_id,
+        NULLIF(interaction_data->>'talent_id', ''),
+        v_creator_id,
+        v_interaction_type,
+        v_interaction_type,
+        v_item_id,
+        v_request_message,
+        interaction_data->>'content',
+        interaction_data->>'client_name',
+        interaction_data->>'client_email',
+        interaction_data,
+        NULLIF(interaction_data->>'ip_address', '')::inet,
+        interaction_data->>'user_agent',
+        interaction_data->>'referrer'
+    )
+    RETURNING id INTO v_interaction_id;
+
+    INSERT INTO public.agency_talent_package_stats (
+        package_id, agency_id, view_count, share_count, download_count,
+        interest_count, asset_request_count, updated_at
+    )
+    SELECT
+        v_package_id, p.agency_id,
+        CASE WHEN v_interaction_type = 'view' THEN 1 ELSE 0 END,
+        CASE WHEN v_interaction_type = 'share' THEN 1 ELSE 0 END,
+        CASE WHEN v_interaction_type = 'download' THEN 1 ELSE 0 END,
+        CASE WHEN v_interaction_type IN ('interest', 'favorite', 'callback', 'selected') THEN 1 ELSE 0 END,
+        CASE WHEN v_interaction_type = 'asset_request' THEN 1 ELSE 0 END,
+        now()
+    FROM public.agency_talent_packages p
+    WHERE p.id = v_package_id
+    ON CONFLICT (package_id) DO UPDATE SET
+        view_count = public.agency_talent_package_stats.view_count +
+            CASE WHEN v_interaction_type = 'view' THEN 1 ELSE 0 END,
+        share_count = public.agency_talent_package_stats.share_count +
+            CASE WHEN v_interaction_type = 'share' THEN 1 ELSE 0 END,
+        download_count = public.agency_talent_package_stats.download_count +
+            CASE WHEN v_interaction_type = 'download' THEN 1 ELSE 0 END,
+        interest_count = public.agency_talent_package_stats.interest_count +
+            CASE WHEN v_interaction_type IN ('interest', 'favorite', 'callback', 'selected') THEN 1 ELSE 0 END,
+        asset_request_count = public.agency_talent_package_stats.asset_request_count +
+            CASE WHEN v_interaction_type = 'asset_request' THEN 1 ELSE 0 END,
+        updated_at = now();
+
+    RETURN v_interaction_id;
+END;
+$$;
+
+
 -- ============================================================================
 -- 7. GET PUBLIC PACKAGE DETAILS (latest from 2026-05-04)
 -- ============================================================================
@@ -377,8 +549,19 @@ BEGIN
       'id', p.id,
       'agency_id', p.agency_id,
       'name', p.name,
+      'title', COALESCE(p.title, p.name),
       'description', p.description,
       'cover_photo_url', p.cover_photo_url,
+      'cover_image_url', COALESCE(p.cover_image_url, p.cover_photo_url),
+      'primary_color', p.primary_color,
+      'secondary_color', p.secondary_color,
+      'custom_message', p.custom_message,
+      'allow_comments', COALESCE(p.allow_comments, true),
+      'allow_favorites', COALESCE(p.allow_favorites, true),
+      'allow_callbacks', COALESCE(p.allow_callbacks, true),
+      'consent_required', p.consent_required,
+      'consent_text', p.consent_text,
+      'consent_items', COALESCE(p.consent_items, '[]'::jsonb),
       'is_template', p.is_template,
       'price_cents', p.price_cents,
       'currency', p.currency,
@@ -387,8 +570,8 @@ BEGIN
       'sports', p.sports,
       'client_name', p.client_name,
       'client_email', p.client_email,
-      'consent_required', p.consent_required,
-      'consent_text', p.consent_text,
+      'expires_at', p.expires_at,
+      'access_token', p.access_token,
       'meta', p.meta,
       'is_active', p.is_active,
       'created_at', p.created_at,
@@ -402,10 +585,16 @@ BEGIN
         SELECT jsonb_agg(
           jsonb_build_object(
             'id', i.id,
+            'talent_id', i.talent_id,
             'creator_id', i.creator_id,
             'interaction_type', i.interaction_type,
+            'type', COALESCE(i."type", i.interaction_type),
             'item_id', i.item_id,
             'request_message', i.request_message,
+            'content', i.content,
+            'client_name', i.client_name,
+            'client_email', i.client_email,
+            'interaction_data', i.interaction_data,
             'created_at', i.created_at
           )
         )
@@ -428,20 +617,38 @@ BEGIN
             'talent', COALESCE(
               (
                 SELECT jsonb_build_object(
-                  'id', u.id, 'stage_name', u.stage_name,
+                  'id', u.id,
+                  'stage_name', u.stage_name,
                   'full_legal_name', u.full_legal_name,
+                  'full_name', COALESCE(u.stage_name, u.full_legal_name),
                   'profile_photo_url', u.profile_photo_url,
-                  'bio_notes', u.bio_notes, 'city', u.city
+                  'bio_notes', u.bio_notes,
+                  'city', u.city
                 )
                 FROM public.agency_users u WHERE u.id = it.talent_id
               ),
               (
                 SELECT jsonb_build_object(
-                  'id', c.id, 'full_name', c.full_name,
-                  'profile_photo_url', c.profile_photo_url, 'city', c.city
+                  'id', c.id,
+                  'full_name', c.full_name,
+                  'stage_name', c.full_name,
+                  'full_legal_name', c.full_name,
+                  'profile_photo_url', c.profile_photo_url,
+                  'city', c.city
                 )
                 FROM public.creators c WHERE c.id = it.creator_id
               )
+            ),
+            'creator', (
+              SELECT jsonb_build_object(
+                'id', c.id,
+                'full_name', c.full_name,
+                'stage_name', c.full_name,
+                'full_legal_name', c.full_name,
+                'profile_photo_url', c.profile_photo_url,
+                'city', c.city
+              )
+              FROM public.creators c WHERE c.id = it.creator_id
             ),
             'assets', COALESCE((
               SELECT jsonb_agg(
@@ -461,14 +668,55 @@ BEGIN
     )
     INTO result
   FROM public.agency_talent_packages p
-  WHERE p.id = (
-    SELECT package_id FROM public.agency_talent_package_interactions
-    WHERE id = p_access_token::uuid
-    LIMIT 1
-  ) OR p.meta->>'access_token' = p_access_token;
+  WHERE p.access_token = p_access_token
+     OR p.meta->>'access_token' = p_access_token
+     OR p.id::text = p_access_token;
 
   RETURN result;
 END;
 $$;
+
+CREATE OR REPLACE FUNCTION public.fill_package_item_talent_id()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    IF NEW.talent_id IS NULL AND NEW.creator_id IS NOT NULL THEN
+        SELECT au.id
+        INTO NEW.talent_id
+        FROM public.agency_users au
+        WHERE au.creator_id = NEW.creator_id
+          AND au.agency_id = NEW.agency_id
+        LIMIT 1;
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS fill_package_item_talent_id
+    ON public.agency_talent_package_items;
+CREATE TRIGGER fill_package_item_talent_id
+    BEFORE INSERT OR UPDATE ON public.agency_talent_package_items
+    FOR EACH ROW
+    EXECUTE FUNCTION public.fill_package_item_talent_id();
+
+UPDATE public.agency_talent_package_items i
+SET talent_id = au.id
+FROM public.agency_users au
+WHERE i.talent_id IS NULL
+  AND i.creator_id IS NOT NULL
+  AND au.creator_id = i.creator_id
+  AND au.agency_id = i.agency_id;
+
+UPDATE public.agency_talent_package_interactions i
+SET talent_id = it.talent_id::text
+FROM public.agency_talent_package_items it
+WHERE i.package_id = it.package_id
+  AND i.creator_id = it.creator_id
+  AND i.talent_id IS NULL
+  AND it.talent_id IS NOT NULL;
 
 COMMIT;

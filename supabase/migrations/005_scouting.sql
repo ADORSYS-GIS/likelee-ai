@@ -37,7 +37,26 @@ CREATE TABLE IF NOT EXISTS public.scouting_prospects (
     eye_color text,
     
     -- Status & Assignment (from 20260115)
-    status text NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'contacted', 'interested', 'not_interested', 'converted', 'archived', 'meeting', 'test_shoot', 'offer_sent', 'signed', 'declined')),
+    status text NOT NULL DEFAULT 'new_lead' CHECK (
+        status IN (
+            'new',
+            'new_lead',
+            'contacted',
+            'in_contact',
+            'interested',
+            'not_interested',
+            'converted',
+            'archived',
+            'meeting',
+            'test_shoot',
+            'test_shoot_pending',
+            'test_shoot_success',
+            'test_shoot_failed',
+            'offer_sent',
+            'signed',
+            'declined'
+        )
+    ),
     assigned_agent_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
     assigned_agent_name text,
     
@@ -140,6 +159,7 @@ CREATE TABLE IF NOT EXISTS public.scouting_events (
     event_type text,
     event_date timestamptz NOT NULL,
     location text NOT NULL,
+    description text,
     
     -- Open Call Details (from 20260115)
     casting_for text,
@@ -174,13 +194,11 @@ CREATE TABLE IF NOT EXISTS public.scouting_events (
     sync_with_calendar boolean,
     
     -- Status
-    status text NOT NULL DEFAULT 'planned' CHECK (status IN ('planned', 'completed', 'cancelled', 'scheduled')),
+    status text NOT NULL DEFAULT 'scheduled' CHECK (status IN ('draft', 'planned', 'scheduled', 'published', 'completed', 'cancelled')),
     
     -- Results
     attendees_count integer DEFAULT 0,
     prospects_identified integer DEFAULT 0,
-    
-    notes text,
     
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now()

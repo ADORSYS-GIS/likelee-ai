@@ -3484,11 +3484,13 @@
         "interactionTypes": {
           "favoritedTalent": "Talento Favorito",
           "selectedTalent": "Talento Seleccionado",
+          "viewedPackage": "Paquete Visto",
           "updatedConsent": "Consentimiento Actualizado",
           "requestedAssets": "Activos Completos Solicitados",
           "commentedOnTalent": "Comentó sobre un Talento",
           "requestedCallback": "Devolución de Llamada Solicitada"
         },
+        "clientViewedPackage": "El cliente vio este paquete",
         "hasComment": "Tiene Comentario",
         "clientContactDetails": "Detalles de Contacto del Cliente",
         "assetRequest": "Solicitud de Activos",
@@ -6752,19 +6754,31 @@
         "confirmRoleChange": "Confirm Role Change"
       },
       "actions": {
-        "editPermissions": "Edit Permissions",
-        "resendInvite": "Resend Invite",
-        "revokeInvite": "Revoke Invite",
-        "removeMember": "Remove Member"
+        "cancel": "Cancelar",
+        "editPermissions": "Editar permisos",
+        "resendInvite": "Reenviar invitación",
+        "revokeInvite": "Revocar invitación",
+        "removeMember": "Eliminar miembro",
+        "sendInvite": "Enviar invitación",
+        "sendinvite": "Enviar invitación"
+      },
+      "fields": {
+        "email": "Correo electrónico",
+        "role": "Rol"
       },
       "toasts": {
-        "inviteSent": "Invitation sent",
-        "inviteSentDescription": "Team invitation has been sent",
-        "inviteFailed": "Invite failed",
-        "roleUpdated": "Role updated",
-        "roleUpdateFailed": "Role update failed",
-        "memberRemoved": "Member removed",
-        "removeFailed": "Remove failed"
+        "inviteSent": "Invitación enviada",
+        "inviteSentDescription": "La invitación del equipo ha sido enviada",
+        "inviteFailed": "Error al invitar",
+        "roleUpdated": "Rol actualizado",
+        "roleUpdateFailed": "Error al actualizar el rol",
+        "memberRemoved": "Miembro eliminado",
+        "removeFailed": "Error al eliminar"
+      }
+    },
+    "tema": {
+      "actions": {
+        "cancel": "Cancelar"
       }
     },
     "commissions": {

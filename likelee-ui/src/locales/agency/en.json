@@ -1812,27 +1812,27 @@
         "comingSoon": "Kampagnen-Tracking kommt bald"
       },
       "invites": {
-        "title": "Portal-Einladung senden",
-        "description": "Wählen Sie ein bestehendes {{entity}} in Ihrem Roster aus, um eine Portal-Einladung zu senden.",
-        "searchLabel": "{{entity}} suchen",
-        "searchPlaceholder": "Nach Name oder E-Mail suchen",
-        "noMatchingEntity": "Kein passendes {{entity}} gefunden.",
-        "noEmailOnFile": "Keine E-Mail hinterlegt",
-        "alreadyConnectedTitle": "Bereits verbunden",
-        "alreadyConnectedDescription": "Dieser Creator ist bereits mit Ihrer Agentur verbunden. Es wurde keine neue Einladung gesendet.",
-        "sentTitle": "Portal-Einladung gesendet",
-        "sentDescription": "Einladung an {{email}} gesendet",
-        "linkCopiedTitle": "Einladungslink kopiert",
-        "linkCopiedDescription": "Die Einladungs-URL wurde in die Zwischenablage kopiert.",
-        "failedToSendTitle": "Senden fehlgeschlagen",
-        "failedToSendDescription": "Einladung konnte nicht gesendet werden",
-        "pendingInvites": "Ausstehende Einladungen",
-        "noPendingInvites": "Keine ausstehenden Einladungen.",
-        "expires": "Läuft ab",
+        "title": "Send Portal Invite",
+        "description": "Select an existing {{entity}} in your roster to send them a portal invite.",
+        "searchLabel": "Search {{entity}}",
+        "searchPlaceholder": "Search by name or email",
+        "noMatchingEntity": "No matching {{entity}} found.",
+        "noEmailOnFile": "No email on file",
+        "alreadyConnectedTitle": "Already connected",
+        "alreadyConnectedDescription": "This creator is already connected to your agency. No new invite was sent.",
+        "sentTitle": "Portal invite sent",
+        "sentDescription": "Invitation sent to {{email}}",
+        "linkCopiedTitle": "Invite link copied",
+        "linkCopiedDescription": "The invite URL was copied to the clipboard.",
+        "failedToSendTitle": "Failed to send",
+        "failedToSendDescription": "Could not send invite",
+        "pendingInvites": "Pending invites",
+        "noPendingInvites": "No pending invites.",
+        "expires": "Expires",
         "inviteRevokedTitle": "Invite revoked",
-        "failedToRevokeTitle": "Revoke failed",
-        "reinvitedTitle": "Reinvited",
-        "failedToReinviteTitle": "Reinvite failed"
+        "failedToRevokeTitle": "Failed to revoke",
+        "reinvitedTitle": "Re-invited",
+        "failedToReinviteTitle": "Failed to re-invite"
       },
       "reminder": {
         "title": "Send Digitals Reminder",
@@ -2755,7 +2755,7 @@
           "loadingRequests": "Anfragen werden geladen…",
           "failedToLoadRequests": "Anfragen konnten nicht geladen werden.",
           "noPendingRequests": "Keine ausstehenden Anfragen.",
-          "brandFallback": "Marke",
+          "brandFallback": "Brand",
           "pending": "Ausstehend",
           "requestedOn": "Angefragt am {{date}}",
           "loadingOffers": "Angebote werden geladen…",
@@ -5132,7 +5132,7 @@
         "contractPhase": "Contract Phase",
         "declined": "Declined"
       },
-      "archiveNotice": "Licensing requests past their end date are automatically moved to the Archive tab. After the client signs the license request, a payment link is generated for you to send.",
+      "archiveNotice": "Licensing requests past their end date are automatically moved to the Archive tab. After the client signs the license request, a payment link is generated for you to send, and paid requests stay here until their license end date.",
       "noActive": "No active licensing requests",
       "noArchived": "No archived licensing requests",
       "statusLabels": {
@@ -5541,11 +5541,13 @@
         "interactionTypes": {
           "favoritedTalent": "Favorited a Talent",
           "selectedTalent": "Selected a Talent",
+          "viewedPackage": "Viewed Package",
           "updatedConsent": "Updated Consent",
           "requestedAssets": "Requested Full Assets",
           "commentedOnTalent": "Commented on a Talent",
           "requestedCallback": "Requested Callback"
         },
+        "clientViewedPackage": "Client viewed this package",
         "hasComment": "Has Comment",
         "clientContactDetails": "Client Contact Details",
         "assetRequest": "Asset Request",
@@ -6999,10 +7001,17 @@
         "confirmRoleChange": "Confirm Role Change"
       },
       "actions": {
+        "cancel": "Cancel",
         "editPermissions": "Edit Permissions",
         "resendInvite": "Resend Invite",
         "revokeInvite": "Revoke Invite",
-        "removeMember": "Remove Member"
+        "removeMember": "Remove Member",
+        "sendInvite": "Send invite",
+        "sendinvite": "Send invite"
+      },
+      "fields": {
+        "email": "Email",
+        "role": "Role"
       },
       "toasts": {
         "inviteSent": "Invitation sent",
@@ -7012,6 +7021,11 @@
         "roleUpdateFailed": "Role update failed",
         "memberRemoved": "Member removed",
         "removeFailed": "Remove failed"
+      }
+    },
+    "tema": {
+      "actions": {
+        "cancel": "Cancel"
       }
     },
     "commissions": {

@@ -764,8 +764,8 @@ export function CreatePackageWizard({
             </div>
 
             {/* Step Bar */}
-            <div className="overflow-x-auto mb-8">
-              <div className="flex items-center gap-0 min-w-max max-w-2xl mx-auto">
+            <div className="overflow-x-auto mb-8 px-4 sm:px-10">
+              <div className="flex items-center gap-0 min-w-max mx-auto">
                 {steps.slice(0, totalSteps).map((s, i) => (
                   <React.Fragment key={s.id}>
                     <div className="flex items-center gap-3">

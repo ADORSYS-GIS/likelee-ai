@@ -2620,5 +2620,39 @@
       }
     }
   },
-  "error": "Fehler"
+  "error": "Fehler",
+  "warningLabel": "Warnung",
+  "bookings": {
+    "campaignModal": {
+      "titleCreate": "Neue Kampagne erstellen",
+      "titleEdit": "Kampagne bearbeiten",
+      "fields": {
+        "name": "Kampagnenname",
+        "status": "Status",
+        "duration": "Dauer",
+        "startDate": "Startdatum"
+      },
+      "placeholders": {
+        "name": "Kampagnenname eingeben"
+      },
+      "statuses": {
+        "created": "Erstellt",
+        "ongoing": "Laufend",
+        "completed": "Abgeschlossen"
+      },
+      "actions": {
+        "cancel": "Abbrechen",
+        "save": "Kampagne speichern",
+        "saving": "Speichern..."
+      },
+      "toasts": {
+        "created": "Kampagne erstellt",
+        "updated": "Kampagne aktualisiert",
+        "error": "Kampagnenfehler"
+      },
+      "errors": {
+        "missingName": "Kampagnenname ist erforderlich"
+      }
+    }
+  }
 }

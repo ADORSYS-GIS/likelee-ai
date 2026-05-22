@@ -527,10 +527,7 @@ pub async fn list_for_agency(
                 .all(|t| t.total_agreed_amount.is_some());
     }
 
-    let mut out: Vec<LicensingRequestGroup> = groups
-        .into_values()
-        .filter(|g| g.payment_link_status.as_deref().unwrap_or("") != "paid")
-        .collect();
+    let mut out: Vec<LicensingRequestGroup> = groups.into_values().collect();
     out.sort_by(|a, b| b.created_at.cmp(&a.created_at));
     Ok(Json(out))
 }
@@ -2220,6 +2217,37 @@ pub async fn send_payment_link(
     all_talent_ids.sort();
     all_talent_ids.dedup();
 
+    if all_talent_ids.is_empty() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            json!({
+                "code": "MISSING_LICENSING_REQUEST_TALENT",
+                "message": "This licensing request has no talent attached, so a payment link cannot be sent.",
+                "check": "Verify licensing_requests.talent_id or licensing_requests.talent_ids."
+            })
+            .to_string(),
+        ));
+    }
+
+    let invalid_talent_ids: Vec<String> = all_talent_ids
+        .iter()
+        .filter(|id| !is_valid_uuid(id))
+        .cloned()
+        .collect();
+
+    if !invalid_talent_ids.is_empty() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            json!({
+                "code": "INVALID_LICENSING_REQUEST_TALENT_IDS",
+                "message": "This licensing request contains talent IDs that are not UUIDs, so payout readiness cannot be checked safely.",
+                "invalid_talent_ids": invalid_talent_ids,
+                "check": "Check licensing_requests.talent_id/talent_ids. These should reference agency_users.id or creators.id UUIDs, not DocuSeal submitter IDs or other numeric IDs."
+            })
+            .to_string(),
+        ));
+    }
+
     // Fetch agency_users details (name + creator_id + performance_tier_name) for all talent IDs
     let t_refs: Vec<&str> = all_talent_ids.iter().map(|s| s.as_str()).collect();
     let mut talent_name_map: std::collections::HashMap<String, String> =
@@ -2228,12 +2256,14 @@ pub async fn send_payment_link(
         std::collections::HashMap::new();
     let mut talent_tier_name_map: std::collections::HashMap<String, String> =
         std::collections::HashMap::new();
+    let mut talent_email_map: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
 
     if !t_refs.is_empty() {
         let au_resp = state
             .pg
             .from("agency_users")
-            .select("id,creator_id,full_legal_name,stage_name,performance_tier_name")
+            .select("id,creator_id,full_legal_name,stage_name,email,performance_tier_name")
             .in_("id", t_refs)
             .execute()
             .await;
@@ -2258,6 +2288,12 @@ pub async fn send_payment_link(
                         .unwrap_or("Unknown")
                         .to_string();
                     talent_name_map.insert(tid.clone(), name);
+                    if let Some(email) = r.get("email").and_then(|v| v.as_str()) {
+                        let email = email.trim().to_lowercase();
+                        if !email.is_empty() {
+                            talent_email_map.insert(tid.clone(), email);
+                        }
+                    }
                     if let Some(cid) = r.get("creator_id").and_then(|v| v.as_str()) {
                         talent_creator_map.insert(tid.clone(), cid.to_string());
                     }
@@ -2269,7 +2305,56 @@ pub async fn send_payment_link(
         }
     }
 
-    // If we have missing creator links, fall back to agency_talent_relationships
+    let missing_email_creator_links: Vec<String> = all_talent_ids
+        .iter()
+        .filter(|tid| !talent_creator_map.contains_key(*tid))
+        .filter_map(|tid| talent_email_map.get(tid).cloned())
+        .collect();
+    if !missing_email_creator_links.is_empty() {
+        let email_refs: Vec<&str> = missing_email_creator_links
+            .iter()
+            .map(|s| s.as_str())
+            .collect();
+        let cr_resp = state
+            .pg
+            .from("creators")
+            .select("id,email")
+            .in_("email", email_refs)
+            .execute()
+            .await;
+        if let Ok(cr_resp) = cr_resp {
+            if cr_resp.status().is_success() {
+                let cr_text = cr_resp.text().await.unwrap_or_else(|_| "[]".into());
+                let cr_rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&cr_text).unwrap_or_default();
+                let mut creator_by_email: std::collections::HashMap<String, String> =
+                    std::collections::HashMap::new();
+                for r in &cr_rows {
+                    let cid = r.get("id").and_then(|v| v.as_str()).unwrap_or("");
+                    let email = r
+                        .get("email")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .trim()
+                        .to_lowercase();
+                    if !cid.is_empty() && !email.is_empty() {
+                        creator_by_email.insert(email, cid.to_string());
+                    }
+                }
+                for (tid, email) in &talent_email_map {
+                    if talent_creator_map.contains_key(tid) {
+                        continue;
+                    }
+                    if let Some(cid) = creator_by_email.get(email) {
+                        talent_creator_map.insert(tid.clone(), cid.clone());
+                    }
+                }
+            }
+        }
+    }
+
+    // If we have missing creator links, fall back to agency_talent_relationships.
+    // Some flows store agency_users.id; others store the relationship row id.
     let missing_creator_links: Vec<String> = all_talent_ids
         .iter()
         .filter(|tid| !talent_creator_map.contains_key(*tid))
@@ -2277,31 +2362,48 @@ pub async fn send_payment_link(
         .collect();
     if !missing_creator_links.is_empty() {
         let rel_refs: Vec<&str> = missing_creator_links.iter().map(|s| s.as_str()).collect();
-        let rel_resp = state
-            .pg
-            .from("agency_talent_relationships")
-            .select("talent_id,creator_id")
-            .in_("talent_id", rel_refs)
-            .execute()
-            .await;
-        if let Ok(rel_resp) = rel_resp {
-            if rel_resp.status().is_success() {
-                let rel_text = rel_resp.text().await.unwrap_or_else(|_| "[]".into());
-                let rel_rows: Vec<serde_json::Value> =
-                    serde_json::from_str(&rel_text).unwrap_or_default();
-                for r in &rel_rows {
-                    let tid = r
-                        .get("talent_id")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string();
-                    let cid = r
-                        .get("creator_id")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string();
-                    if !tid.is_empty() && !cid.is_empty() {
-                        talent_creator_map.entry(tid).or_insert(cid);
+        for (col, selector) in [
+            ("talent_id", "talent_id,creator_id"),
+            ("id", "id,talent_id,creator_id"),
+        ] {
+            let rel_resp = state
+                .pg
+                .from("agency_talent_relationships")
+                .select(selector)
+                .eq("agency_id", agency_id)
+                .in_(col, rel_refs.clone())
+                .execute()
+                .await;
+            if let Ok(rel_resp) = rel_resp {
+                if rel_resp.status().is_success() {
+                    let rel_text = rel_resp.text().await.unwrap_or_else(|_| "[]".into());
+                    let rel_rows: Vec<serde_json::Value> =
+                        serde_json::from_str(&rel_text).unwrap_or_default();
+                    for r in &rel_rows {
+                        let rel_id = r
+                            .get("id")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .to_string();
+                        let tid = r
+                            .get("talent_id")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .to_string();
+                        let cid = r
+                            .get("creator_id")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .to_string();
+                        if cid.is_empty() {
+                            continue;
+                        }
+                        if !tid.is_empty() {
+                            talent_creator_map.entry(tid).or_insert(cid.clone());
+                        }
+                        if !rel_id.is_empty() {
+                            talent_creator_map.entry(rel_id).or_insert(cid);
+                        }
                     }
                 }
             }
@@ -2375,7 +2477,7 @@ pub async fn send_payment_link(
         let cr_resp = state
             .pg
             .from("creators")
-            .select("id,full_name,stage_name")
+            .select("id,full_name")
             .in_("id", cr_refs)
             .execute()
             .await;
@@ -2390,8 +2492,7 @@ pub async fn send_payment_link(
                         continue;
                     }
                     let name = r
-                        .get("stage_name")
-                        .or_else(|| r.get("full_name"))
+                        .get("full_name")
                         .and_then(|v| v.as_str())
                         .unwrap_or("Unknown")
                         .to_string();
@@ -2472,7 +2573,7 @@ pub async fn send_payment_link(
             let cr_resp = state
                 .pg
                 .from("creators")
-                .select("id,full_name,stage_name")
+                .select("id,full_name")
                 .in_("id", cr_refs)
                 .execute()
                 .await;
@@ -2489,8 +2590,7 @@ pub async fn send_payment_link(
                             continue;
                         }
                         let name = r
-                            .get("stage_name")
-                            .or_else(|| r.get("full_name"))
+                            .get("full_name")
                             .and_then(|v| v.as_str())
                             .unwrap_or("Unknown")
                             .to_string();
@@ -2508,17 +2608,19 @@ pub async fn send_payment_link(
         }
     }
 
-    // Fetch creator Stripe Connect account IDs
+    // Fetch creator Stripe Connect account IDs and payout readiness.
     let creator_ids_vec: Vec<String> = talent_creator_map.values().cloned().collect();
     let cr_refs: Vec<&str> = creator_ids_vec.iter().map(|s| s.as_str()).collect();
     let mut stripe_account_map: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    let mut payouts_enabled_map: std::collections::HashMap<String, bool> =
         std::collections::HashMap::new();
 
     if !cr_refs.is_empty() {
         let cr_resp = state
             .pg
             .from("creators")
-            .select("id,stripe_connect_account_id")
+            .select("id,stripe_connect_account_id,payouts_enabled")
             .in_("id", cr_refs)
             .execute()
             .await;
@@ -2533,16 +2635,28 @@ pub async fn send_payment_link(
                         .get("stripe_connect_account_id")
                         .and_then(|v| v.as_str())
                         .unwrap_or("");
-                    if !cid.is_empty() && !acct.is_empty() {
-                        stripe_account_map.insert(cid.to_string(), acct.to_string());
+                    let payouts_enabled = r
+                        .get("payouts_enabled")
+                        .and_then(|v| v.as_bool())
+                        .unwrap_or(false);
+
+                    if !cid.is_empty() {
+                        if !acct.is_empty() {
+                            stripe_account_map.insert(cid.to_string(), acct.to_string());
+                        }
+                        payouts_enabled_map.insert(cid.to_string(), payouts_enabled);
                     }
                 }
             }
         }
     }
 
-    // Check that all talents have connected their creator profiles and Stripe Connect accounts
+    // Check that all talents have connected creator profiles and payout-ready Stripe accounts.
     let mut missing_stripe: Vec<String> = vec![];
+    let mut has_missing_profiles = false;
+    let mut has_missing_stripe = false;
+    let mut has_pending_verification = false;
+
     for tid in &all_talent_ids {
         let name = talent_name_map
             .get(tid)
@@ -2551,21 +2665,53 @@ pub async fn send_payment_link(
         let cid = talent_creator_map.get(tid).cloned().unwrap_or_default();
         if cid.is_empty() {
             missing_stripe.push(format!("{} (No creator profile linked)", name));
+            has_missing_profiles = true;
             continue;
         }
         if !stripe_account_map.contains_key(&cid) {
-            missing_stripe.push(format!("{} (No Stripe account connected)", name));
+            missing_stripe.push(format!("{} (Stripe account not connected)", name));
+            has_missing_stripe = true;
+        } else if !payouts_enabled_map.get(&cid).copied().unwrap_or(false) {
+            missing_stripe.push(format!(
+                "{} (Stripe connected but payouts not enabled - verification may be pending)",
+                name
+            ));
+            has_pending_verification = true;
         }
     }
 
     if !missing_stripe.is_empty() {
+        let action = if has_pending_verification && !has_missing_profiles && !has_missing_stripe {
+            "The creators have connected their Stripe accounts but need to complete Stripe verification before receiving payouts."
+        } else if has_missing_stripe && !has_missing_profiles {
+            "Ask each talent to complete Stripe onboarding in their portal before sending the payment link."
+        } else {
+            "Link each talent to a Creator profile and ensure they complete Stripe onboarding. Then try sending the payment link again."
+        };
+
+        let readiness_debug = json!({
+            "licensing_request_id": id,
+            "legacy_talent_id": lr.get("talent_id").and_then(|v| v.as_str()),
+            "talent_ids_checked": all_talent_ids,
+            "resolved_creator_by_talent": talent_creator_map,
+            "stripe_account_creator_ids": stripe_account_map.keys().cloned().collect::<Vec<String>>(),
+            "payouts_enabled_by_creator": payouts_enabled_map,
+        });
+        warn!(
+            agency_id = %agency_id,
+            licensing_request_id = %id,
+            readiness_debug = %readiness_debug,
+            "Payment link blocked by talent payout readiness check"
+        );
+
         return Err((
             StatusCode::BAD_REQUEST,
             json!({
                 "code": "MISSING_TALENT_STRIPE_CONNECT",
                 "message": "Some talents are not ready for payments yet.",
-                "action": "Link each talent to a Creator profile and ensure they complete Stripe Connect onboarding. Then try sending the payment link again.",
+                "action": action,
                 "missing": missing_stripe,
+                "debug": readiness_debug,
             })
             .to_string(),
         ));
@@ -2760,7 +2906,7 @@ pub async fn send_payment_link(
     let expires_at = Utc::now() + Duration::hours(expires_in_hours);
 
     let mut metadata = std::collections::HashMap::new();
-    metadata.insert("agency_id".to_string(), user.id.clone());
+    metadata.insert("agency_id".to_string(), agency_id.clone());
     metadata.insert("licensing_request_ids".to_string(), id.clone());
     metadata.insert(
         "campaign_id".to_string(),
@@ -2808,7 +2954,7 @@ pub async fn send_payment_link(
 
     // 10. Store in agency_payment_links
     let db_record = json!({
-        "agency_id": user.id,
+        "agency_id": agency_id,
         "licensing_request_id": id,
         "campaign_id": campaign_id,
         "stripe_payment_link_id": stripe_payment_link_id,
@@ -2847,7 +2993,7 @@ pub async fn send_payment_link(
         .to_string();
 
     info!(
-        agency_id = %user.id,
+        agency_id = %agency_id,
         licensing_request_id = %id,
         payment_link_id = %our_payment_link_id,
         "Payment link generated via send_payment_link"
@@ -2908,6 +3054,10 @@ pub async fn send_payment_link(
         client_email: resolved_client_email,
         email_sent,
     }))
+}
+
+fn is_valid_uuid(value: &str) -> bool {
+    uuid::Uuid::parse_str(value.trim()).is_ok()
 }
 
 pub async fn get_pay_split(

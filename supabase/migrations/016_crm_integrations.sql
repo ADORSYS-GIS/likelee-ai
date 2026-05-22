@@ -333,8 +333,8 @@ CREATE TABLE IF NOT EXISTS public.agency_catalog_items (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     catalog_id uuid NOT NULL REFERENCES public.agency_catalogs(id) ON DELETE CASCADE,
     
-    -- Subject
-    talent_id uuid REFERENCES public.agency_users(id) ON DELETE CASCADE,
+    -- Subject (Can be agency_users.id, creators.id, or agency_talent_relationships.id)
+    talent_id uuid,
     
     -- Display
     title text,
@@ -365,6 +365,15 @@ CREATE POLICY "Agencies can view own catalog items" ON public.agency_catalog_ite
         )
     );
 
+DROP POLICY IF EXISTS "Agencies can manage own catalog items" ON public.agency_catalog_items;
+CREATE POLICY "Agencies can manage own catalog items" ON public.agency_catalog_items
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM public.agency_catalogs c
+            WHERE c.id = catalog_id AND c.agency_id = auth.uid()
+        )
+    );
+
 DROP POLICY IF EXISTS "Public can view public catalog items" ON public.agency_catalog_items;
 CREATE POLICY "Public can view public catalog items" ON public.agency_catalog_items
     FOR SELECT USING (
@@ -383,7 +392,7 @@ CREATE TABLE IF NOT EXISTS public.agency_catalog_assets (
     catalog_item_id uuid NOT NULL REFERENCES public.agency_catalog_items(id) ON DELETE CASCADE,
     
     -- Asset Details
-    asset_type text NOT NULL CHECK (asset_type IN ('photo', 'video', 'digitals', 'comp_card')),
+    asset_type text NOT NULL CHECK (asset_type IN ('photo', 'video', 'digitals', 'comp_card', 'image')),
     
     -- Storage
     storage_bucket text NOT NULL,
@@ -421,6 +430,16 @@ CREATE POLICY "Agencies can view own catalog assets" ON public.agency_catalog_as
         )
     );
 
+DROP POLICY IF EXISTS "Agencies can manage own catalog assets" ON public.agency_catalog_assets;
+CREATE POLICY "Agencies can manage own catalog assets" ON public.agency_catalog_assets
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM public.agency_catalog_items ci
+            JOIN public.agency_catalogs c ON c.id = ci.catalog_id
+            WHERE ci.id = catalog_item_id AND c.agency_id = auth.uid()
+        )
+    );
+
 -- ============================================================================
 -- 8. AGENCY CATALOG RECORDINGS (Voice samples in catalog)
 -- ============================================================================
@@ -450,6 +469,16 @@ ALTER TABLE public.agency_catalog_recordings ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Agencies can view own catalog recordings" ON public.agency_catalog_recordings;
 CREATE POLICY "Agencies can view own catalog recordings" ON public.agency_catalog_recordings
     FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM public.agency_catalog_items ci
+            JOIN public.agency_catalogs c ON c.id = ci.catalog_id
+            WHERE ci.id = catalog_item_id AND c.agency_id = auth.uid()
+        )
+    );
+
+DROP POLICY IF EXISTS "Agencies can manage own catalog recordings" ON public.agency_catalog_recordings;
+CREATE POLICY "Agencies can manage own catalog recordings" ON public.agency_catalog_recordings
+    FOR ALL USING (
         EXISTS (
             SELECT 1 FROM public.agency_catalog_items ci
             JOIN public.agency_catalogs c ON c.id = ci.catalog_id

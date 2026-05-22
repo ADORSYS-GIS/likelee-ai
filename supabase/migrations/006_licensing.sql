@@ -100,6 +100,58 @@ CREATE INDEX IF NOT EXISTS idx_licensing_requests_effective_end_date ON public.l
 CREATE INDEX IF NOT EXISTS idx_licensing_requests_context_type ON public.licensing_requests(context_type);
 CREATE INDEX IF NOT EXISTS idx_licensing_requests_campaign_offer ON public.licensing_requests(campaign_offer_id);
 CREATE INDEX IF NOT EXISTS idx_licensing_requests_created_at ON public.licensing_requests(created_at);
+CREATE INDEX IF NOT EXISTS idx_licensing_requests_talent_ids ON public.licensing_requests USING GIN(talent_ids);
+
+COMMENT ON COLUMN public.licensing_requests.talent_ids IS 'Array of creator IDs (creators.id) associated with this licensing request.';
+
+CREATE OR REPLACE FUNCTION public.normalize_licensing_request_talent_ids()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    normalized_ids uuid[];
+BEGIN
+    normalized_ids := ARRAY(
+        SELECT DISTINCT creator_id
+        FROM (
+            SELECT COALESCE(au.creator_id, c.id) AS creator_id
+            FROM unnest(COALESCE(NEW.talent_ids, ARRAY[]::uuid[])) AS src_id
+            LEFT JOIN public.agency_users au
+              ON au.agency_id = NEW.agency_id
+             AND au.id = src_id
+            LEFT JOIN public.creators c
+              ON c.id = src_id
+
+            UNION ALL
+
+            SELECT au.creator_id
+            FROM public.agency_users au
+            WHERE au.agency_id = NEW.agency_id
+              AND au.id = NEW.talent_id
+
+            UNION ALL
+
+            SELECT NEW.creator_id
+        ) normalized
+        WHERE creator_id IS NOT NULL
+        ORDER BY creator_id
+    );
+
+    NEW.talent_ids := CASE
+        WHEN normalized_ids IS NULL OR cardinality(normalized_ids) = 0 THEN NULL
+        ELSE normalized_ids
+    END;
+
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_normalize_licensing_request_talent_ids ON public.licensing_requests;
+CREATE TRIGGER trg_normalize_licensing_request_talent_ids
+    BEFORE INSERT OR UPDATE OF agency_id, talent_id, creator_id, talent_ids
+    ON public.licensing_requests
+    FOR EACH ROW
+    EXECUTE FUNCTION public.normalize_licensing_request_talent_ids();
 
 ALTER TABLE public.licensing_requests ENABLE ROW LEVEL SECURITY;
 
@@ -138,7 +190,7 @@ CREATE TABLE IF NOT EXISTS public.license_templates (
     usage_scope text,
     
     -- Pricing (flat fee, not range)
-    license_fee integer NOT NULL DEFAULT 0,
+    license_fee integer DEFAULT 0,
     
     -- Terms
     duration_days integer,
@@ -146,7 +198,7 @@ CREATE TABLE IF NOT EXISTS public.license_templates (
     territory text,
     modifications_allowed text,
     custom_terms text,
-    usage_count integer, -- how many times can be used
+    usage_count integer NOT NULL DEFAULT 0, -- how many times can be used
     docuseal_template_id integer,
     client_name text,
     talent_name text,
@@ -207,7 +259,7 @@ CREATE TABLE IF NOT EXISTS public.license_submissions (
     
     -- Brand Request
     requires_agency_signature boolean DEFAULT false,
-    agency_submitter_id uuid REFERENCES public.agencies(id) ON DELETE SET NULL,
+    agency_submitter_id bigint,
     agency_submitter_slug text,
     agency_embed_src text,
     agency_signed_at timestamptz,
@@ -220,7 +272,7 @@ CREATE TABLE IF NOT EXISTS public.license_submissions (
     docuseal_template_id integer,
     
     -- Status
-    status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'pending', 'sent', 'opened', 'under_review', 'approved', 'rejected', 'signed', 'declined', 'archived', 'completed', 'converted')),
+    status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'pending', 'sent', 'opened', 'under_review', 'approved', 'rejected', 'signed', 'declined', 'archived', 'completed', 'converted', 'agency_pending', 'client_pending', 'expired')),
     archived_at timestamptz,
     
     -- Contract
@@ -246,6 +298,7 @@ CREATE INDEX IF NOT EXISTS idx_license_submissions_request ON public.license_sub
 CREATE INDEX IF NOT EXISTS idx_license_submissions_brand_request ON public.license_submissions(brand_request_id);
 CREATE INDEX IF NOT EXISTS idx_license_submissions_status ON public.license_submissions(status);
 CREATE INDEX IF NOT EXISTS idx_license_submissions_talent ON public.license_submissions(talent_id);
+CREATE INDEX IF NOT EXISTS idx_license_submissions_docuseal_submission ON public.license_submissions(docuseal_submission_id);
 
 ALTER TABLE public.license_submissions ENABLE ROW LEVEL SECURITY;
 
@@ -271,14 +324,21 @@ CREATE TABLE IF NOT EXISTS public.licensing_payouts (
     -- Source
     submission_id uuid REFERENCES public.license_submissions(id) ON DELETE SET NULL,
     payment_link_id uuid,
+    licensing_request_id uuid REFERENCES public.licensing_requests(id) ON DELETE SET NULL,
     
     -- Amounts
     amount_cents bigint NOT NULL,
     platform_fee_cents integer NOT NULL DEFAULT 0,
+    net_amount_cents bigint,
+    talent_earnings_cents bigint,
     currency text NOT NULL DEFAULT 'USD',
     
     -- Talent splits (JSONB array of {creator_id, talent_id, amount_cents})
     talent_splits jsonb NOT NULL DEFAULT '[]'::jsonb,
+    
+    -- Stripe references
+    stripe_checkout_session_id text,
+    stripe_payment_intent_id text,
     
     -- Status
     status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'paid', 'failed')),
@@ -294,6 +354,9 @@ CREATE INDEX IF NOT EXISTS idx_licensing_payouts_submission ON public.licensing_
 CREATE INDEX IF NOT EXISTS idx_licensing_payouts_status ON public.licensing_payouts(status);
 CREATE INDEX IF NOT EXISTS idx_licensing_payouts_paid_at ON public.licensing_payouts(paid_at);
 CREATE INDEX IF NOT EXISTS idx_licensing_payouts_agency_talent_paid ON public.licensing_payouts(agency_id, paid_at);
+CREATE INDEX IF NOT EXISTS idx_licensing_payouts_licensing_request ON public.licensing_payouts(licensing_request_id);
+CREATE INDEX IF NOT EXISTS idx_licensing_payouts_stripe_checkout_session ON public.licensing_payouts(stripe_checkout_session_id);
+CREATE INDEX IF NOT EXISTS idx_licensing_payouts_stripe_payment_intent ON public.licensing_payouts(stripe_payment_intent_id);
 
 ALTER TABLE public.licensing_payouts ENABLE ROW LEVEL SECURITY;
 
